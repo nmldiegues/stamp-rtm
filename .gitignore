@@ -1,0 +1,22 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+bayes.rtm
+genome.rtm
+intruder.rtm
+kmeans.rtm
+labyrinth.rtm
+ssca2.rtm
+vacation.rtm
+yada.rtm
