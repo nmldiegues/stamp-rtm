@@ -68,11 +68,16 @@
  * =============================================================================
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
 
 #include <assert.h>
 #include <stdlib.h>
+#include <sched.h>
 #include "thread.h"
 #include "types.h"
+
 
 static THREAD_LOCAL_T    global_threadId;
 static long              global_numThread       = 1;
@@ -97,6 +102,11 @@ threadWait (void* argPtr)
     long threadId = *(long*)argPtr;
 
     THREAD_LOCAL_SET(global_threadId, (long)threadId);
+
+    cpu_set_t my_set;
+    CPU_ZERO(&my_set);
+    CPU_SET(threadId % 8, &my_set);
+    sched_setaffinity(0, sizeof(cpu_set_t), &my_set);
 
     while (1) {
         THREAD_BARRIER(global_barrierPtr, threadId); /* wait for start parallel */
