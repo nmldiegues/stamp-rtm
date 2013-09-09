@@ -1,0 +1,47 @@
+# ==============================================================================
+#
+# Makefile.wlpdstm
+#
+# ==============================================================================
+
+
+# ==============================================================================
+# Variables
+# ==============================================================================
+
+WLPDSTM_INC_DIR = /home/nmld/Desktop/swisstm-c/include
+WLPDSTM_LIB_DIR = /home/nmld/Desktop/swisstm-c/lib
+
+#ATOMIC_OPS_INCLUDE = /home/dragojev/local/include
+#ATOMIC_OPS_LIB = /home/dragojev/local/lib
+
+#CFLAGS   += -m32 -DSTM -DWLPDSTM -I$(WLPDSTM_INC_DIR) -I$(ATOMIC_OPS_INCLUDE)
+CFLAGS   += -DSTM -DWLPDSTM -I$(STM)/include
+CPPFLAGS := $(CFLAGS)
+#LDFLAGS  += -m32 -L$(WLPDSTM_LIB_DIR)# -L$(ATOMIC_OPS_LIB) -static
+LDFLAGS  += -L$(STM)/lib -static
+LIBS     += -lwlpdstm
+
+
+# ==============================================================================
+# Rules
+# ==============================================================================
+
+.PHONY: default
+default: $(PROG)
+
+.PHONY: clean
+clean:
+	$(RM) $(OBJS) $(PROG) $(OUTPUT)
+
+$(PROG): $(OBJS)
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $(PROG)
+
+include ../common/Makefile.common
+
+
+# ==============================================================================
+#
+# End of Makefile.wlpdstm
+#
+# ==============================================================================
