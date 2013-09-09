@@ -8,7 +8,7 @@ for F in $FOLDERS
 do
     cd $F
     rm *.o || true
-    make -f Makefile.rtm
+    make -f Makefile.$1
     #cp $F.rtm ../bin
     cd ..
 done

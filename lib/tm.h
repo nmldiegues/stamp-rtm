@@ -293,7 +293,7 @@
 #  define TM_ARGDECL_ALONE              /* nothing */
 #  define TM_CALLABLE                   /* nothing */
 
-#  define TM_STARTUP(numThread)         CPUID_RTM_CHECK; THREAD_MUTEX_INIT(global_rtm_mutex);
+#  define TM_STARTUP(numThread)         THREAD_MUTEX_INIT(global_rtm_mutex);
 #  define TM_SHUTDOWN()                 /* nothing */
 
 #  define TM_THREAD_ENTER()             /* nothing */

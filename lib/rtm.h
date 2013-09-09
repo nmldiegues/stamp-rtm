@@ -20,6 +20,7 @@
                      :"a"(eax)       \
                      :"ecx","edx");  \
         rtm_present = ebx & (1u<<11); \
+        printf("RTM value: %d\n", rtm_present); \
         assert(rtm_present && "RTM is not present"); \
         }
 
