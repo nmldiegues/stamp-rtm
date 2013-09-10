@@ -221,7 +221,7 @@ maze_read (maze_t* mazePtr, char* inputFileName)
                 pair_t* coordinatePairPtr = pair_alloc(srcPtr, dstPtr);
                 assert(coordinatePairPtr);
                 bool_t status = list_insert(workListPtr, (void*)coordinatePairPtr);
-                assert(status == TRUE);
+//                assert(status == TRUE);
                 vector_pushBack(srcVectorPtr, (void*)srcPtr);
                 vector_pushBack(dstVectorPtr, (void*)dstPtr);
                 break;

@@ -12,6 +12,8 @@
 *.la
 *.a
 
+auto-results
+
 bayes.rtm
 genome.rtm
 intruder.rtm
@@ -30,11 +32,11 @@ ssca2.seq
 vacation.seq
 yada.seq
 
-bayes
-genome
-intruder
-kmeans
-labyrinth
-ssca2
-vacation
-yada
+bayes/bayes
+genome/genome
+intruder/intruder
+kmeans/kmeans
+labyrinth/labyrinth
+ssca2/ssca2
+vacation/vacation
+yada/yada
