@@ -1,6 +1,14 @@
 #!/bin/sh
 
-workspace="/home/nmld/workspace-c/stamp-rtm/"
+workspace="/home/ndiegues/stamp-rtm/"
+
+cd tl2;
+make clean; make;
+cd ../TinySTM;
+make clean; make;
+cd ../swisstm;
+make clean; make;
+cd ..
 
 config[1]="rtm"
 config[2]="seq"
@@ -39,12 +47,12 @@ build[4]="stm"
 build[5]="stm"
 
 
-for c in 2 3 4 5
+for c in 3 4 5
 do
     cd $workspace;
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]};
-    for b in 5 #6 7 8
+    for b in 1 2 3 4 5 6 7 8
     do
         for t in 2
         do

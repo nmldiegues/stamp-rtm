@@ -2,7 +2,7 @@
 # installation specific dirs
 LIBPAPI_DIR = /home/dragojev/local64
 
-ATOMIC_OPS_INCLUDE = /home/nmld/workspace-c/stamp-rtm/TinySTM/src/atomic_ops/
+ATOMIC_OPS_INCLUDE = ../TinySTM/src/atomic_ops/
 
 ########################################
 # set general variables
