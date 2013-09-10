@@ -25,14 +25,14 @@ benchmarks[6]="ssca2"
 benchmarks[7]="vacation"
 benchmarks[8]="yada"
 
-params[1]="-v32 -r4096 -n10 -p40 -i2 -e8 -s1"
-params[2]="-g16384 -s64 -n16777216"
-params[3]="-a10 -l128 -n262144 -s1"
-params[4]="-m15 -n15 -t0.00001 -i inputs/random-n65536-d32-c16.txt"
-params[5]="-i inputs/random-x512-y512-z7-n512.txt"
-params[6]="-s20 -i1.0 -u1.0 -l3 -p3"
-params[7]="-n4 -q60 -u90 -r1048576 -t4194304"
-params[8]="-a15 -i inputs/ttimeu1000000.2"
+params[1]="-v32 -r4096 -n10 -p40 -i2 -e8 -s1 -t"
+params[2]="-g16384 -s64 -n16777216 -t"
+params[3]="-a10 -l128 -n262144 -s1 -t"
+params[4]="-m15 -n15 -t0.00001 -i inputs/random-n65536-d32-c16.txt -p"
+params[5]="-i inputs/random-x512-y512-z7-n512.txt -t"
+params[6]="-s20 -i1.0 -u1.0 -l3 -p3 -t"
+params[7]="-n4 -q60 -u90 -r1048576 -t4194304 -c"
+params[8]="-a15 -i inputs/ttimeu1000000.2- t"
 
 ext[1]=".rtm"
 ext[2]=".seq"
@@ -65,7 +65,7 @@ do
                 pid=$!
                 ./../../power_gadget/power_gadget -e 1000 > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]} -c$t > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.data
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.data
                 rc=$?
                 kill $pid
                 kill $pid2
