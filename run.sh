@@ -65,7 +65,7 @@ do
                 pid=$!
                 ./../../power_gadget/power_gadget -e 1000 > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]} > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.data
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]} -c$t > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.data
                 rc=$?
                 kill $pid
                 kill $pid2
