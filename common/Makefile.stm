@@ -1,39 +1,35 @@
 # ==============================================================================
 #
-# Makefile.stm
+# Makefile.rtm
+# Build rules for Intel RTM ISA.
 #
 # ==============================================================================
 
+SUFF=.rtm
 
-# ==============================================================================
-# Variables
-# ==============================================================================
-
-CFLAGS   += -DSTM -I$(STM)
+CFLAGS   += -DHTM # We substitute our RTM implementation for HTM.                                                                                                                                                
 CPPFLAGS := $(CFLAGS)
-LDFLAGS  += -L$(STM)
-LIBS     += -ltl2
-
 
 # ==============================================================================
 # Rules
 # ==============================================================================
 
 .PHONY: default
-default: $(PROG)
+default: $(PROG)$(SUFF)
 
 .PHONY: clean
 clean:
-	$(RM) $(OBJS) $(PROG) $(OUTPUT)
+	$(RM) $(OBJS) $(PROG)$(SUFF) $(OUTPUT)
 
-$(PROG): $(OBJS)
-	$(LD) $(LDFLAGS) $^ $(LIBS) -o $(PROG)
+$(PROG)$(SUFF): $(OBJS)
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $(PROG)$(SUFF) -static
 
 include ../common/Makefile.common
 
 
 # ==============================================================================
 #
-# End of Makefile.stm
+# Makefile.rtm
 #
 # ==============================================================================
+
