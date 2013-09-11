@@ -72,6 +72,7 @@
 #ifndef THREAD_H
 #define THREAD_H 1
 
+#include <linux/spinlock.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include "types.h"
@@ -132,6 +133,7 @@ typedef struct thread_barrier {
     long numThread;
 } thread_barrier_t;
 
+extern spinlock_t* global_spin_lock;
 extern THREAD_MUTEX_T global_rtm_mutex;
 
 /* =============================================================================
