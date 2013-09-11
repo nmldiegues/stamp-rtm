@@ -32,7 +32,7 @@ params[4]="-m15 -n15 -t0.00001 -i inputs/random-n65536-d32-c16.txt -p"
 params[5]="-i inputs/random-x512-y512-z7-n512.txt -t"
 params[6]="-s20 -i1.0 -u1.0 -l3 -p3 -t"
 params[7]="-n4 -q60 -u90 -r1048576 -t4194304 -c"
-params[8]="-a15 -i inputs/ttimeu1000000.2- t"
+params[8]="-a15 -i inputs/ttimeu1000000.2 -t"
 
 ext[1]=".rtm"
 ext[2]=".seq"
@@ -47,14 +47,14 @@ build[4]="stm"
 build[5]="stm"
 
 
-for c in 1 2 3 4 5
+for c in 2 3 4 5
 do
     cd $workspace;
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]};
-    for b in 1 2 3 4 5 6 7 8
+    for b in 1 3 4 5 6 7 8
     do
-        for t in 1 2 3 4 5 6 7 8
+        for t in 1 2 4 8
         do
             for a in 1 2 3
             do
@@ -71,7 +71,6 @@ do
                 kill $pid2
                 if [[ $rc != 0 ]] ; then
                     echo "Error within: ${config[$c]} | ${benchmarks[$b]} | threads $t | attempt $a" >> ../auto-results/error.out
-                    exit 1;
                 fi
             done    
         done

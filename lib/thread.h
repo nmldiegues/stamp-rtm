@@ -118,25 +118,13 @@ extern "C" {
 #  define THREAD_BARRIER(bar, tid)          pthread_barrier_wait(bar)
 #  define THREAD_BARRIER_FREE(bar)          free(bar)
 #else /* !SIMULATOR */
-
-#ifdef LOG_BARRIER
 #  define THREAD_BARRIER_T                  thread_barrier_t
 #  define THREAD_BARRIER_ALLOC(N)           thread_barrier_alloc(N)
 #  define THREAD_BARRIER_INIT(bar, N)       thread_barrier_init(bar)
 #  define THREAD_BARRIER(bar, tid)          thread_barrier(bar, tid)
 #  define THREAD_BARRIER_FREE(bar)          thread_barrier_free(bar)
-#else
-#  define THREAD_BARRIER_T                  barrier_t
-#  define THREAD_BARRIER_ALLOC(N)           barrier_alloc()
-#  define THREAD_BARRIER_INIT(bar, N)       barrier_init(bar, N)
-#  define THREAD_BARRIER(bar, tid)          barrier_cross(bar)
-#  define THREAD_BARRIER_FREE(bar)          barrier_free(bar)
-#endif /* !LOG_BARRIER */
 #endif /* !SIMULATOR */
 
-extern THREAD_MUTEX_T global_rtm_mutex;
-
-#ifdef LOG_BARRIER
 typedef struct thread_barrier {
     THREAD_MUTEX_T countLock;
     THREAD_COND_T proceedCond;
@@ -144,25 +132,8 @@ typedef struct thread_barrier {
     long count;
     long numThread;
 } thread_barrier_t;
-#else
 
-typedef struct barrier {
-	pthread_cond_t complete;
-	pthread_mutex_t mutex;
-	int count;
-	int crossing;
-} barrier_t;
-
-barrier_t *barrier_alloc();
-
-void barrier_free(barrier_t *b);
-
-void barrier_init(barrier_t *b, int n);
-
-void barrier_cross(barrier_t *b);
-
-#endif /* LOG_BARRIER */
-
+extern THREAD_MUTEX_T global_rtm_mutex;
 
 /* =============================================================================
  * thread_startup
@@ -194,7 +165,6 @@ void
 thread_shutdown ();
 
 
-#ifdef LOG_BARRIER
 /* =============================================================================
  * thread_barrier_alloc
  * =============================================================================
@@ -227,16 +197,6 @@ thread_barrier_init (thread_barrier_t* barrierPtr);
 void
 thread_barrier (thread_barrier_t* barrierPtr, long threadId);
 
-#endif /* LOG_BARRIER */
-
-
-/* =============================================================================
- * thread_barrier_wait
- * -- Call after thread_start() to synchronize threads inside parallel region
- * =============================================================================
- */
-void
-thread_barrier_wait();
 
 /* =============================================================================
  * thread_getId
@@ -256,6 +216,14 @@ long
 thread_getNumThread();
 
 
+/* =============================================================================
+ * thread_barrier_wait
+ * -- Call after thread_start() to synchronize threads inside parallel region
+ * =============================================================================
+ */
+void
+thread_barrier_wait();
+
 
 #ifdef __cplusplus
 }
@@ -271,3 +239,4 @@ thread_getNumThread();
  *
  * =============================================================================
  */
+
