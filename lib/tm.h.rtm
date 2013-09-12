@@ -330,7 +330,7 @@
                                                 while (__sync_lock_test_and_set(&exclusion, 1)) {}  \
                                             else { \
                                                 XBEGIN(failure); \
-                                                if (exclusion == 1) XABORT(0xab);
+                                                if (exclusion == 1) XABORT(0xab); \
                                             }
                                             
 

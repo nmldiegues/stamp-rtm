@@ -327,8 +327,11 @@
                                             XFAIL(failure);     \
                                             tries --;           \
                                             if (tries <= 0)     \
-                                                pthread_mutex_lock(&global_rtm_mutex);  \
-                                            else XBEGIN(failure);
+                                                while (__sync_lock_test_and_set(&exclusion, 1)) {}  \
+                                            else { \
+                                                XBEGIN(failure); \
+                                                if (exclusion == 1) XABORT(0xab); \
+                                            }
                                             
 
 #    define TM_END()                      if (tries > 0)        \
