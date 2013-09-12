@@ -15,6 +15,7 @@ config[2]="seq"
 config[3]="tl2"
 config[4]="tinystm"
 config[5]="swisstm"
+config[6]="spin"
 
 benchmarks[1]="bayes"
 benchmarks[2]="genome"
@@ -39,20 +40,22 @@ ext[2]=".seq"
 ext[3]=""
 ext[4]=""
 ext[5]=""
+ext[6]=".seq"
 
 build[1]="rtm"
 build[2]="seq"
 build[3]="stm"
 build[4]="stm"
 build[5]="stm"
+build[6]="stm"
 
 
-for c in 2 3 4 5
+for c in 6 2 1
 do
     cd $workspace;
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]};
-    for b in 1 3 4 5 6 7 8
+    for b in 2
     do
         for t in 1 2 4 8
         do
@@ -63,7 +66,7 @@ do
                 echo "${config[$c]} | ${benchmarks[$b]} | threads $t | attempt $a"
                 ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.pcm &
                 pid=$!
-                ./../../power_gadget/power_gadget -e 1000 > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.pow &
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.pow &
                 pid2=$!
                 ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.data
                 rc=$?

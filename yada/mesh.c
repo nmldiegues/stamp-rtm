@@ -165,6 +165,9 @@ mesh_insert (mesh_t* meshPtr, element_t* elementPtr, MAP_T* edgeMapPtr)
              */
             bool_t isSuccess;
             element_t* sharerPtr = (element_t*)MAP_FIND(edgeMapPtr, edgePtr);
+            if (! sharerPtr) {
+                return;
+            }
             assert(sharerPtr); /* cannot be shared by >2 elements */
             element_addNeighbor(elementPtr, sharerPtr);
             element_addNeighbor(sharerPtr, elementPtr);
@@ -226,6 +229,9 @@ TMmesh_insert (TM_ARGDECL
              */
             bool_t isSuccess;
             element_t* sharerPtr = (element_t*)MAP_FIND(edgeMapPtr, edgePtr);
+            if (! sharerPtr) {
+                return;
+            }
             assert(sharerPtr); /* cannot be shared by >2 elements */
             TMELEMENT_ADDNEIGHBOR(elementPtr, sharerPtr);
             TMELEMENT_ADDNEIGHBOR(sharerPtr, elementPtr);
@@ -258,6 +264,9 @@ TMmesh_insert (TM_ARGDECL
 void
 TMmesh_remove (TM_ARGDECL  mesh_t* meshPtr, element_t* elementPtr)
 {
+    if (TMELEMENT_ISGARBAGE(elementPtr)) {
+        return;
+    }
     assert(!TMELEMENT_ISGARBAGE(elementPtr));
 
     /*
