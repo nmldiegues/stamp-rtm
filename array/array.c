@@ -4,6 +4,7 @@
 #include "thread.h"
 #include "tm.h"
 #include "timer.h"
+#include "random.h"
 
 enum param_types {
     PARAM_SIZE = (unsigned char)'s',
@@ -61,10 +62,10 @@ static void parseArgs(long argc, char* const argv[]) {
     }
 }
 
-volatile long dummy = 1;
-
 void client_run (void* argPtr) {
     TM_THREAD_ENTER();
+
+    random_t* randomPtr = random_alloc();
 
     // unsigned long myId = thread_getId();
     // long numThread = *((long*)argPtr);
@@ -74,8 +75,8 @@ void client_run (void* argPtr) {
 
     long i = 0;
     for (; i < operations; i++) {
-        long random_number = ((long) rand()) % ((long)global_params[PARAM_SIZE]);
-        long random_number2 = ((long) rand()) % ((long)global_params[PARAM_SIZE]);
+        long random_number = ((long) random_generate(randomPtr)()) % ((long)global_params[PARAM_SIZE]);
+        long random_number2 = ((long) random_generate(randomPtr)()) % ((long)global_params[PARAM_SIZE]);
         if (random_number == random_number2) {
             random_number2 = (random_number2 + 1) % ((long)global_params[PARAM_SIZE]);
         }
@@ -90,7 +91,7 @@ void client_run (void* argPtr) {
 
         long k = 0;
         for (;k < (long)global_params[PARAM_INTERVAL]; k++) {
-            long ru = (long) dummy % 2;
+            long ru = ((long) random_generate(randomPtr)) % 2;
             total += ru;
         }
     }
