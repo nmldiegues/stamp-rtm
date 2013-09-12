@@ -337,7 +337,7 @@
 #    define TM_END()                      if (tries > 0)        \
                                               XEND();           \
                                           else                      \
-                                              pthread_mutex_unlock(&global_rtm_mutex);     \
+                                              exclusion = 0;     \
                                           };
 
 
