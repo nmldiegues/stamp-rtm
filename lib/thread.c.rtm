@@ -89,6 +89,7 @@ static void            (*global_funcPtr)(void*) = NULL;
 static void*             global_argPtr          = NULL;
 static volatile bool_t   global_doShutdown      = FALSE;
 
+volatile int exclusion = 0;
 THREAD_MUTEX_T global_rtm_mutex;
 
 /* =============================================================================

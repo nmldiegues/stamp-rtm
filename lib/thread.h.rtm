@@ -132,6 +132,7 @@ typedef struct thread_barrier {
     long numThread;
 } thread_barrier_t;
 
+extern volatile int exclusion;
 extern THREAD_MUTEX_T global_rtm_mutex;
 
 /* =============================================================================
