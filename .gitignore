@@ -17,7 +17,7 @@ auto-results
 intset-rbtree
 rbforest
 
-
+array.rtm
 bayes.rtm
 genome.rtm
 intruder.rtm
@@ -27,6 +27,7 @@ ssca2.rtm
 vacation.rtm
 yada.rtm
 
+array.seq
 bayes.seq
 genome.seq
 intruder.seq
@@ -36,6 +37,7 @@ ssca2.seq
 vacation.seq
 yada.seq
 
+array/array
 bayes/bayes
 genome/genome
 intruder/intruder

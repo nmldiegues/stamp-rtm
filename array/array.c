@@ -70,23 +70,25 @@ void client_run (void* argPtr) {
     // unsigned long myId = thread_getId();
     // long numThread = *((long*)argPtr);
     long operations = (long)global_params[PARAM_OPERATIONS];
+    long interval = (long)global_params[PARAM_INTERVAL];
+    printf("operations: %ld \tinterval: %ld\n", operations, interval);
 
     long total = 0;
 
     long i = 0;
     for (; i < operations; i++) {
-        long random_number = ((long) random_generate(randomPtr)()) % ((long)global_params[PARAM_SIZE]);
-        long random_number2 = ((long) random_generate(randomPtr)()) % ((long)global_params[PARAM_SIZE]);
+        long random_number = ((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE]);
+        long random_number2 = ((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE]);
         if (random_number == random_number2) {
             random_number2 = (random_number2 + 1) % ((long)global_params[PARAM_SIZE]);
         }
         TM_BEGIN();
-        long r1 = (long)TM_SHARED_READ(global_array[random_number]);
-        long r2 = (long)TM_SHARED_READ(global_array[random_number2]);
+        long r1 = (long)TM_SHARED_READ(global_array[1]); //random_number]);
+        long r2 = (long)TM_SHARED_READ(global_array[99]); //random_number2]);
         r1 = r1 + 1;
         r2 = r2 - 1;
-        TM_SHARED_WRITE(global_array[random_number], r1);
-        TM_SHARED_WRITE(global_array[random_number2], r2);
+        TM_SHARED_WRITE(global_array[1], r1);
+        TM_SHARED_WRITE(global_array[99], r2);
         TM_END();
 
         long k = 0;
