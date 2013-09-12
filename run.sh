@@ -50,12 +50,12 @@ build[5]="stm"
 build[6]="stm"
 
 
-for c in 6 2 1
+for c in 1
 do
     cd $workspace;
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]};
-    for b in 2
+    for b in 1 2 3 4 5 6 7 8
     do
         for t in 1 2 4 8
         do

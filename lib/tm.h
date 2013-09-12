@@ -326,18 +326,20 @@
                                             int tries = 4;      \
                                             XFAIL(failure);     \
                                             tries --;           \
-                                            if (tries <= 0)     \
+                                            if (tries <= 0) {     \
                                                 while (__sync_lock_test_and_set(&exclusion, 1)) {}  \
-                                            else { \
+                                            } else { \
                                                 XBEGIN(failure); \
                                                 if (exclusion == 1) XABORT(0xab); \
-                                            }
+                                            } \
                                             
 
-#    define TM_END()                      if (tries > 0)        \
+#    define TM_END()                      if (tries > 0){        \
                                               XEND();           \
-                                          else                      \
-                                              pthread_mutex_unlock(&global_rtm_mutex);     \
+                                          } else {                     \
+                                              __sync_synchronize(); \
+                                              exclusion = 0;     \
+                                          } \
                                           };
 
 
