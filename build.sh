@@ -1,6 +1,6 @@
 #!/bin/sh
 
-FOLDERS="bayes  genome  intruder  kmeans  labyrinth  ssca2  vacation  yada"
+FOLDERS="array bayes  genome  intruder  kmeans  labyrinth  ssca2  vacation  yada"
 
 rm lib/*.o || true
 
