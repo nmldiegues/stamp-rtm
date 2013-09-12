@@ -75,6 +75,9 @@
 #ifndef TM_H
 #define TM_H 1
 
+#include <pthread.h>
+#include "thread.h"
+
 #ifdef HAVE_CONFIG_H
 # include "STAMP_config.h"
 #endif
@@ -176,6 +179,7 @@
 
 #endif /* !SIMULATOR */
 
+#  define TM_LOCAL_WRITE(var, val)    ({var = val; var;})
 
 /* =============================================================================
  * Transactional Memory System Interface
@@ -326,20 +330,15 @@
                                             int tries = 4;      \
                                             XFAIL(failure);     \
                                             tries --;           \
-                                            if (tries <= 0) {     \
-                                                while (__sync_lock_test_and_set(&exclusion, 1)) {}  \
-                                            } else { \
-                                                XBEGIN(failure); \
-                                                if (exclusion == 1) XABORT(0xab); \
-                                            } \
+                                            if (tries <= 0)     \
+                                                pthread_mutex_lock(&global_rtm_mutex);  \
+                                            else XBEGIN(failure);
                                             
 
-#    define TM_END()                      if (tries > 0){        \
+#    define TM_END()                      if (tries > 0)        \
                                               XEND();           \
-                                          } else {                     \
-                                              __sync_synchronize(); \
-                                              exclusion = 0;     \
-                                          } \
+                                          else                      \
+                                              pthread_mutex_unlock(&global_rtm_mutex);     \
                                           };
 
 
@@ -585,9 +584,9 @@
 
 #  endif /* !SIMULATOR */
 
-#  define TM_BEGIN()                    /* nothing */
-#  define TM_BEGIN_RO()                 /* nothing */
-#  define TM_END()                      /* nothing */
+#  define TM_BEGIN()                    pthread_mutex_lock(&global_rtm_mutex) /* nothing */
+#  define TM_BEGIN_RO()                 pthread_mutex_lock(&global_rtm_mutex) /* nothing */
+#  define TM_END()                      pthread_mutex_unlock(&global_rtm_mutex) /* nothing */
 #  define TM_RESTART()                  assert(0)
 
 #  define TM_EARLY_RELEASE(var)         /* nothing */

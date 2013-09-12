@@ -68,6 +68,7 @@
  * =============================================================================
  */
 
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
 #endif
@@ -89,7 +90,7 @@ static void            (*global_funcPtr)(void*) = NULL;
 static void*             global_argPtr          = NULL;
 static volatile bool_t   global_doShutdown      = FALSE;
 
-volatile int exclusion = 0;
+spinlock_t* global_spin_lock;
 THREAD_MUTEX_T global_rtm_mutex;
 
 /* =============================================================================
@@ -121,7 +122,6 @@ threadWait (void* argPtr)
         }
     }
 }
-
 
 /* =============================================================================
  * thread_startup
@@ -221,6 +221,7 @@ thread_shutdown ()
     global_numThread = 1;
 }
 
+#ifdef LOG_BARRIER
 
 /* =============================================================================
  * thread_barrier_alloc
@@ -327,6 +328,55 @@ thread_barrier (thread_barrier_t* barrierPtr, long threadId)
     }
 }
 
+#else
+
+barrier_t *barrier_alloc() {
+    return (barrier_t *)malloc(sizeof(barrier_t));
+}
+
+void barrier_free(barrier_t *b) {
+    free(b);
+}
+
+void barrier_init(barrier_t *b, int n) {
+    pthread_cond_init(&b->complete, NULL);
+    pthread_mutex_init(&b->mutex, NULL);
+    b->count = n;
+    b->crossing = 0;
+}
+
+void barrier_cross(barrier_t *b) {
+    pthread_mutex_lock(&b->mutex);
+    /* One more thread through */
+    b->crossing++;
+    /* If not all here, wait */
+    if (b->crossing < b->count) {
+        pthread_cond_wait(&b->complete, &b->mutex);
+    } else {
+        /* Reset for next time */
+        b->crossing = 0;
+        pthread_cond_broadcast(&b->complete);
+    }
+    pthread_mutex_unlock(&b->mutex);
+}
+
+
+#endif /* !LOG_BARRIER */
+
+/* =============================================================================
+ * thread_barrier_wait
+ * -- Call after thread_start() to synchronize threads inside parallel region
+ * =============================================================================
+ */
+void
+thread_barrier_wait()
+{
+#ifndef SIMULATOR
+    long threadId = thread_getId();
+#endif /* !SIMULATOR */
+    THREAD_BARRIER(global_barrierPtr, threadId);
+}
+
 
 /* =============================================================================
  * thread_getId
@@ -351,20 +401,6 @@ thread_getNumThread()
     return global_numThread;
 }
 
-
-/* =============================================================================
- * thread_barrier_wait
- * -- Call after thread_start() to synchronize threads inside parallel region
- * =============================================================================
- */
-void
-thread_barrier_wait()
-{
-#ifndef SIMULATOR
-    long threadId = thread_getId();
-#endif /* !SIMULATOR */
-    THREAD_BARRIER(global_barrierPtr, threadId);
-}
 
 
 /* =============================================================================
@@ -435,4 +471,3 @@ main ()
  *
  * =============================================================================
  */
-
