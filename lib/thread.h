@@ -72,7 +72,7 @@
 #ifndef THREAD_H
 #define THREAD_H 1
 
-#include <linux/spinlock.h>
+
 #include <pthread.h>
 #include <stdlib.h>
 #include "types.h"
@@ -134,7 +134,7 @@ extern "C" {
 #endif /* !LOG_BARRIER */
 #endif /* !SIMULATOR */
 
-extern spinlock_t* global_spin_lock;
+extern volatile int exclusion;
 extern THREAD_MUTEX_T global_rtm_mutex;
 
 #ifdef LOG_BARRIER

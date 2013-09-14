@@ -90,7 +90,7 @@ static void            (*global_funcPtr)(void*) = NULL;
 static void*             global_argPtr          = NULL;
 static volatile bool_t   global_doShutdown      = FALSE;
 
-spinlock_t* global_spin_lock;
+volatile int exclusion = 0;
 THREAD_MUTEX_T global_rtm_mutex;
 
 /* =============================================================================

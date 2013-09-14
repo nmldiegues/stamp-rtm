@@ -1,18 +1,18 @@
 # ==============================================================================
 #
-# Makefile.seq
+# Makefile.rtm
+# Build rules for Intel RTM ISA.
 #
 # ==============================================================================
 
+SUFF=.rtm
+
+CFLAGS   += -DHTM # We substitute our RTM implementation for HTM.                                                                                                                                                
+CPPFLAGS := $(CFLAGS)
 
 # ==============================================================================
 # Rules
 # ==============================================================================
-
-CFLAGS   += -I/usr/src/linux-headers-3.8.0-30-generic/include/ -I/usr/include/x86_64-linux-gnu/
-CPPFLAGS := $(CFLAGS)
-
-SUFF=.seq
 
 .PHONY: default
 default: $(PROG)$(SUFF)
@@ -22,14 +22,14 @@ clean:
 	$(RM) $(OBJS) $(PROG)$(SUFF) $(OUTPUT)
 
 $(PROG)$(SUFF): $(OBJS)
-	$(LD) $(LDFLAGS) $^ $(LIBS) -o $(PROG)$(SUFF)
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $(PROG)$(SUFF) -static
 
 include ../common/Makefile.common
 
 
 # ==============================================================================
 #
-# Makefile.seq
+# Makefile.rtm
 #
 # ==============================================================================
 

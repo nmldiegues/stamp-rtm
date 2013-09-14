@@ -15,7 +15,6 @@ config[2]="seq"
 config[3]="tl2"
 config[4]="tinystm"
 config[5]="swisstm"
-config[6]="spin"
 
 benchmarks[1]="bayes"
 benchmarks[2]="genome"
@@ -50,16 +49,16 @@ build[5]="stm"
 build[6]="stm"
 
 
-for c in 1
+for c in 3
 do
     cd $workspace;
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]};
-    for b in 1 2 3 4 5 6 7 8
+    for b in 3
     do
-        for t in 1 2 4 8
+        for t in 7 8
         do
-            for a in 1 2 3
+            for a in 1 2 3 4 5 6 7 8 9 10
             do
                 cd $workspace;
                 cd ${benchmarks[$b]};
@@ -70,8 +69,8 @@ do
                 pid2=$!
                 ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.data
                 rc=$?
-                kill $pid
-                kill $pid2
+                kill -9 $pid
+                kill -9 $pid2
                 if [[ $rc != 0 ]] ; then
                     echo "Error within: ${config[$c]} | ${benchmarks[$b]} | threads $t | attempt $a" >> ../auto-results/error.out
                 fi
