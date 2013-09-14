@@ -49,32 +49,37 @@ build[5]="stm"
 build[6]="stm"
 
 
-for c in 3
+for c in 1
 do
     cd $workspace;
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]};
-    for b in 3
+    for b in 2 3 4 5 6 7 8
     do
-        for t in 7 8
+        for t in 1 2 3 4 5 6 7 8
         do
+        for r in 1 2 3 4 5 6
+        do
+            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
             for a in 1 2 3 4 5 6 7 8 9 10
             do
                 cd $workspace;
                 cd ${benchmarks[$b]};
-                echo "${config[$c]} | ${benchmarks[$b]} | threads $t | attempt $a"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.pcm &
+                echo "${config[$c]} | ${benchmarks[$b]} | retries $r | threads $t | attempt $a"
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${benchmarks[$b]}-$r-$t-$a.pcm &
                 pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.pow &
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${benchmarks[$b]}-$r-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${benchmarks[$b]}-$t-$a.data
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${benchmarks[$b]}-$r-$t-$a.data
                 rc=$?
                 kill -9 $pid
                 kill -9 $pid2
                 if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${config[$c]} | ${benchmarks[$b]} | threads $t | attempt $a" >> ../auto-results/error.out
+                    echo "Error within: ${config[$c]} | ${benchmarks[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
                 fi
-            done    
+            done
+            cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h    
+        done
         done
     done
 done

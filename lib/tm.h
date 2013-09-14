@@ -323,7 +323,7 @@
 #  else /* !OTM */
 
 #    define TM_BEGIN()                    { __label__ failure;  \
-                                            int tries = 4;      \
+                                            int tries = 1;      \
                                             XFAIL(failure);     \
                                             tries --;           \
                                             if (tries <= 0) {     \
