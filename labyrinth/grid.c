@@ -80,8 +80,6 @@
 #include "vector.h"
 
 
-const unsigned long CACHE_LINE_SIZE = 32UL;
-
 
 /* =============================================================================
  * grid_alloc
@@ -98,12 +96,12 @@ grid_alloc (long width, long height, long depth)
         gridPtr->height = height;
         gridPtr->depth  = depth;
         long n = width * height * depth;
-        long* points_unaligned = (long*)malloc(n * sizeof(long) + CACHE_LINE_SIZE);
+        long* points_unaligned = (long*)malloc(n * sizeof(long) + 64);
         assert(points_unaligned);
         gridPtr->points_unaligned = points_unaligned;
         gridPtr->points = (long*)((char*)(((unsigned long)points_unaligned
-                                          & ~(CACHE_LINE_SIZE-1)))
-                                  + CACHE_LINE_SIZE);
+                                          & ~(64-1)))
+                                  + 64);
         memset(gridPtr->points, GRID_POINT_EMPTY, (n * sizeof(long)));
     }
 
@@ -126,12 +124,12 @@ Pgrid_alloc (long width, long height, long depth)
         gridPtr->height = height;
         gridPtr->depth  = depth;
         long n = width * height * depth;
-        long* points_unaligned = (long*)P_MALLOC(n * sizeof(long) + CACHE_LINE_SIZE);
+        long* points_unaligned = (long*)P_MALLOC(n * sizeof(long) + 64);
         assert(points_unaligned);
         gridPtr->points_unaligned = points_unaligned;
         gridPtr->points = (long*)((char*)(((unsigned long)points_unaligned
-                                          & ~(CACHE_LINE_SIZE-1)))
-                                  + CACHE_LINE_SIZE);
+                                          & ~(64-1)))
+                                  + 64);
         memset(gridPtr->points, GRID_POINT_EMPTY, (n * sizeof(long)));
     }
 
@@ -180,7 +178,7 @@ grid_copy (grid_t* dstGridPtr, grid_t* srcGridPtr)
 #ifdef USE_EARLY_RELEASE
     long* srcPoints = srcGridPtr->points;
     long i;
-    long i_step = (CACHE_LINE_SIZE / sizeof(srcPoints[0]));
+    long i_step = (64 / sizeof(srcPoints[0]));
     for (i = 0; i < n; i+=i_step) {
         TM_EARLY_RELEASE(srcPoints[i]); /* releases entire line */
     }

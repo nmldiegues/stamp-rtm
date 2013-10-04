@@ -83,12 +83,12 @@ void client_run (void* argPtr) {
             random_number2 = (random_number2 + 1) % ((long)global_params[PARAM_SIZE]);
         }
         TM_BEGIN();
-        long r1 = (long)TM_SHARED_READ(global_array[1]); //random_number]);
-        long r2 = (long)TM_SHARED_READ(global_array[99]); //random_number2]);
+        long r1 = (long)TM_SHARED_READ(global_array[random_number]);
+        long r2 = (long)TM_SHARED_READ(global_array[random_number2]);
         r1 = r1 + 1;
         r2 = r2 - 1;
-        TM_SHARED_WRITE(global_array[1], r1);
-        TM_SHARED_WRITE(global_array[99], r2);
+        TM_SHARED_WRITE(global_array[random_number], r1);
+        TM_SHARED_WRITE(global_array[random_number2], r2);
         TM_END();
 
         long k = 0;
