@@ -1,24 +1,24 @@
 # ==============================================================================
 #
-# Makefile.seq
+# Makefile.rtm
+# Build rules for Intel RTM ISA.
 #
-# ==============================================================================
-
-
-# ==============================================================================
-# Rules
 # ==============================================================================
 
 ifndef LOCK_VERSION
   LOCK_VERSION=-DUSE_TTAS_LOCKS
 endif
 
-CFLAGS   += -I$(STM)/include $(LOCK_VERSION)
+SUFF=.rtm
+
+CFLAGS   += -DHTM -I$(STM)/include $(LOCK_VERSION) # We substitute our RTM implementation for HTM.                                                                                                                                                
 CPPFLAGS := $(CFLAGS)
 LDFLAGS  += -L$(STM)
 LIBS     += -lsync -lrt -lpthread -lnuma
 
-SUFF=.seq
+# ==============================================================================
+# Rules
+# ==============================================================================
 
 .PHONY: default
 default: $(PROG)$(SUFF)
@@ -28,14 +28,14 @@ clean:
 	$(RM) $(OBJS) $(PROG)$(SUFF) $(OUTPUT)
 
 $(PROG)$(SUFF): $(OBJS)
-	$(LD) $(LDFLAGS) $^ $(LIBS) -o $(PROG)$(SUFF)
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $(PROG)$(SUFF) -static
 
 include ../common/Makefile.common
 
 
 # ==============================================================================
 #
-# Makefile.seq
+# Makefile.rtm
 #
 # ==============================================================================
 
