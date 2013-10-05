@@ -56,4 +56,8 @@ ssync/stress_one
 ssync/stress_test
 ssync/trylock_test
 ssync/uncontended
+ssync/atomic_latency
+ssync/atomic_success
+ssync/atomic_test
+ssync/htlock_test
 
