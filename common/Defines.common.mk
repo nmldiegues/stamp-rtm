@@ -19,7 +19,7 @@ OUTPUT +=
 
 LIB := ../lib
 
-STM := ../ssync
+STM := ../tl2
 
 LOSTM := ../../OpenTM/lostm
 
