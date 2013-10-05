@@ -26,15 +26,15 @@ config[13]="seq"
 config[14]="seq"
 config[15]="seq"
 config[16]="seq"
-alias[17]="rtmssync"
-alias[18]="rtmssync"
-alias[19]="rtmssync"
-alias[20]="rtmssync"
-alias[21]="rtmssync"
-alias[22]="rtmssync"
-alias[23]="rtmssync"
-alias[24]="rtmssync"
-alias[25]="rtmssync"
+config[17]="rtmssync"
+config[18]="rtmssync"
+config[19]="rtmssync"
+config[20]="rtmssync"
+config[21]="rtmssync"
+config[22]="rtmssync"
+config[23]="rtmssync"
+config[24]="rtmssync"
+config[25]="rtmssync"
 
 
 alias[8]="MCS_LOCKS"
@@ -46,15 +46,15 @@ alias[13]="CLH_LOCKS"
 alias[14]="RW_LOCKS"
 alias[15]="TICKET_LOCKS"
 alias[16]="HTICKET_LOCKS"
-alias[17]="MCS_RTM"
-alias[18]="HCLH_RTM"
-alias[19]="TTAS_RTM"
-alias[20]="SPINLOCK_RTM"
-alias[21]="ARRAY_RTM"
-alias[22]="CLH_RTM"
-alias[23]="RW_RTM"
-alias[24]="TICKET_RTM"
-alias[25]="HTICKET_RTM"
+alias[17]="MCS_LOCKS"
+alias[18]="HCLH_LOCKS"
+alias[19]="TTAS_LOCKS"
+alias[20]="SPINLOCK_LOCKS"
+alias[21]="ARRAY_LOCKS"
+alias[22]="CLH_LOCKS"
+alias[23]="RW_LOCKS"
+alias[24]="TICKET_LOCKS"
+alias[25]="HTICKET_LOCKS"
 
 
 benchmarks[1]="bayes"
@@ -133,6 +133,7 @@ build[25]="rtm"
 for c in 17 18 19 20 21 22 23 24 25
 do
     cd $workspace;
+    echo "building ${build[$c]} ${alias[$c]}"
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]} ${alias[$c]};
     for b in 2 #3 4 5 6 7 8
@@ -147,11 +148,11 @@ do
                 cd $workspace;
                 cd ${benchmarks[$b]};
                 echo "${config[$c]} | ${benchmarks[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${alias[$c]}-${benchmarks[$b]}-$t-$a.pcm &
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.pcm &
                 pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${alias[$c]}-${benchmarks[$b]}-$t-$a.pow &
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${alias[$c]}-${benchmarks[$b]}-$t-$a.data
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.data
                 rc=$?
                 kill -9 $pid
                 kill -9 $pid2

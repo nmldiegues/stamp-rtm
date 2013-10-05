@@ -50,7 +50,6 @@ yada/yada
 ssync/bank
 ssync/bank_one
 ssync/bank_simple
-ssync/include/lock_if.h
 ssync/individual_ops
 ssync/stress_latency
 ssync/stress_one
