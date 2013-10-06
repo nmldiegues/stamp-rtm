@@ -96,6 +96,10 @@ __attribute__((aligned(CACHE_LINE_SIZE))) volatile lock_local_data * local_th_da
 __thread uint32_t phys_id;
 __thread uint32_t cluster_id;
 
+__thread long rtm_aborts;
+__thread long rtm_commits;
+__thread long lock_commits;
+
 /* =============================================================================
  * threadWait
  * -- Synchronizes all threads to start/stop parallel section

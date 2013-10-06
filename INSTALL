@@ -1,0 +1,2 @@
+sudo apt-get install numactl
+sudo apt-get install libnuma-dev

@@ -297,7 +297,7 @@
 #  define TM_SHUTDOWN()                 /* nothing */
 
 #  define TM_THREAD_ENTER()             /* nothing */
-#  define TM_THREAD_EXIT()              /* nothing */
+#  define TM_THREAD_EXIT()              printf("rtm_commits: %ld\t rtm_aborts: %ld\t lock_commits: %ld\n", rtm_commits, rtm_aborts, lock_commits);
 #  define TM_BEGIN_WAIVER()
 #  define TM_END_WAIVER()
 
@@ -322,9 +322,11 @@
 
 #  else /* !OTM */
 
-#    define TM_BEGIN()                    { __label__ failure;  \
+#    define TM_BEGIN()                    	rtm_commits++;		\
+											{ __label__ failure;  \
                                             int tries = 4;      \
                                             XFAIL(failure);     \
+                                            rtm_aborts++;		\
                                             tries --;           \
                                             if (tries <= 0) {     \
                                                 acquire_write(&(local_th_data[phys_id]), &the_lock); \
@@ -336,8 +338,10 @@
 
 #    define TM_END()                      if (tries > 0){        \
                                               XEND();           \
+                                              rtm_commits++;	\
                                           } else {                     \
                                               release_write(cluster_id, &(local_th_data[phys_id]), &the_lock); \
+                                              lock_commits++;													\
                                           } \
                                           };
 

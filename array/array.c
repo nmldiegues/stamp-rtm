@@ -20,7 +20,7 @@ enum param_types {
 
 double global_params[256];
 
-long* global_array;
+__attribute__((aligned(64))) long* global_array;
 
 static void setDefaultParams() {
     global_params[PARAM_SIZE] = PARAM_DEFAULT_SIZE;
@@ -69,11 +69,12 @@ void client_run (void* argPtr) {
 
     // unsigned long myId = thread_getId();
     // long numThread = *((long*)argPtr);
-    long operations = (long)global_params[PARAM_OPERATIONS];
+    long operations = (long)global_params[PARAM_OPERATIONS] / (long)global_params[PARAM_THREADS];
     long interval = (long)global_params[PARAM_INTERVAL];
     printf("operations: %ld \tinterval: %ld\n", operations, interval);
 
     long total = 0;
+    long total2 = 0;
 
     long i = 0;
     for (; i < operations; i++) {
@@ -89,17 +90,23 @@ void client_run (void* argPtr) {
         r2 = r2 - 1;
         TM_SHARED_WRITE(global_array[random_number], r1);
         TM_SHARED_WRITE(global_array[random_number2], r2);
+        long res = 0;
+        for (int k = 0; k < (long) global_params[PARAM_OPERATIONS] / 2; k++) {
+        	res += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])]);
+        }
         TM_END();
+        total2 += res;
 
         long k = 0;
         for (;k < (long)global_params[PARAM_INTERVAL]; k++) {
             long ru = ((long) random_generate(randomPtr)) % 2;
             total += ru;
         }
+
     }
 
     TM_THREAD_EXIT();
-    printf("ru ignore %ld\n", total);
+    printf("ru ignore %ld - %ld\n", total, total2);
 }
 
 MAIN(argc, argv) {

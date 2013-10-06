@@ -144,6 +144,10 @@ extern __attribute__((aligned(CACHE_LINE_SIZE))) volatile lock_local_data* local
 extern __thread uint32_t phys_id;
 extern __thread uint32_t cluster_id;
 
+extern __thread long rtm_aborts;
+extern __thread long rtm_commits;
+extern __thread long lock_commits;
+
 #ifdef LOG_BARRIER
 typedef struct thread_barrier {
     THREAD_MUTEX_T countLock;
