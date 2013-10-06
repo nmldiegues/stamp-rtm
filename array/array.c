@@ -90,13 +90,11 @@ void client_run (void* argPtr) {
         r2 = r2 - 1;
         TM_SHARED_WRITE(global_array[random_number], r1);
         TM_SHARED_WRITE(global_array[random_number2], r2);
-        long res = 0;
         int repeat = 0;
         for (; repeat < (long) global_params[PARAM_OPERATIONS] / 2; repeat++) {
-        	res += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])]);
+        	total2 += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])]);
         }
         TM_END();
-        total2 += res;
 
         long k = 0;
         for (;k < (long)global_params[PARAM_INTERVAL]; k++) {
