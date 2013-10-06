@@ -7,17 +7,19 @@ rm lib/*.o || true
 name=$1
 alias=$2
 
-cd ssync;
-make clean;
-make LOCK_VERSION="-DUSE_$alias";
-rc=$?
-if [[ $rc != 0 ]] ; then
-     echo ""
-     echo "=================================== ERROR BUILDING $name $alias ==================================="
-     echo ""
-     exit 1
+if [[ $# != 1 ]] ; then
+    cd ssync
+    make clean
+    make LOCK_VERSION="-DUSE_$alias"
+    rc=$?
+    if [[ $rc != 0 ]] ; then
+         echo ""
+         echo "=================================== ERROR BUILDING $name $alias ==================================="
+         echo ""
+         exit 1
+    fi
+    cd ..;
 fi
-cd ..;
 
 for F in $FOLDERS
 do
