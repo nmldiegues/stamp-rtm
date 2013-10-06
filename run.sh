@@ -129,6 +129,19 @@ build[23]="rtm"
 build[24]="rtm"
 build[25]="rtm"
 
+wait_until_finish() {
+    pid3=$1
+    LIMIT=260
+    for ((j = 0; j < $LIMIT; ++j)); do
+        STILL_RUNNING=`ps | grep '$pid3' | grep -v 'grep'`
+        if [ -z "${STILL_RUNNING}" ]; then
+            return;
+        fi
+        sleep 1s
+    done
+    kill -9 $pid3
+}
+
 
 for c in 17 18 19 20 21 22 23 24 25
 do
@@ -136,14 +149,14 @@ do
     echo "building ${build[$c]} ${alias[$c]}"
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]} ${alias[$c]};
-    for b in 2 #3 4 5 6 7 8
+    for b in 2 3 4 5 6 7 8
     do
-        for t in 4 #1 2 3 4 5 6 7 8
+        for t in 1 2 3 4 5 6 7 8
         do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 #2 3 4 5 #6 7 8 9 10
+            for a in 1 2 3 4 5 #6 7 8 9 10
             do
                 cd $workspace;
                 cd ${benchmarks[$b]};
@@ -152,7 +165,10 @@ do
                 pid=$!
                 ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.data
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.data &
+		pid3=$!
+		wait_until_finish $pid3
+		wait $pid3
                 rc=$?
                 kill -9 $pid
                 kill -9 $pid2
@@ -165,3 +181,5 @@ do
         done
     done
 done
+
+
