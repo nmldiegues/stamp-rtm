@@ -91,7 +91,8 @@ void client_run (void* argPtr) {
         TM_SHARED_WRITE(global_array[random_number], r1);
         TM_SHARED_WRITE(global_array[random_number2], r2);
         long res = 0;
-        for (int k = 0; k < (long) global_params[PARAM_OPERATIONS] / 2; k++) {
+        int repeat = 0;
+        for (; repeat < (long) global_params[PARAM_OPERATIONS] / 2; repeat++) {
         	res += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])]);
         }
         TM_END();
