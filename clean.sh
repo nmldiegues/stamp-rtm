@@ -1,5 +1,5 @@
 rm tokill;
-ps aux | grep 'Intel' | cut -d ' ' -f 7 > tokill;
+ps aux | grep 'Intel' | grep -v 'grep' | cut -d ' ' -f 7 > tokill;
 for pid in `cat tokill`
 do 
     if [[ $pid != "0.0" ]] ; then 
@@ -9,7 +9,7 @@ do
 done
 rm tokill;
 
-ps aux | grep 'Intel' | cut -d ' ' -f 6 > tokill;
+ps aux | grep 'Intel' | grep -v 'grep' | cut -d ' ' -f 6 > tokill;
 for pid in `cat tokill`
 do
     if [[ $pid != "0.0" ]] ; then
