@@ -141,6 +141,9 @@ extern "C" {
 extern volatile lock_global_data the_lock;
 extern __attribute__((aligned(CACHE_LINE_SIZE))) volatile lock_local_data* local_th_data;
 
+extern volatile lock_global_data aux_lock;
+extern __attribute__((aligned(CACHE_LINE_SIZE))) volatile lock_local_data* aux_local;
+
 extern __thread uint32_t phys_id;
 extern __thread uint32_t cluster_id;
 
