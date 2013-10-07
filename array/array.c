@@ -85,13 +85,13 @@ void client_run (void* argPtr) {
         if (random_number == random_number2) {
             random_number2 = (random_number2 + 1) % ((long)global_params[PARAM_SIZE]);
         }
+        TM_BEGIN();
+        long r1 = (long)TM_SHARED_READ(global_array[random_number]);
+        long r2 = (long)TM_SHARED_READ(global_array[random_number2]);
         int repeat = 0;
         for (; repeat < (long) global_params[PARAM_OPERATIONS] / 2; repeat++) {
         	total2 += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])]);
         }
-        TM_BEGIN();
-        long r1 = (long)TM_SHARED_READ(global_array[random_number]);
-        long r2 = (long)TM_SHARED_READ(global_array[random_number2]);
         r1 = r1 + 1;
         r2 = r2 - 1;
         TM_SHARED_WRITE(global_array[random_number], r1);
