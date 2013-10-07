@@ -23,7 +23,19 @@ enum param_types {
 
 double global_params[256];
 
-__attribute__((aligned(64))) long* global_array;
+typedef struct
+{
+    long value;
+    long padding1;
+    long padding2;
+    long padding3;
+    long padding4;
+    long padding5;
+    long padding6;
+    long padding7;
+} aligned_type_t ;
+
+__attribute__((aligned(64))) aligned_type_t* global_array;
 
 static void setDefaultParams() {
     global_params[PARAM_SIZE] = PARAM_DEFAULT_SIZE;
@@ -90,16 +102,16 @@ void client_run (void* argPtr) {
             random_number2 = (random_number2 + 1) % ((long)global_params[PARAM_SIZE]);
         }
         TM_BEGIN();
-        long r1 = (long)TM_SHARED_READ(global_array[random_number]);
-        long r2 = (long)TM_SHARED_READ(global_array[random_number2]);
+        long r1 = (long)TM_SHARED_READ(global_array[random_number].value);
+        long r2 = (long)TM_SHARED_READ(global_array[random_number2].value);
         int repeat = 0;
         for (; repeat < (long) global_params[PARAM_CONTENTION]; repeat++) {
-        	total2 += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])]);
+        	total2 += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])].value);
         }
         r1 = r1 + 1;
         r2 = r2 - 1;
-        TM_SHARED_WRITE(global_array[random_number], r1);
-        TM_SHARED_WRITE(global_array[random_number2], r2);
+        TM_SHARED_WRITE(global_array[random_number].value, r1);
+        TM_SHARED_WRITE(global_array[random_number2].value, r2);
         TM_END();
 
         long k = 0;
@@ -122,7 +134,7 @@ MAIN(argc, argv) {
 
     parseArgs(argc, (char** const)argv);
     long sz = (long)global_params[PARAM_SIZE];
-    global_array = (long*) malloc(sz * sizeof(long));
+    global_array = (aligned_type_t*) malloc(sz * sizeof(aligned_type_t));
 
     long numThread = global_params[PARAM_THREADS];
     SIM_GET_NUM_CPU(numThread);
@@ -147,7 +159,7 @@ MAIN(argc, argv) {
     long i = 0;
     long sum = 0;
     for (;i < sz; i++) {
-        sum += global_array[i];
+        sum += global_array[i].value;
     }
     if (sum != 0) {
         printf("Problem, sum was not zero!: %ld\n", sum);
