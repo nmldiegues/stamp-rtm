@@ -99,7 +99,7 @@ params[5]="-i inputs/random-x512-y512-z7-n512.txt -t"
 params[6]="-s20 -i0.5 -u0.1 -l3 -p3 -t"
 params[7]="-n1 -q90 -u80 -r1048576 -t4194304 -c"
 params[8]="-a20 -i inputs/ttimeu1000000.2 -t"
-params[9]=""
+params[9]="-s 1000 -o10000000 -i20 -c5 -t"
 
 ext[1]=".rtm"
 ext[2]=".seq"
