@@ -19,3 +19,6 @@ sudo ./pcm-tsx.x 1 (answer yes)
 sudo apt-get install make
 
 sudo apt-get install git
+
+sudo scp /etc/alternatives/cc node31:/etc/alternatives/cc
+sudo scp /usr/bin/cc node31:/usr/bin/cc
