@@ -36,7 +36,13 @@ config[23]="rtmssync"
 config[24]="rtmssync"
 config[25]="rtmssync"
 
-
+alias[1]="MCS_LOCKS"
+alias[2]="MCS_LOCKS"
+alias[3]="MCS_LOCKS"
+alias[4]="MCS_LOCKS"
+alias[5]="MCS_LOCKS"
+alias[6]="MCS_LOCKS"
+alias[7]="MCS_LOCKS"
 alias[8]="MCS_LOCKS"
 alias[9]="HCLH_LOCKS"
 alias[10]="TTAS_LOCKS"
@@ -131,10 +137,13 @@ build[25]="rtm"
 
 wait_until_finish() {
     pid3=$1
-    LIMIT=260
+    echo "process is $pid3"
+    LIMIT=120
     for ((j = 0; j < $LIMIT; ++j)); do
-        STILL_RUNNING=`ps | grep '$pid3' | grep -v 'grep'`
-        if [ -z "${STILL_RUNNING}" ]; then
+        kill -s 0 $pid3
+        rc=$?
+        if [[ $rc != 0 ]] ; then
+            echo "returning"
             return;
         fi
         sleep 1s
@@ -142,8 +151,46 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
+for c in 18
+do
+    cd $workspace;
+    echo "building ${build[$c]} ${alias[$c]}"
+    bash config.sh ${config[$c]};
+    bash build.sh ${build[$c]} ${alias[$c]};
+    for b in 5 6 7 8
+    do
+        for t in 1 2 3 4 6 8
+        do
+#        for r in 1 2 3 4 5 6
+#        do
+#            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
+            for a in 1 2 3 #4 5 #6 7 8 9 10
+            do
+                cd $workspace;
+                cd ${benchmarks[$b]};
+                echo "${config[$c]} | ${benchmarks[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.pcm &
+                pid=$!
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.pow &
+                pid2=$!
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.data &
+                pid3=$!
+                wait_until_finish $pid3
+                wait $pid3
+                rc=$?
+                kill -9 $pid
+                kill -9 $pid2
+                if [[ $rc != 0 ]] ; then
+                    echo "Error within: ${alias[$c]} | ${config[$c]} | ${benchmarks[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
+                fi
+            done
+            cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
+#        done
+        done
+    done
+done
 
-for c in 17 18 19 20 21 22 23 24 25
+for c in 19 20 22 23 24 25
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
@@ -151,12 +198,12 @@ do
     bash build.sh ${build[$c]} ${alias[$c]};
     for b in 2 3 4 5 6 7 8
     do
-        for t in 1 2 3 4 5 6 7 8
+        for t in 1 2 3 4 6 8
         do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 2 3 4 5 #6 7 8 9 10
+            for a in 1 2 3 #4 5 #6 7 8 9 10
             do
                 cd $workspace;
                 cd ${benchmarks[$b]};
@@ -173,7 +220,7 @@ do
                 kill -9 $pid
                 kill -9 $pid2
                 if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${alias[$c]} | ${benchmarks[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
+                    echo "Error within: ${alias[$c]} | ${config[$c]} | ${benchmarks[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
                 fi
             done
             cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h    
