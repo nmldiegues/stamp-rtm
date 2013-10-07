@@ -12,12 +12,14 @@ enum param_types {
     PARAM_THREADS = (unsigned char)'t',
     PARAM_OPERATIONS = (unsigned char)'o',
     PARAM_INTERVAL = (unsigned char)'i',
+    PARAM_CONTENTION = (unsigned char)'c',
 };
 
 #define PARAM_DEFAULT_SIZE (1024)
 #define PARAM_DEFAULT_THREADS (2)
 #define PARAM_DEFAULT_OPERATIONS (10000)
 #define PARAM_DEFAULT_INTERVAL (1000)
+#define PARAM_DEFAULT_CONTENTION (100)
 
 double global_params[256];
 
@@ -28,6 +30,7 @@ static void setDefaultParams() {
     global_params[PARAM_THREADS] = PARAM_DEFAULT_THREADS;
     global_params[PARAM_OPERATIONS] = PARAM_DEFAULT_OPERATIONS;
     global_params[PARAM_INTERVAL] = PARAM_DEFAULT_INTERVAL;
+    global_params[PARAM_CONTENTION] = PARAM_DEFAULT_CONTENTION;
 }
 
 static void parseArgs(long argc, char* const argv[]) {
@@ -37,12 +40,13 @@ static void parseArgs(long argc, char* const argv[]) {
 
     setDefaultParams();
 
-    while ((opt = getopt(argc, argv, "s:t:o:i:")) != -1) {
+    while ((opt = getopt(argc, argv, "s:t:o:i:c:")) != -1) {
         switch (opt) {
         case 's':
         case 'o':
         case 't':
         case 'i':
+        case 'c':
             global_params[(unsigned char)opt] = atol(optarg);
             break;
         case '?':
@@ -89,7 +93,7 @@ void client_run (void* argPtr) {
         long r1 = (long)TM_SHARED_READ(global_array[random_number]);
         long r2 = (long)TM_SHARED_READ(global_array[random_number2]);
         int repeat = 0;
-        for (; repeat < (long) global_params[PARAM_INTERVAL] / 2; repeat++) {
+        for (; repeat < (long) global_params[PARAM_CONTENTION]; repeat++) {
         	total2 += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])]);
         }
         r1 = r1 + 1;
