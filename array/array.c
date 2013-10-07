@@ -5,6 +5,7 @@
 #include "tm.h"
 #include "timer.h"
 #include "random.h"
+#include <time.h>
 
 enum param_types {
     PARAM_SIZE = (unsigned char)'s',
@@ -66,6 +67,7 @@ void client_run (void* argPtr) {
     TM_THREAD_ENTER();
 
     random_t* randomPtr = random_alloc();
+    random_seed(randomPtr, time(0));
 
     // unsigned long myId = thread_getId();
     // long numThread = *((long*)argPtr);
@@ -83,6 +85,10 @@ void client_run (void* argPtr) {
         if (random_number == random_number2) {
             random_number2 = (random_number2 + 1) % ((long)global_params[PARAM_SIZE]);
         }
+        int repeat = 0;
+        for (; repeat < (long) global_params[PARAM_OPERATIONS] / 2; repeat++) {
+        	total2 += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])]);
+        }
         TM_BEGIN();
         long r1 = (long)TM_SHARED_READ(global_array[random_number]);
         long r2 = (long)TM_SHARED_READ(global_array[random_number2]);
@@ -90,10 +96,6 @@ void client_run (void* argPtr) {
         r2 = r2 - 1;
         TM_SHARED_WRITE(global_array[random_number], r1);
         TM_SHARED_WRITE(global_array[random_number2], r2);
-        int repeat = 0;
-        for (; repeat < (long) global_params[PARAM_OPERATIONS] / 2; repeat++) {
-        	total2 += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])]);
-        }
         TM_END();
 
         long k = 0;
