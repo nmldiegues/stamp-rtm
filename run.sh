@@ -35,6 +35,15 @@ config[22]="rtmssync"
 config[23]="rtmssync"
 config[24]="rtmssync"
 config[25]="rtmssync"
+config[26]="rtmssyncaux"
+config[27]="rtmssyncaux"
+config[28]="rtmssyncaux"
+config[29]="rtmssyncaux"
+config[30]="rtmssyncaux"
+config[31]="rtmssyncaux"
+config[32]="rtmssyncaux"
+config[33]="rtmssyncaux"
+config[34]="rtmssyncaux"
 
 alias[1]="MCS_LOCKS"
 alias[2]="MCS_LOCKS"
@@ -61,6 +70,15 @@ alias[22]="CLH_LOCKS"
 alias[23]="RW_LOCKS"
 alias[24]="TICKET_LOCKS"
 alias[25]="HTICKET_LOCKS"
+alias[26]="MCS_LOCKS"
+alias[27]="HCLH_LOCKS"
+alias[28]="TTAS_LOCKS"
+alias[29]="SPINLOCK_LOCKS"
+alias[30]="ARRAY_LOCKS"
+alias[31]="CLH_LOCKS"
+alias[32]="RW_LOCKS"
+alias[33]="TICKET_LOCKS"
+alias[34]="HTICKET_LOCKS"
 
 
 benchmarks[1]="bayes"
@@ -71,6 +89,7 @@ benchmarks[5]="labyrinth"
 benchmarks[6]="ssca2"
 benchmarks[7]="vacation"
 benchmarks[8]="yada"
+benchmarks[9]="array"
 
 params[1]="-v32 -r4096 -n10 -p40 -i2 -e8 -s1 -t"
 params[2]="-g16384 -s64 -n16777216 -t"
@@ -80,6 +99,7 @@ params[5]="-i inputs/random-x512-y512-z7-n512.txt -t"
 params[6]="-s20 -i0.5 -u0.1 -l3 -p3 -t"
 params[7]="-n1 -q90 -u80 -r1048576 -t4194304 -c"
 params[8]="-a20 -i inputs/ttimeu1000000.2 -t"
+params[9]=""
 
 ext[1]=".rtm"
 ext[2]=".seq"
@@ -106,7 +126,15 @@ ext[22]=".rtm"
 ext[23]=".rtm"
 ext[24]=".rtm"
 ext[25]=".rtm"
-
+ext[26]=".rtm"
+ext[27]=".rtm"
+ext[28]=".rtm"
+ext[29]=".rtm"
+ext[30]=".rtm"
+ext[31]=".rtm"
+ext[32]=".rtm"
+ext[33]=".rtm"
+ext[34]=".rtm"
 
 
 build[1]="rtm"
@@ -134,6 +162,16 @@ build[22]="rtm"
 build[23]="rtm"
 build[24]="rtm"
 build[25]="rtm"
+build[26]="rtm"
+build[27]="rtm"
+build[28]="rtm"
+build[29]="rtm"
+build[30]="rtm"
+build[31]="rtm"
+build[32]="rtm"
+build[33]="rtm"
+build[34]="rtm"
+
 
 wait_until_finish() {
     pid3=$1
@@ -151,54 +189,15 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
-for c in 18
+for c in 3 4 5 8 9 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]} ${alias[$c]};
-    for b in 5 6 7 8
+    for b in 9 #2 3 4 5 6 7 8
     do
-        for t in 1 2 3 4 6 8
-        do
-#        for r in 1 2 3 4 5 6
-#        do
-#            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 2 3 #4 5 #6 7 8 9 10
-            do
-                cd $workspace;
-                cd ${benchmarks[$b]};
-                echo "${config[$c]} | ${benchmarks[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.pcm &
-                pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.pow &
-                pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.data &
-                pid3=$!
-                wait_until_finish $pid3
-                wait $pid3
-                rc=$?
-                kill -9 $pid
-                kill -9 $pid2
-                if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${alias[$c]} | ${config[$c]} | ${benchmarks[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
-                fi
-            done
-            cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
-#        done
-        done
-    done
-done
-
-for c in 19 20 22 23 24 25
-do
-    cd $workspace;
-    echo "building ${build[$c]} ${alias[$c]}"
-    bash config.sh ${config[$c]};
-    bash build.sh ${build[$c]} ${alias[$c]};
-    for b in 2 3 4 5 6 7 8
-    do
-        for t in 1 2 3 4 6 8
+        for t in 1 2 3 4 5 6 7 8
         do
 #        for r in 1 2 3 4 5 6
 #        do
