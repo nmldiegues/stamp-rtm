@@ -89,7 +89,7 @@ void client_run (void* argPtr) {
         long r1 = (long)TM_SHARED_READ(global_array[random_number]);
         long r2 = (long)TM_SHARED_READ(global_array[random_number2]);
         int repeat = 0;
-        for (; repeat < (long) global_params[PARAM_OPERATIONS] / 2; repeat++) {
+        for (; repeat < (long) global_params[PARAM_INTERVAL] / 2; repeat++) {
         	total2 += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])]);
         }
         r1 = r1 + 1;
