@@ -299,7 +299,7 @@
 #  define TM_SHUTDOWN()                 /* nothing */
 
 #  define TM_THREAD_ENTER()             /* nothing */
-#  define TM_THREAD_EXIT()              printf("rtm_commits: %ld\t rtm_aborts: %ld\t lock_commits: %ld\n", rtm_commits, rtm_aborts, lock_commits);
+#  define TM_THREAD_EXIT()              printf("\n\nrtm_commits: %ld\t rtm_aborts: %ld\t lock_commits: %ld\tsuccessful_starts: %ld\tabort_explicit: %ld\tabort_30: %ld\tabort_retry: %ld\nconflict: %ld\tcapacity: %ld\tdebug: %ld\tnested: %ld\tother: %ld\n", rtm_commits, rtm_aborts, lock_commits, successful_starts, abort_explicit, abort_30, abort_retry, abort_conflict, abort_capacity, abort_debug, abort_nested, abort_other);
 #  define TM_BEGIN_WAIVER()
 #  define TM_END_WAIVER()
 
