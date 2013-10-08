@@ -335,28 +335,24 @@ extern __thread long abort_other;
 
 #    define TM_BEGIN()	{ \
 							int tries = 4;	\
-							while (1) {	\
-								int status = _xbegin();	\
-								if (status == _XBEGIN_STARTED) successful_starts++;	\
-								else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
-								else if (status == _XABORT_RETRY) abort_retry++; \
-								else if (status == _XABORT_CONFLICT) abort_conflict++; \
-								else if (status == _XABORT_CAPACITY) abort_capacity++; \
-								else if (status == _XABORT_DEBUG) abort_debug++;	\
-								else if (status == _XABORT_NESTED) abort_nested++;	\
-								else abort_other++;	\
-								if (status == _XBEGIN_STARTED) { \
-									if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) _xabort(30); \
-									break;	\
-								} else { \
-									rtm_aborts++;	\
-									tries--;	\
-									if (tries <= 0) {	\
-										acquire_write(&(local_th_data[phys_id]), &the_lock); \
-										break;	\
-									}	\
+							int status = _xbegin();	\
+							if (status == _XBEGIN_STARTED) successful_starts++;	\
+							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
+							else if (status == _XABORT_RETRY) abort_retry++; \
+							else if (status == _XABORT_CONFLICT) abort_conflict++; \
+							else if (status == _XABORT_CAPACITY) abort_capacity++; \
+							else if (status == _XABORT_DEBUG) abort_debug++;	\
+							else if (status == _XABORT_NESTED) abort_nested++;	\
+							else abort_other++;	\
+							if (status == _XBEGIN_STARTED) { \
+								if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) _xabort(30); \
+							} else { \
+								rtm_aborts++;	\
+								tries--;	\
+								if (tries <= 0) {	\
+									acquire_write(&(local_th_data[phys_id]), &the_lock); \
 								}	\
-							}
+							}	\
 
 
 #    define TM_END()		if (tries > 0) {	\

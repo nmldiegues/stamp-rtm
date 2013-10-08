@@ -150,6 +150,16 @@ extern __thread uint32_t cluster_id;
 extern __thread long rtm_aborts;
 extern __thread long rtm_commits;
 extern __thread long lock_commits;
+extern __thread long successful_starts;
+extern __thread long abort_explicit;
+extern __thread long abort_30;
+extern __thread long abort_retry;
+extern __thread long abort_conflict;
+extern __thread long abort_capacity;
+extern __thread long abort_debug;
+extern __thread long abort_nested;
+extern __thread long abort_other;
+
 
 #ifdef LOG_BARRIER
 typedef struct thread_barrier {
