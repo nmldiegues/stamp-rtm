@@ -328,7 +328,7 @@
 							int tries = 4;	\
 							while (1) {	\
 								if (_xbegin() == _XBEGIN_STARTED) { \
-									if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) XABORT(30); \
+									if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) _xabort(30); \
 									break;	\
 								} else { \
 									rtm_aborts++;	\
