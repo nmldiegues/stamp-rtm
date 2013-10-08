@@ -352,7 +352,7 @@
                                 
 
 #    define TM_BEGIN_RO()                 TM_BEGIN()
-#    define TM_RESTART()                  XABORT(0xab);
+#    define TM_RESTART()                  _xabort(0xab);
 #    define TM_EARLY_RELEASE(var)         
 
 #  define TM_SHARED_READ(var)         (var)
