@@ -352,7 +352,7 @@ extern __thread long abort_other;
 								if (tries <= 0) {	\
 									acquire_write(&(local_th_data[phys_id]), &the_lock); \
 								}	\
-							}	\
+							}
 
 
 #    define TM_END()		if (tries > 0) {	\
