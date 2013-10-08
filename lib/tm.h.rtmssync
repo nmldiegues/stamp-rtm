@@ -299,7 +299,7 @@
 #  define TM_SHUTDOWN()                 /* nothing */
 
 #  define TM_THREAD_ENTER()             /* nothing */
-#  define TM_THREAD_EXIT()              printf("\n\nrtm_commits: %ld\t rtm_aborts: %ld\t lock_commits: %ld\tsuccessful_starts: %ld\tabort_explicit: %ld\tabort_retry: %ld\nconflict: %ld\tcapacity: %ld\tdebug: %ld\tnested: %ld\tother: %ld\n", rtm_commits, rtm_aborts, lock_commits, successful_starts, abort_explicit, abort_retry, abort_conflict, abort_capacity, abort_debug, abort_nested, abort_other);
+#  define TM_THREAD_EXIT()              printf("\n\nrtm_commits: %ld\t rtm_aborts: %ld\t lock_commits: %ld\tsuccessful_starts: %ld\tabort_explicit: %ld\tabort_30: %ld\tabort_retry: %ld\nconflict: %ld\tcapacity: %ld\tdebug: %ld\tnested: %ld\tother: %ld\n", rtm_commits, rtm_aborts, lock_commits, successful_starts, abort_explicit, abort_30, abort_retry, abort_conflict, abort_capacity, abort_debug, abort_nested, abort_other);
 #  define TM_BEGIN_WAIVER()
 #  define TM_END_WAIVER()
 
@@ -338,7 +338,7 @@ extern __thread long abort_other;
 							while (1) {	\
 								int status = _xbegin();	\
 								if (status == _XBEGIN_STARTED) successful_starts++;	\
-								else if (status & _XABORT_EXPLICIT) abort_explicit++; \
+								else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
 								else if (status == _XABORT_RETRY) abort_retry++; \
 								else if (status == _XABORT_CONFLICT) abort_conflict++; \
 								else if (status == _XABORT_CAPACITY) abort_capacity++; \
