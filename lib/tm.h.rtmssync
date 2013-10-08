@@ -338,7 +338,7 @@ extern __thread long abort_other;
 							while (1) {	\
 								int status = _xbegin();	\
 								if (status == _XBEGIN_STARTED) successful_starts++;	\
-								else if (status == _XABORT_EXPLICIT) abort_explicit++; \
+								else if (status & _XABORT_EXPLICIT) abort_explicit++; \
 								else if (status == _XABORT_RETRY) abort_retry++; \
 								else if (status == _XABORT_CONFLICT) abort_conflict++; \
 								else if (status == _XABORT_CAPACITY) abort_capacity++; \
