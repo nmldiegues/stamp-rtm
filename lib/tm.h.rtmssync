@@ -335,6 +335,7 @@ extern __thread long abort_other;
 
 #    define TM_BEGIN()	{ \
 							int tries = 4;	\
+while (1) { \
 							int status = _xbegin();	\
 							if (status == _XBEGIN_STARTED) successful_starts++;	\
 							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
@@ -346,13 +347,16 @@ extern __thread long abort_other;
 							else abort_other++;	\
 							if (status == _XBEGIN_STARTED) { \
 								if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) _xabort(30); \
+		break; \
 							} else { \
 								rtm_aborts++;	\
 								tries--;	\
 								if (tries <= 0) {	\
 									acquire_write(&(local_th_data[phys_id]), &the_lock); \
+		break; \
 								}	\
-							}
+							} \
+	}
 
 
 #    define TM_END()		if (tries > 0) {	\

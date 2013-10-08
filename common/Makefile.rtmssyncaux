@@ -14,7 +14,7 @@ SUFF=.rtm
 CFLAGS   += -DHTM -I$(STM)/include $(LOCK_VERSION) # We substitute our RTM implementation for HTM.                                                                                                                                                
 CPPFLAGS := $(CFLAGS)
 LDFLAGS  += -L$(STM)
-LIBS     += -lsync -lrt -lpthread -lnuma
+LIBS     += -lsync -lrt -lpthread -lnuma -mrtm
 
 # ==============================================================================
 # Rules
