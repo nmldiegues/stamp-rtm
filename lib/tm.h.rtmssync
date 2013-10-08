@@ -285,7 +285,9 @@
 #  include "thread.h"
 #  include "types.h"
 
-#  include "rtm.h"
+// #  include "rtm.h"
+#include <immintrin.h>
+#include <rtmintrin.h>
 
 #  define TM_ARG                        /* nothing */
 #  define TM_ARG_ALONE                  /* nothing */
@@ -322,31 +324,32 @@
 
 #  else /* !OTM */
 
-#    define TM_BEGIN()                    	rtm_aborts--;		\
-											{ __label__ failure;  \
-                                            int tries = 4;      \
-                                            XFAIL(failure);     \
-                                            rtm_aborts++;		\
-                                            tries --;           \
-                                            if (tries <= 0) {     \
-                                                acquire_write(&(local_th_data[phys_id]), &the_lock); \
-                                            } else { \
-                                                XBEGIN(failure); \
-                                                if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) XABORT(0xab); \
-                                            } \
-                                            
-
-#    define TM_END()                      if (tries > 0){        \
-                                              XEND();           \
-                                              rtm_commits++;	\
-                                          } else {                     \
-                                              release_write(cluster_id, &(local_th_data[phys_id]), &the_lock); \
-                                              lock_commits++;													\
-                                          } \
-                                          };
+#    define TM_BEGIN()	{ \
+							int tries = 4;	\
+							while (1) {
+								if (_xbegin() == _XBEGIN_STARTED) { \
+									if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) XABORT(30); \
+									break;	\
+								} else { \
+									rtm_aborts++;	\
+									tries--;	\
+									if (tries <= 0) {	\
+										acquire_write(&(local_th_data[phys_id]), &the_lock); \
+										break;	\
+									}	\
+								}	\
+							}
 
 
-
+#    define TM_END()		if (tries > 0) {	\
+								_xend();	\
+								rtm_commits++;	\
+							} else {	\
+								release_write(cluster_id, &(local_th_data[phys_id]), &the_lock); \
+                                lock_commits++;		\
+                            }\
+                     	};
+                                
 
 #    define TM_BEGIN_RO()                 TM_BEGIN()
 #    define TM_RESTART()                  XABORT(0xab);
