@@ -324,10 +324,28 @@
 
 #  else /* !OTM */
 
+extern __thread long successful_starts;
+extern __thread long abort_explicit;
+extern __thread long abort_retry;
+extern __thread long abort_conflict;
+extern __thread long abort_capacity;
+extern __thread long abort_debug;
+extern __thread long abort_nested;
+extern __thread long abort_other;
+
 #    define TM_BEGIN()	{ \
 							int tries = 4;	\
 							while (1) {	\
-								if (_xbegin() == _XBEGIN_STARTED) { \
+								int status = _xbegin();	\
+								if (status == _XBEGIN_STARTED) successful_starts++;	\
+								else if (status == _XABORT_EXPLICIT) abort_explicit++; \
+								else if (status == _XABORT_RETRY) abort_retry++; \
+								else if (status == _XABORT_CONFLICT) abort_conflict++; \
+								else if (status == _XABORT_CAPACITY) abort_capacity++; \
+								else if (status == _XABORT_DEBUG) abort_debug++;	\
+								else if (status == _XABORT_NESTED) abort_nested++;	\
+								else abort_other++;	\
+								if (status == _XBEGIN_STARTED) { \
 									if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) _xabort(30); \
 									break;	\
 								} else { \

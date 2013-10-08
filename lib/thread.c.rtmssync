@@ -99,6 +99,14 @@ __thread uint32_t cluster_id;
 __thread long rtm_aborts;
 __thread long rtm_commits;
 __thread long lock_commits;
+__thread long successful_starts;
+__thread long abort_explicit;
+__thread long abort_retry;
+__thread long abort_conflict;
+__thread long abort_capacity;
+__thread long abort_debug;
+__thread long abort_nested;
+__thread long abort_other;
 
 /* =============================================================================
  * threadWait
