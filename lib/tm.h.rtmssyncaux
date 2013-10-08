@@ -323,7 +323,7 @@
 #  else /* !OTM */
 
 #    define TM_BEGIN()                    	{int aux_lock_owned = 0;	\
-											rtm_commits++;		\
+											rtm_aborts--;		\
 											{ __label__ failure;  \
                                             int tries = 4;      \
                                             XFAIL(failure);     \

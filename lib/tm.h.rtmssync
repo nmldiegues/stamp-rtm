@@ -322,7 +322,7 @@
 
 #  else /* !OTM */
 
-#    define TM_BEGIN()                    	rtm_commits++;		\
+#    define TM_BEGIN()                    	rtm_aborts--;		\
 											{ __label__ failure;  \
                                             int tries = 4;      \
                                             XFAIL(failure);     \
