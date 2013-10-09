@@ -93,12 +93,12 @@ benchmarks[9]="array"
 
 params[1]="-v32 -r4096 -n10 -p40 -i2 -e8 -s1 -t"
 params[2]="-g16384 -s64 -n16777216 -t"
-params[3]="-a10 -l16 -n262144 -s1 -t"
+params[3]="-a10 -l128 -n262144 -s1 -t"
 params[4]="-m15 -n15 -t0.00001 -i inputs/random-n65536-d32-c16.txt -p"
 params[5]="-i inputs/random-x512-y512-z7-n512.txt -t"
-params[6]="-s20 -i0.5 -u0.1 -l3 -p3 -t"
-params[7]="-n1 -q90 -u80 -r1048576 -t4194304 -c"
-params[8]="-a20 -i inputs/ttimeu1000000.2 -t"
+params[6]="-s20 -i1.0 -u1.0 -l3 -p3 -t"
+params[7]="-n4 -q60 -u90 -r1048576 -t4194304 -c"
+params[8]="-a15 -i inputs/ttimeu1000000.2 -t"
 params[9]="-s 1000 -o10000000 -i20 -c5 -t"
 
 ext[1]=".rtm"
@@ -189,15 +189,15 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
-for c in 3 4 5 8 9 10 11 12 13 14 15 16 17 18 19 20 22 23 24 25 26 27 28 29 31 32 33 34
+for c in 3 4 5 15 26 27 28 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]} ${alias[$c]};
-    for b in 9 #2 3 4 5 6 7 8
+    for b in 2 3 4 5 6 7 8
     do
-        for t in 1 2 3 4 5 6 7 8
+        for t in 1 2 3 4 6 8
         do
 #        for r in 1 2 3 4 5 6
 #        do
