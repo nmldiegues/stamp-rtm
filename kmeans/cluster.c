@@ -114,7 +114,9 @@ extractMoments (float *data, int num_elts, int num_moments)
     int j;
     float* moments;
 
-    moments = (float*)calloc(num_moments, sizeof(float));
+    moments = (float*)malloc(num_moments*sizeof(float));
+    moments[0] = 0;
+    moments[1] = 0;
     assert(moments);
     for (i = 0; i < num_elts; i++) {
         moments[0] += data[i];
@@ -146,7 +148,10 @@ zscoreTransform (float** data, /* in & out: [numObjects][numAttributes] */
     int i;
     int j;
 
-    single_variable = (float*)calloc(numObjects, sizeof(float));
+    single_variable = (float*)malloc(numObjects*sizeof(float));
+    for (i = 0; i < numObjects; i++) {
+        single_variable[i];
+    }
     assert(single_variable);
     for (i = 0; i < numAttributes; i++) {
         for (j = 0; j < numObjects; j++) {

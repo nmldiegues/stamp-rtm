@@ -401,7 +401,7 @@
 #    ifdef OTM
 
 #      include <omp.h>
-#      include "tl2.h"
+#      include "norec.h"
 
 #      define TM_STARTUP(numThread)     STM_STARTUP()
 #      define TM_SHUTDOWN()             STM_SHUTDOWN()

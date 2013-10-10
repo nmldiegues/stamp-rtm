@@ -10,7 +10,7 @@
 # ==============================================================================
 
 CC      := gcc
-CFLAGS  := -g -Wall -Winline #-O3
+CFLAGS  := -g -Wall -Winline -O3
 #CFLAGS  += -m32
 LD      := gcc
 

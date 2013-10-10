@@ -104,6 +104,7 @@ void client_run (void* argPtr) {
         TM_BEGIN();
         long r1 = (long)TM_SHARED_READ(global_array[random_number].value);
         long r2 = (long)TM_SHARED_READ(global_array[random_number2].value);
+
         int repeat = 0;
         for (; repeat < (long) global_params[PARAM_CONTENTION]; repeat++) {
         	total2 += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])].value);

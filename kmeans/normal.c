@@ -251,7 +251,8 @@ normal_exec (int       nthreads,
         int cluster_size = sizeof(int) + sizeof(float) * nfeatures;
         const int cacheLineSize = 32;
         cluster_size += (cacheLineSize-1) - ((cluster_size-1) % cacheLineSize);
-        alloc_memory = calloc(nclusters, cluster_size);
+        alloc_memory = malloc(nclusters * cluster_size);
+        memset(alloc_memory, 0, nclusters * cluster_size);
         new_centers_len = (int**) malloc(nclusters * sizeof(int*));
         new_centers = (float**) malloc(nclusters * sizeof(float*));
         assert(alloc_memory && new_centers && new_centers_len);
