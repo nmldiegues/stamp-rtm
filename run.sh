@@ -8,10 +8,12 @@ cd ../TinySTM;
 make clean; make;
 cd ../swisstm;
 make clean; make;
+cd ../norec;
+make clean; make;
 cd ..
 
 config[1]="rtm"
-config[2]="seq"
+config[2]="norec"
 config[3]="tl2"
 config[4]="tinystm"
 config[5]="swisstm"
@@ -102,7 +104,7 @@ params[8]="-a15 -i inputs/ttimeu1000000.2 -t"
 params[9]="-s 1000 -o10000000 -i20 -c5 -t"
 
 ext[1]=".rtm"
-ext[2]=".seq"
+ext[2]=""
 ext[3]=""
 ext[4]=""
 ext[5]=""
@@ -138,7 +140,7 @@ ext[34]=".rtm"
 
 
 build[1]="rtm"
-build[2]="seq"
+build[2]="stm"
 build[3]="stm"
 build[4]="stm"
 build[5]="stm"
@@ -189,7 +191,7 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
-for c in 3 4 5 15 26 27 28 31 32 33 34
+for c in 2 #3 4 5 15 26 27 28 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
