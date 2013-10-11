@@ -286,6 +286,7 @@
 #  include "types.h"
 
 //#  include "rtm.h"
+#include <xmmintrin.h>
 #include <immintrin.h>
 #include <rtmintrin.h>
 #include "stm.h"
@@ -338,29 +339,40 @@
 #    define TM_BEGIN()	{ \
 							int tries = 4;	\
 	while (1) {	\
-							int status = _xbegin();	\
-							if (status == _XBEGIN_STARTED) successful_starts++;	\
-							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
-							else if (status == _XABORT_RETRY) abort_retry++; \
-							else if (status == _XABORT_CONFLICT) abort_conflict++; \
-							else if (status == _XABORT_CAPACITY) abort_capacity++; \
-							else if (status == _XABORT_DEBUG) abort_debug++;	\
-							else if (status == _XABORT_NESTED) abort_nested++;	\
-							else abort_other++;	\
-							if (status == _XBEGIN_STARTED) { \
-	                            break;	\
-							} else { \
-								rtm_aborts++;	\
-								tries--;	\
-								if (tries <= 0) {	\
-								    STM_BEGIN_WR(); \
-								    abortFunPtr = &abortSTM;    \
-                                    sharedReadFunPtr = &sharedReadSTM;  \
-                                    sharedWriteFunPtr = &sharedWriteSTM;    \
-                                    localWriteFunPtr = &localWriteSTM;  \
-	                                break; 	\
-								}	\
-							}	\
+	                        if (is_fallback == 0) { \
+    							int status = _xbegin();	\
+    							if (status == _XBEGIN_STARTED) successful_starts++;	\
+    							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
+    							else if (status == _XABORT_RETRY) abort_retry++; \
+    							else if (status == _XABORT_CONFLICT) abort_conflict++; \
+    							else if (status == _XABORT_CAPACITY) abort_capacity++; \
+    							else if (status == _XABORT_DEBUG) abort_debug++;	\
+    							else if (status == _XABORT_NESTED) abort_nested++;	\
+    							else abort_other++;	\
+    							if (status == _XBEGIN_STARTED) { \
+    							    if (is_fallback != 0) { _xabort(0xab); } \
+    	                            break;	\
+    							} else { \
+    								rtm_aborts++;	\
+    								tries--;	\
+    								if (tries <= 0) {	\
+    								    STM_BEGIN_WR(); \
+    								    abortFunPtr = &abortSTM;    \
+                                        sharedReadFunPtr = &sharedReadSTM;  \
+                                        sharedWriteFunPtr = &sharedWriteSTM;    \
+                                        localWriteFunPtr = &localWriteSTM;  \
+    	                                break; 	\
+    								}	\
+    							}	\
+    						} else {  \
+    						    tries = -1;   \
+    						    __sync_add_and_fetch(&is_fallback,1);    \
+    						    STM_BEGIN_WR();   \
+                                abortFunPtr = &abortSTM;    \
+                                sharedReadFunPtr = &sharedReadSTM;  \
+                                sharedWriteFunPtr = &sharedWriteSTM;    \
+                                localWriteFunPtr = &localWriteSTM;  \
+    						} \
 	}
 
 
@@ -368,7 +380,7 @@
                                 HTM_INC_CLOCK();  \
 								_xend();	\
 								rtm_commits++;	\
-							} else {	\
+							} else if (tries == 0) {	\
 							    long local_global_clock = TX_END_HYBRID_FIRST_STEP();  \
 							    while (1) {  \
 							         int status = _xbegin();  \
@@ -377,9 +389,9 @@
 							             if (res_htm == 1) { _xabort(0xab); }   \
 							             break;  \
 							         } else if (status == _XABORT_CAPACITY) { \
-							             printf("capacity exceeded on commit mix-path\n");   \
-							             exit(1);    \
+							             __sync_add_and_fetch(&is_fallback,1);    \
 							             STM_END();  \
+							             __sync_sub_and_fetch(&is_fallback,1);    \
 							             break;  \
 							         }   \
 							    }    \
@@ -388,7 +400,10 @@
                                 sharedReadFunPtr = &sharedReadHTM;  \
                                 sharedWriteFunPtr = &sharedWriteHTM;    \
                                 localWriteFunPtr = &localWriteHTM;  \
-                            }\
+                            } else {    \
+                                STM_END();  \
+                                __sync_sub_and_fetch(&is_fallback,1);    \
+                            }   \
                      	};
 
 
