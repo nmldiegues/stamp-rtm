@@ -16,7 +16,7 @@ WLPDSTM_LIB_DIR = /home/nmld/Desktop/swisstm-c/lib
 #ATOMIC_OPS_LIB = /home/dragojev/local/lib
 
 #CFLAGS   += -m32 -DSTM -DWLPDSTM -I$(WLPDSTM_INC_DIR) -I$(ATOMIC_OPS_INCLUDE)
-CFLAGS   += -DSTM -DWLPDSTM -I$(STM)/include
+CFLAGS   += -w -DSTM -DWLPDSTM -I$(STM)/include
 CPPFLAGS := $(CFLAGS)
 #LDFLAGS  += -m32 -L$(WLPDSTM_LIB_DIR)# -L$(ATOMIC_OPS_LIB) -static
 LDFLAGS  += -L$(STM)/lib -static

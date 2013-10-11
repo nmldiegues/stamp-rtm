@@ -9,7 +9,7 @@
 # Variables
 # ==============================================================================
 
-CFLAGS   += -DSTM -I$(STM)/include
+CFLAGS   += -w -DSTM -I$(STM)/include
 CPPFLAGS := $(CFLAGS)
 LDFLAGS  += -L$(STM)/lib
 LIBS     += -lstm

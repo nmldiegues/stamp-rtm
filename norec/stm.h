@@ -62,9 +62,13 @@
 
 #define STM_BEGIN_RD()                  STM_BEGIN(1)
 #define STM_BEGIN_WR()                  STM_BEGIN(0)
+#define TX_END_HYBRID_FIRST_STEP()      TxValidate(STM_SELF)
+#define TX_END_HYBRID_LAST_STEP(clock)  TxFinalize(STM_SELF, clock)
 #define STM_END()                       TxCommit(STM_SELF)
 
 typedef volatile intptr_t               vintp;
+
+#define STM_HYBRID_READ(varPtr)         TxLoad(STM_SELF, varPtr)
 
 #define STM_READ(var)                   TxLoad(STM_SELF, (vintp*)(void*)&(var))
 #define STM_READ_F(var)                 IP2F(TxLoad(STM_SELF, \
@@ -72,6 +76,7 @@ typedef volatile intptr_t               vintp;
 #define STM_READ_P(var)                 IP2VP(TxLoad(STM_SELF, \
                                                      (vintp*)(void*)&(var)))
 
+#define STM_HYBRID_WRITE(varPtr, val)   TxStore(STM_SELF, varPtr, val)
 #define STM_WRITE(var, val)             TxStore(STM_SELF, \
                                                 (vintp*)(void*)&(var), \
                                                 (intptr_t)(val))
@@ -82,9 +87,12 @@ typedef volatile intptr_t               vintp;
                                                 (vintp*)(void*)&(var), \
                                                 VP2IP(val))
 
+#define STM_HYBRID_LOCAL_WRITE(varPtr, val)     ({*varPtr = val; *varPtr;})
 #define STM_LOCAL_WRITE(var, val)       ({var = val; var;})
 #define STM_LOCAL_WRITE_F(var, val)     ({var = val; var;})
 #define STM_LOCAL_WRITE_P(var, val)     ({var = val; var;})
+
+#define HTM_INC_CLOCK()                   TxIncClock()
 
 
 #endif /* STM_H */
