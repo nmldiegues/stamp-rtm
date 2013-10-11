@@ -372,6 +372,7 @@
                                 sharedReadFunPtr = &sharedReadSTM;  \
                                 sharedWriteFunPtr = &sharedWriteSTM;    \
                                 localWriteFunPtr = &localWriteSTM;  \
+                                break;  \
     						} \
 	}
 
@@ -403,6 +404,10 @@
                                 localWriteFunPtr = &localWriteHTM;  \
                             } else {    \
                                 STM_END();  \
+                                abortFunPtr = &abortHTM;    \
+                                sharedReadFunPtr = &sharedReadHTM;  \
+                                sharedWriteFunPtr = &sharedWriteHTM;    \
+                                localWriteFunPtr = &localWriteHTM;  \
                                 __sync_sub_and_fetch(&is_fallback,1);    \
                             }   \
                      	};

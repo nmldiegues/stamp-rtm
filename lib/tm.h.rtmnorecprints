@@ -339,7 +339,7 @@
 #    define TM_BEGIN()	{ \
 							int tries = 4;	\
 	while (1) {	\
-	                        if (is_fallback == 0) { \
+	                        if (tries == 42) { \
     							int status = _xbegin();	\
     							if (status == _XBEGIN_STARTED) successful_starts++;	\
     							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
@@ -375,6 +375,7 @@ printf("someone is in the slow mode %ld ! falling back to full STM\n", is_fallba
                                 sharedReadFunPtr = &sharedReadSTM;  \
                                 sharedWriteFunPtr = &sharedWriteSTM;    \
                                 localWriteFunPtr = &localWriteSTM;  \
+                                break;  \
     						} \
 	}
 
@@ -413,6 +414,10 @@ printf("aborted in mixed hardware, but not due to capacity\n");\
                                 localWriteFunPtr = &localWriteHTM;  \
                             } else {    \
                                 STM_END();  \
+                                abortFunPtr = &abortHTM;    \
+                                sharedReadFunPtr = &sharedReadHTM;  \
+                                sharedWriteFunPtr = &sharedWriteHTM;    \
+                                localWriteFunPtr = &localWriteHTM;  \
                                 __sync_sub_and_fetch(&is_fallback,1);    \
 printf("commtited in full slow STM\n");\
                             }   \

@@ -77,7 +77,7 @@ static struct sigaction global_act_oldsigbus;
 static struct sigaction global_act_oldsigsegv;
 
 void TxIncClock() {
-    LOCK->value++;
+    LOCK->value+=2;
 }
 
 static void
@@ -643,7 +643,7 @@ long TxFinalize (Thread* Self, long clock) {
 
     Log* const wr = &Self->wrSet;
     WriteBackForward(wr); /* write-back the deferred stores */
-    LOCK->value++;
+    LOCK->value+=2;
 
     txCommitReset(Self);
     tmalloc_clear(Self->allocPtr);
