@@ -353,9 +353,11 @@
     							    if (is_fallback != 0) { _xabort(0xab); } \
     	                            break;	\
     							} else { \
+printf("aborted RTM %d\n", tries);\
     								rtm_aborts++;	\
     								tries--;	\
     								if (tries <= 0) {	\
+printf("gave up with %d tries, going mix path\n", tries);\
     								    STM_BEGIN_WR(); \
     								    abortFunPtr = &abortSTM;    \
                                         sharedReadFunPtr = &sharedReadSTM;  \
@@ -365,6 +367,7 @@
     								}	\
     							}	\
     						} else {  \
+printf("someone is in the slow mode %ld ! falling back to full STM\n", is_fallback); \
     						    tries = -1;   \
     						    __sync_add_and_fetch(&is_fallback,1);    \
     						    STM_BEGIN_WR();   \
@@ -380,21 +383,28 @@
                                 HTM_INC_CLOCK();  \
 								_xend();	\
 								rtm_commits++;	\
+printf("committed in full hardware\n");\
 							} else if (tries == 0) {	\
+printf("trying to commit in mixed, 1st step\n");\
 							    long local_global_clock = TX_END_HYBRID_FIRST_STEP();  \
+printf("validated successfully with clock %ld . about to write-back in hardware\n", local_global_clock);\
 							    while (1) {  \
 							         int status = _xbegin();  \
 							         if (status == _XBEGIN_STARTED) { \
 							             long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \
 							             if (res_htm == 1) { _xabort(0xab); }   \
                                                                      _xend();	\
+printf("committed in mixed hardware\n");\
 							             break;  \
 							         } else if (status == _XABORT_CAPACITY) { \
+printf("aborted in mixed hardware, due to capacity. going slow full STM\n");\
 							             __sync_add_and_fetch(&is_fallback,1);    \
 							             STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \
+printf("committed mixed, but slow commit STM\n");\
 							             break;  \
 							         }   \
+printf("aborted in mixed hardware, but not due to capacity\n");\
 							    }    \
                                 lock_commits++;		\
                                 abortFunPtr = &abortHTM;    \
@@ -404,6 +414,7 @@
                             } else {    \
                                 STM_END();  \
                                 __sync_sub_and_fetch(&is_fallback,1);    \
+printf("commtited in full slow STM\n");\
                             }   \
                      	};
 
