@@ -339,7 +339,7 @@
 #    define TM_BEGIN()	{ \
 							int tries = 4;	\
 	while (1) {	\
-	                        if (tries == 42) { \
+	                        if (is_fallback == 0) { \
     							int status = _xbegin();	\
     							if (status == _XBEGIN_STARTED) successful_starts++;	\
     							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
@@ -363,6 +363,7 @@ printf("gave up with %d tries, going mix path\n", tries);\
                                         sharedReadFunPtr = &sharedReadSTM;  \
                                         sharedWriteFunPtr = &sharedWriteSTM;    \
                                         localWriteFunPtr = &localWriteSTM;  \
+                                        fallback_mixed++; \
     	                                break; 	\
     								}	\
     							}	\
@@ -375,6 +376,7 @@ printf("someone is in the slow mode %ld ! falling back to full STM\n", is_fallba
                                 sharedReadFunPtr = &sharedReadSTM;  \
                                 sharedWriteFunPtr = &sharedWriteSTM;    \
                                 localWriteFunPtr = &localWriteSTM;  \
+                                fallback_stm++; \
                                 break;  \
     						} \
 	}
@@ -394,7 +396,8 @@ printf("validated successfully with clock %ld . about to write-back in hardware\
 							         if (status == _XBEGIN_STARTED) { \
 							             long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \
 							             if (res_htm == 1) { _xabort(0xab); }   \
-                                                                     _xend();	\
+                                         _xend();	\
+                                         commit_mixed_hw++; \
 printf("committed in mixed hardware\n");\
 							             break;  \
 							         } else if (status == _XABORT_CAPACITY) { \
@@ -402,12 +405,12 @@ printf("aborted in mixed hardware, due to capacity. going slow full STM\n");\
 							             __sync_add_and_fetch(&is_fallback,1);    \
 							             STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \
+							             commit_mixed_stm++; \
 printf("committed mixed, but slow commit STM\n");\
 							             break;  \
 							         }   \
 printf("aborted in mixed hardware, but not due to capacity\n");\
 							    }    \
-                                lock_commits++;		\
                                 abortFunPtr = &abortHTM;    \
                                 sharedReadFunPtr = &sharedReadHTM;  \
                                 sharedWriteFunPtr = &sharedWriteHTM;    \
@@ -419,6 +422,7 @@ printf("aborted in mixed hardware, but not due to capacity\n");\
                                 sharedWriteFunPtr = &sharedWriteHTM;    \
                                 localWriteFunPtr = &localWriteHTM;  \
                                 __sync_sub_and_fetch(&is_fallback,1);    \
+                                commit_stm++; \
 printf("commtited in full slow STM\n");\
                             }   \
                      	};

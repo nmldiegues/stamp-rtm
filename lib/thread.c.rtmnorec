@@ -92,7 +92,6 @@ static volatile bool_t   global_doShutdown      = FALSE;
 
 __thread long rtm_aborts;
 __thread long rtm_commits;
-__thread long lock_commits;
 __thread long successful_starts;
 __thread long abort_explicit;
 __thread long abort_30;
@@ -102,6 +101,11 @@ __thread long abort_capacity;
 __thread long abort_debug;
 __thread long abort_nested;
 __thread long abort_other;
+__thread long fallback_mixed;
+__thread long fallback_stm;
+__thread long commit_mixed_hw;
+__thread long commit_mixed_stm;
+__thread long commit_stm;
 
 void abortHTM(Thread* Self) {
     _xabort(0xab);
@@ -153,6 +157,23 @@ threadWait (void* argPtr)
     sharedReadFunPtr = &sharedReadHTM;
     sharedWriteFunPtr = &sharedWriteHTM;
     localWriteFunPtr = &localWriteHTM;
+
+    rtm_aborts = 0;
+    rtm_commits = 0;
+    successful_starts = 0;
+    abort_explicit = 0;
+    abort_30 = 0;
+    abort_retry = 0;
+    abort_conflict = 0;
+    abort_capacity = 0;
+    abort_debug = 0;
+    abort_nested = 0;
+    abort_other = 0;
+    fallback_mixed = 0;
+    fallback_stm = 0;
+    commit_mixed_hw = 0;
+    commit_mixed_stm = 0;
+    commit_stm = 0;
 
     cpu_set_t my_set;
     CPU_ZERO(&my_set);

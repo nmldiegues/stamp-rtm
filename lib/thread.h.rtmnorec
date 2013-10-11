@@ -142,7 +142,6 @@ extern "C" {
 
 extern __thread long rtm_aborts;
 extern __thread long rtm_commits;
-extern __thread long lock_commits;
 extern __thread long successful_starts;
 extern __thread long abort_explicit;
 extern __thread long abort_30;
@@ -152,6 +151,11 @@ extern __thread long abort_capacity;
 extern __thread long abort_debug;
 extern __thread long abort_nested;
 extern __thread long abort_other;
+extern __thread long fallback_mixed;
+extern __thread long fallback_stm;
+extern __thread long commit_mixed_hw;
+extern __thread long commit_mixed_stm;
+extern __thread long commit_stm;
 
 extern void abortHTM(Thread* Self);
 extern intptr_t sharedReadHTM(Thread* Self, intptr_t* addr);

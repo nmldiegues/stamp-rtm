@@ -311,7 +311,7 @@
                                         localWriteFunPtr = &localWriteHTM
 
 
-#  define TM_THREAD_EXIT()              printf("\n\nrtm_commits: %ld\t rtm_aborts: %ld\t lock_commits: %ld\tsuccessful_starts: %ld\tabort_explicit: %ld\tabort_30: %ld\tabort_retry: %ld\nconflict: %ld\tcapacity: %ld\tdebug: %ld\tnested: %ld\tother: %ld\n", rtm_commits, rtm_aborts, lock_commits, successful_starts, abort_explicit, abort_30, abort_retry, abort_conflict, abort_capacity, abort_debug, abort_nested, abort_other); STM_FREE_THREAD(TM_ARG_ALONE)
+#  define TM_THREAD_EXIT()              printf("\n\nrtm_commits: %ld\tsuccessful_starts: %ld\trtm_aborts: %ld\tabort_explicit: %ld\tabort_30: %ld\tabort_retry: %ld\nconflict: %ld\tcapacity: %ld\tdebug: %ld\tnested: %ld\tother: %ld\nfallback_mixed: %ld\tfallback_stm: %ld\tcommit_mixed_hw: %ld\tcommit_mixed_stm: %ld\tcommit_stm: %ld\n", rtm_commits, successful_starts, rtm_aborts, abort_explicit, abort_30, abort_retry, abort_conflict, abort_capacity, abort_debug, abort_nested, abort_other, fallback_mixed, fallback_stm, commit_mixed_hw, commit_mixed_stm, commit_stm); STM_FREE_THREAD(TM_ARG_ALONE)
 #  define TM_BEGIN_WAIVER()
 #  define TM_END_WAIVER()
 
@@ -361,6 +361,7 @@
                                         sharedReadFunPtr = &sharedReadSTM;  \
                                         sharedWriteFunPtr = &sharedWriteSTM;    \
                                         localWriteFunPtr = &localWriteSTM;  \
+                                        fallback_mixed++; \
     	                                break; 	\
     								}	\
     							}	\
@@ -372,6 +373,7 @@
                                 sharedReadFunPtr = &sharedReadSTM;  \
                                 sharedWriteFunPtr = &sharedWriteSTM;    \
                                 localWriteFunPtr = &localWriteSTM;  \
+                                fallback_stm++; \
                                 break;  \
     						} \
 	}
@@ -388,16 +390,17 @@
 							         if (status == _XBEGIN_STARTED) { \
 							             long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \
 							             if (res_htm == 1) { _xabort(0xab); }   \
-                                                                     _xend();	\
+                                         _xend();	\
+                                         commit_mixed_hw++; \
 							             break;  \
 							         } else if (status == _XABORT_CAPACITY) { \
 							             __sync_add_and_fetch(&is_fallback,1);    \
 							             STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \
+							             commit_mixed_stm++; \
 							             break;  \
 							         }   \
 							    }    \
-                                lock_commits++;		\
                                 abortFunPtr = &abortHTM;    \
                                 sharedReadFunPtr = &sharedReadHTM;  \
                                 sharedWriteFunPtr = &sharedWriteHTM;    \
@@ -409,6 +412,7 @@
                                 sharedWriteFunPtr = &sharedWriteHTM;    \
                                 localWriteFunPtr = &localWriteHTM;  \
                                 __sync_sub_and_fetch(&is_fallback,1);    \
+                                commit_stm++; \
                             }   \
                      	};
 
