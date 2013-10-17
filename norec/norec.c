@@ -76,6 +76,10 @@ static pthread_key_t    global_key_self;
 static struct sigaction global_act_oldsigbus;
 static struct sigaction global_act_oldsigsegv;
 
+void TxIncClock() {
+    LOCK->value+=2;
+}
+
 static void
 useAfterFreeHandler (int signum, siginfo_t* siginfo, void* context)
 {
@@ -595,6 +599,59 @@ TxCommit (Thread* Self)
 
     return 0;
 }
+
+long TxValidate (Thread* Self) {
+    if (Self->wrSet.put == Self->wrSet.List) {
+        return -1;
+    } else {
+        long local_global_clock = LOCK->value;
+
+        while (1) {
+            Log* const rd = &Self->rdSet;
+            AVPair* const EndOfList = rd->put;
+            AVPair* e;
+
+            for (e = rd->List; e != EndOfList; e = e->Next) {
+                if (e->Valu != LDNF(e->Addr)) {
+                    TxAbort(Self);
+                }
+            }
+
+            long tmp = LOCK->value;
+            if (local_global_clock == tmp) {
+                return local_global_clock;
+            } else {
+                local_global_clock = tmp;
+            }
+        }
+        return local_global_clock;
+    }
+}
+
+
+long TxFinalize (Thread* Self, long clock) {
+    if (Self->wrSet.put == Self->wrSet.List) {
+        txCommitReset(Self);
+        tmalloc_clear(Self->allocPtr);
+        tmalloc_releaseAllForward(Self->freePtr);
+        return 0;
+    }
+
+    if (LOCK->value != clock) {
+        return 1;
+    }
+
+    Log* const wr = &Self->wrSet;
+    WriteBackForward(wr); /* write-back the deferred stores */
+    LOCK->value+=2;
+
+    txCommitReset(Self);
+    tmalloc_clear(Self->allocPtr);
+    tmalloc_releaseAllForward(Self->freePtr);
+
+    return 0;
+}
+
 
 
 void*

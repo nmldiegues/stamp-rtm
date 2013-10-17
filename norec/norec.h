@@ -95,7 +95,10 @@ void     TxShutdown    ();
 void*    TxAlloc       (Thread*, size_t);
 void     TxFree        (Thread*, void*);
 
+void     TxIncClock    ();
 
+long     TxValidate    (Thread*);
+long     TxFinalize    (Thread*, long);
 
 
 
