@@ -236,12 +236,12 @@ do
             do
                 cd $workspace;
                 cd ${benchmarkslocks[$b]};
-                echo "${config[$c]} | ${benchmarkslocks[$b]} | retries $r | threads $t | attempt $a | ${locks[$l]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${locks[$l]}-${benchmarkslocks[$b]}-$t-$a.pcm &
+                echo "${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a | ${locks[$l]}"
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${locks[$l]}-${balias[$b]}-$t-$a.pcm &
                 pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${locks[$l]}-${benchmarkslocks[$b]}-$t-$a.pow &
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${locks[$l]}-${balias[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarkslocks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${locks[$l]}-${benchmarkslocks[$b]}-$t-$a.data &
+                ./${benchmarkslocks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${locks[$l]}-${balias[$b]}-$t-$a.data &
                 pid3=$!
                 wait_until_finish $pid3
                 wait $pid3
@@ -249,7 +249,7 @@ do
                 kill -9 $pid
                 kill -9 $pid2
                 if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${locks[$l]} | ${config[$c]} | ${benchmarkslocks[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
+                    echo "Error within: ${locks[$l]} | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
                 fi
             done
             cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
@@ -258,6 +258,8 @@ do
     done
     done
 done
+
+exit 0
 
 for c in 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
