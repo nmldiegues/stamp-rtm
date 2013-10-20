@@ -1,6 +1,6 @@
 #!/bin/sh
 
-FOLDERS="array-locks"
+FOLDERS="array-locks kmeans-locks"
 
 rm lib/*.o || true
 
