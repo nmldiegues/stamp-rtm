@@ -11,7 +11,7 @@
 
 SUFF=
 
-CFLAGS   += -w -DHTM -I$(STM)
+CFLAGS   += -w -DHTM $(LOCKS) -I$(STM)
 CPPFLAGS := $(CFLAGS)
 LDFLAGS  += -L$(STM)
 LIBS     += -ltl2

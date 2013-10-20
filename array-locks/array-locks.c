@@ -95,31 +95,40 @@ void client_run (void* argPtr) {
     long total2 = 0;
 
     long i = 0;
-    unsigned int sorted_locks[2];
+    unsigned int cont_size = (unsigned int) global_params[PARAM_CONTENTION];
+    unsigned int* sorted_locks = (int*) malloc((2 + cont_size) * sizeof(int));
+    unsigned int* read_idxs = (int*) malloc(cont_size * sizeof(int));
+
     for (; i < operations; i++) {
         long random_number = ((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE]);
         long random_number2 = ((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE]);
         if (random_number == random_number2) {
             random_number2 = (random_number2 + 1) % ((long)global_params[PARAM_SIZE]);
         }
+
+        int repeat = 0;
+        for (; repeat < cont_size; repeat++) {
+        	read_idxs[repeat] = ((unsigned int) random_generate(randomPtr)) % ((unsigned int)global_params[PARAM_SIZE]);
+        	LI_HASH(&global_array[read_idxs[repeat]], &sorted_locks[repeat + 2]);
+        }
+
         // TM_BEGIN();
         LI_HASH(&global_array[random_number], &sorted_locks[0]);
         LI_HASH(&global_array[random_number2], &sorted_locks[1]);
-        LI_LOCK(sorted_locks, 2);
+        LI_LOCK(sorted_locks, cont_size + 2);
 
         long r1 = (long)TM_SHARED_READ(global_array[random_number].value);
         long r2 = (long)TM_SHARED_READ(global_array[random_number2].value);
 
-        int repeat = 0;
-        for (; repeat < (long) global_params[PARAM_CONTENTION]; repeat++) {
-        	total2 += (long) TM_SHARED_READ(global_array[((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE])].value);
+        for (repeat--; repeat >= 0; repeat--) {
+        	total2 += (long) TM_SHARED_READ(global_array[read_idxs[repeat]].value);
         }
         r1 = r1 + 1;
         r2 = r2 - 1;
         TM_SHARED_WRITE(global_array[random_number].value, r1);
         TM_SHARED_WRITE(global_array[random_number2].value, r2);
         // TM_END();
-        LI_UNLOCK(sorted_locks, 2);
+        LI_UNLOCK(sorted_locks, cont_size + 2);
 
         long k = 0;
         for (;k < (long)global_params[PARAM_INTERVAL]; k++) {
