@@ -339,7 +339,7 @@
 #    define TM_BEGIN()	{ \
 							int tries = 4;	\
 	while (1) {	\
-	                        if (is_fallback == 0) { \
+	                        if (is_fallback == 0 && tries > 0) { \
     							int status = _xbegin();	\
     							if (status == _XBEGIN_STARTED) successful_starts++;	\
     							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
@@ -350,52 +350,43 @@
     							else if (status == _XABORT_NESTED) abort_nested++;	\
     							else abort_other++;	\
     							if (status == _XBEGIN_STARTED) { \
+    							    if (is_fallback != 0) { _xabort(0xab); } \
     	                            break;	\
     							} else { \
     								rtm_aborts++;	\
     								tries--;	\
-    								if (tries <= 0) {	\
-    								    STM_BEGIN_WR(); \
-    								    abortFunPtr = &abortSTM;    \
-                                        sharedReadFunPtr = &sharedReadSTM;  \
-                                        sharedWriteFunPtr = &sharedWriteSTM;    \
-                                        localWriteFunPtr = &localWriteSTM;  \
-                                        fallback_mixed++; \
-    	                                break; 	\
-    								}	\
     							}	\
     						} else {  \
-    						    tries = -1;   \
-    						    __sync_add_and_fetch(&is_fallback,1);    \
+    						    tries = 0; \
     						    STM_BEGIN_WR();   \
                                 abortFunPtr = &abortSTM;    \
                                 sharedReadFunPtr = &sharedReadSTM;  \
                                 sharedWriteFunPtr = &sharedWriteSTM;    \
                                 localWriteFunPtr = &localWriteSTM;  \
-                                fallback_stm++; \
+                                fallback_mixed++; \
                                 break;  \
     						} \
 	}
 
 
 #    define TM_END()		if (tries > 0) {	\
-                                if (is_fallback != 0) { _xabort(0xab); } \
                                 HTM_INC_CLOCK();  \
 								_xend();	\
 								rtm_commits++;	\
-							} else if (tries == 0) {	\
+							} else {	\
 							    long local_global_clock = TX_END_HYBRID_FIRST_STEP();  \
 							    int retriesCommit = 4; \
 							    while (1) {  \
 							         int status = _xbegin();  \
 							         if (status == _XBEGIN_STARTED) { \
+							             if (is_fallback != 0) { _xabort(0xab); } \
 							             long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \
 							             if (res_htm == 1) { _xabort(0xab); }   \
                                          _xend();	\
                                          TX_AFTER_FINALIZE();    \
                                          commit_mixed_hw++; \
 							             break;  \
-							         } else if (status == _XABORT_CAPACITY || retriesCommit == 0) { \
+							         } else if (retriesCommit == 0 || _XABORT_CODE(status) == 30) { \
 							             __sync_add_and_fetch(&is_fallback,1);    \
 							             STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \
@@ -408,15 +399,7 @@
                                 sharedReadFunPtr = &sharedReadHTM;  \
                                 sharedWriteFunPtr = &sharedWriteHTM;    \
                                 localWriteFunPtr = &localWriteHTM;  \
-                            } else {    \
-                                STM_END();  \
-                                abortFunPtr = &abortHTM;    \
-                                sharedReadFunPtr = &sharedReadHTM;  \
-                                sharedWriteFunPtr = &sharedWriteHTM;    \
-                                localWriteFunPtr = &localWriteHTM;  \
-                                __sync_sub_and_fetch(&is_fallback,1);    \
-                                commit_stm++; \
-                            }   \
+                            } \
                      	};
 
 
