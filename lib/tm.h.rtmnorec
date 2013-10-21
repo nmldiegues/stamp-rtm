@@ -339,7 +339,7 @@
 #    define TM_BEGIN()	{ \
 							int tries = 4;	\
 	while (1) {	\
-				while (is_fallback != 0) {} \
+							while (is_fallback != 0) {} \
 	                        if (tries > 0) { \
     							int status = _xbegin();	\
     							if (status == _XBEGIN_STARTED) successful_starts++;	\
@@ -389,8 +389,11 @@
 							             break;  \
 							         } else if (retriesCommit == 0 || _XABORT_CODE(status) == 30) { \
 							             __sync_add_and_fetch(&is_fallback,1);    \
-							             STM_END();  \
+							             int ret = STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \
+							             if (ret == 0) { \
+							             	STM_RESTART(); \
+							             } \
 							             commit_mixed_stm++; \
 							             break;  \
 							         } \

@@ -432,7 +432,7 @@ TryFastUpdate (Thread* Self)
     while (CAS(&(LOCK->value), Self->snapshot, Self->snapshot + 1) != Self->snapshot) {
         long newSnap = ReadSetCoherent(Self);
         if (newSnap == -1) {
-            TxAbort(Self);
+            return 0; //TxAbort(Self);
         }
         Self->snapshot = newSnap;
     }
@@ -594,10 +594,11 @@ TxCommit (Thread* Self)
         return 1;
     }
 
-    TxAbort(Self);
-    ASSERT(0);
-
     return 0;
+    //TxAbort(Self);
+    //ASSERT(0);
+
+    //return 0;
 }
 
 long TxValidate (Thread* Self) {
