@@ -12,7 +12,7 @@ cd ../norec;
 make clean; make;
 cd ..
 
-config[1]="rtm"
+config[1]="rtmnorec"
 config[2]="norec"
 config[3]="tl2"
 config[4]="tinystm"
@@ -163,7 +163,7 @@ ext[40]=""
 ext[41]=""
 ext[42]=""
 
-build[1]="rtm"
+build[1]="stm"
 build[2]="stm"
 build[3]="stm"
 build[4]="stm"
@@ -218,55 +218,13 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
-for c in 40 41 42
-do
-    for l in 40 41 42
-    do
-    cd $workspace;
-    echo "building ${build[$c]} ${locks[$l]}"
-    bash config.sh ${config[$c]};
-    bash build-locks.sh ${build[$c]} ${locks[$l]};
-    for b in 4
-    do
-        for t in 1 2 3 4 5 6 7 8
-        do
-#        for r in 1 2 3 4 5 6
-#        do
-#            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 ##2 3 #4 5 #6 7 8 9 10
-            do
-                cd $workspace;
-                cd ${benchmarkslocks[$b]};
-                echo "${config[$c]} | ${benchmarkslocks[$b]} | retries $r | threads $t | attempt $a | ${locks[$l]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${locks[$l]}-${benchmarkslocks[$b]}-$t-$a.pcm &
-                pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${locks[$l]}-${benchmarkslocks[$b]}-$t-$a.pow &
-                pid2=$!
-                ./${benchmarkslocks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${locks[$l]}-${benchmarkslocks[$b]}-$t-$a.data &
-                pid3=$!
-                wait_until_finish $pid3
-                wait $pid3
-                rc=$?
-                kill -9 $pid
-                kill -9 $pid2
-                if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${locks[$l]} | ${config[$c]} | ${benchmarkslocks[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
-                fi
-            done
-            cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
-#        done
-        done
-    done
-    done
-done
-
-for c in 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 1 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]} ${alias[$c]};
-    for b in 4
+    for b in 2 3 4 5 6 7 8
     do
         for t in 1 2 3 4 5 6 7 8
         do
