@@ -311,7 +311,7 @@
                                         localWriteFunPtr = &localWriteHTM
 
 
-#  define TM_THREAD_EXIT()              printf("\n\nrtm_commits: %ld\t rtm_aborts: %ld\t lock_commits: %ld\tsuccessful_starts: %ld\tabort_explicit: %ld\tabort_30: %ld\tabort_retry: %ld\nconflict: %ld\tcapacity: %ld\tdebug: %ld\tnested: %ld\tother: %ld\n", rtm_commits, rtm_aborts, lock_commits, successful_starts, abort_explicit, abort_30, abort_retry, abort_conflict, abort_capacity, abort_debug, abort_nested, abort_other); STM_FREE_THREAD(TM_ARG_ALONE)
+#  define TM_THREAD_EXIT()              printf("\n\nrtm_commits: %ld\tsuccessful_starts: %ld\trtm_aborts: %ld\tabort_explicit: %ld\tabort_30: %ld\tabort_retry: %ld\nconflict: %ld\tcapacity: %ld\tdebug: %ld\tnested: %ld\tother: %ld\nfallback_mixed: %ld\tfallback_stm: %ld\tcommit_mixed_hw: %ld\tcommit_mixed_stm: %ld\tcommit_stm: %ld\n", rtm_commits, successful_starts, rtm_aborts, abort_explicit, abort_30, abort_retry, abort_conflict, abort_capacity, abort_debug, abort_nested, abort_other, fallback_mixed, fallback_stm, commit_mixed_hw, commit_mixed_stm, commit_stm); STM_FREE_THREAD(TM_ARG_ALONE)
 #  define TM_BEGIN_WAIVER()
 #  define TM_END_WAIVER()
 
