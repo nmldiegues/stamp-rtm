@@ -339,7 +339,8 @@
 #    define TM_BEGIN()	{ \
 							int tries = 4;	\
 	while (1) {	\
-	                        if (is_fallback == 0 && tries > 0) { \
+				while (is_fallback != 0) {} \
+	                        if (tries > 0) { \
     							int status = _xbegin();	\
     							if (status == _XBEGIN_STARTED) successful_starts++;	\
     							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
