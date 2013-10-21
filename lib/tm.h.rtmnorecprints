@@ -350,7 +350,6 @@
     							else if (status == _XABORT_NESTED) abort_nested++;	\
     							else abort_other++;	\
     							if (status == _XBEGIN_STARTED) { \
-    							    if (is_fallback != 0) { _xabort(0xab); } \
     	                            break;	\
     							} else { \
 printf("aborted RTM %d\n", tries);\
@@ -383,6 +382,7 @@ printf("someone is in the slow mode %ld ! falling back to full STM\n", is_fallba
 
 
 #    define TM_END()		if (tries > 0) {	\
+                                if (is_fallback != 0) { _xabort(0xab); } \
                                 HTM_INC_CLOCK();  \
 								_xend();	\
 								rtm_commits++;	\
@@ -392,6 +392,7 @@ printf("trying to commit in mixed, 1st step\n");\
 							    long local_global_clock = TX_END_HYBRID_FIRST_STEP();  \
 printf("validated successfully with clock %ld . about to write-back in hardware\n", local_global_clock);\
 							    while (1) {  \
+							         int retriesCommit = 4; \
 							         int status = _xbegin();  \
 							         if (status == _XBEGIN_STARTED) { \
 							             long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \
@@ -400,7 +401,7 @@ printf("validated successfully with clock %ld . about to write-back in hardware\
                                          commit_mixed_hw++; \
 printf("committed in mixed hardware\n");\
 							             break;  \
-							         } else if (status == _XABORT_CAPACITY) { \
+							         } else if (status == _XABORT_CAPACITY || retriesCommit == 0) { \
 printf("aborted in mixed hardware, due to capacity. going slow full STM\n");\
 							             __sync_add_and_fetch(&is_fallback,1);    \
 							             STM_END();  \
@@ -409,6 +410,7 @@ printf("aborted in mixed hardware, due to capacity. going slow full STM\n");\
 printf("committed mixed, but slow commit STM\n");\
 							             break;  \
 							         }   \
+							         retriesCommit--; \
 printf("aborted in mixed hardware, but not due to capacity\n");\
 							    }    \
                                 abortFunPtr = &abortHTM;    \

@@ -350,7 +350,6 @@
     							else if (status == _XABORT_NESTED) abort_nested++;	\
     							else abort_other++;	\
     							if (status == _XBEGIN_STARTED) { \
-    							    if (is_fallback != 0) { _xabort(0xab); } \
     	                            break;	\
     							} else { \
     								rtm_aborts++;	\
@@ -380,12 +379,14 @@
 
 
 #    define TM_END()		if (tries > 0) {	\
+                                if (is_fallback != 0) { _xabort(0xab); } \
                                 HTM_INC_CLOCK();  \
 								_xend();	\
 								rtm_commits++;	\
 							} else if (tries == 0) {	\
 							    long local_global_clock = TX_END_HYBRID_FIRST_STEP();  \
 							    while (1) {  \
+							         int retriesCommit = 4; \
 							         int status = _xbegin();  \
 							         if (status == _XBEGIN_STARTED) { \
 							             long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \
@@ -393,13 +394,14 @@
                                          _xend();	\
                                          commit_mixed_hw++; \
 							             break;  \
-							         } else if (status == _XABORT_CAPACITY) { \
+							         } else if (status == _XABORT_CAPACITY || retriesCommit == 0) { \
 							             __sync_add_and_fetch(&is_fallback,1);    \
 							             STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \
 							             commit_mixed_stm++; \
 							             break;  \
-							         }   \
+							         } \
+    					             retriesCommit--; \
 							    }    \
                                 abortFunPtr = &abortHTM;    \
                                 sharedReadFunPtr = &sharedReadHTM;  \
