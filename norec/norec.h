@@ -99,7 +99,7 @@ void     TxIncClock    ();
 
 long     TxValidate    (Thread*);
 long     TxFinalize    (Thread*, long);
-
+void     TxResetAfterFinalize (Thread*);
 
 
 

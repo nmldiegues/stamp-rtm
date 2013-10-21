@@ -645,11 +645,13 @@ long TxFinalize (Thread* Self, long clock) {
     WriteBackForward(wr); /* write-back the deferred stores */
     LOCK->value+=2;
 
+    return 0;
+}
+
+void TxResetAfterFinalize (Thread* Self) {
     txCommitReset(Self);
     tmalloc_clear(Self->allocPtr);
     tmalloc_releaseAllForward(Self->freePtr);
-
-    return 0;
 }
 
 

@@ -392,6 +392,7 @@
 							             long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \
 							             if (res_htm == 1) { _xabort(0xab); }   \
                                          _xend();	\
+                                         TX_AFTER_FINALIZE();    \
                                          commit_mixed_hw++; \
 							             break;  \
 							         } else if (status == _XABORT_CAPACITY || retriesCommit == 0) { \

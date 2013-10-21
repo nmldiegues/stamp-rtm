@@ -64,6 +64,7 @@
 #define STM_BEGIN_WR()                  STM_BEGIN(0)
 #define TX_END_HYBRID_FIRST_STEP()      TxValidate(STM_SELF)
 #define TX_END_HYBRID_LAST_STEP(clock)  TxFinalize(STM_SELF, clock)
+#define TX_AFTER_FINALIZE()             TxResetAfterFinalize (STM_SELF)
 #define STM_END()                       TxCommit(STM_SELF)
 
 typedef volatile intptr_t               vintp;
