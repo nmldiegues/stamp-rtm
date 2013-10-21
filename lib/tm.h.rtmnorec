@@ -385,8 +385,8 @@
 								rtm_commits++;	\
 							} else if (tries == 0) {	\
 							    long local_global_clock = TX_END_HYBRID_FIRST_STEP();  \
+							    int retriesCommit = 4; \
 							    while (1) {  \
-							         int retriesCommit = 4; \
 							         int status = _xbegin();  \
 							         if (status == _XBEGIN_STARTED) { \
 							             long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \

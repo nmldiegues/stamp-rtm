@@ -391,8 +391,8 @@ printf("committed in full hardware\n");\
 printf("trying to commit in mixed, 1st step\n");\
 							    long local_global_clock = TX_END_HYBRID_FIRST_STEP();  \
 printf("validated successfully with clock %ld . about to write-back in hardware\n", local_global_clock);\
+							    int retriesCommit = 4; \
 							    while (1) {  \
-							         int retriesCommit = 4; \
 							         int status = _xbegin();  \
 							         if (status == _XBEGIN_STARTED) { \
 							             long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \
