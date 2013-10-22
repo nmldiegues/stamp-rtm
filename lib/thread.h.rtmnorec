@@ -171,7 +171,7 @@ extern __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);
 extern __thread void (*sharedWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
 extern __thread void (*localWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
 
-extern unsigned long is_fallback;
+extern volatile unsigned long is_fallback;
 
 #ifdef LOG_BARRIER
 typedef struct thread_barrier {
