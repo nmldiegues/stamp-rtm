@@ -236,7 +236,7 @@ do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]} ${locks[$l]}"
     bash config.sh ${config[$c]};
-    bash build.sh ${build[$c]} ${alias[$c]} ${locks[$l]};
+    bash build-locks.sh ${build[$c]} ${alias[$c]} ${locks[$l]};
     for b in 4 9 10 11
     do
         for t in 1 2 3 4 5 6 7 8
