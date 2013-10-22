@@ -88,7 +88,9 @@ alias[31]="CLH_LOCKS"
 alias[32]="RW_LOCKS"
 alias[33]="TICKET_LOCKS"
 alias[34]="HTICKET_LOCKS"
-
+alias[43]="HTICKET_LOCKS"
+alias[44]="HTICKET_LOCKS"
+alias[45]="HTICKET_LOCKS"
 
 benchmarks[1]="bayes"
 benchmarks[2]="genome"
@@ -234,9 +236,9 @@ wait_until_finish() {
 for c in 43 44 45 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
-    echo "building ${build[$c]} ${alias[$c]} ${locks[$l]}"
+    echo "building ${build[$c]} ${alias[$c]} ${locks[$c]}"
     bash config.sh ${config[$c]};
-    bash build-locks.sh ${build[$c]} ${alias[$c]} ${locks[$l]};
+    bash build-locks.sh ${build[$c]} ${alias[$c]} ${locks[$c]};
     for b in 4 9 10 11
     do
         for t in 1 2 3 4 5 6 7 8
