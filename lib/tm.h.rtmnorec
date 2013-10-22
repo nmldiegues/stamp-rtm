@@ -343,7 +343,7 @@
 	                        if (tries > 0) { \
     							int status = _xbegin();	\
     							if (status == _XBEGIN_STARTED) successful_starts++;	\
-    							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
+    							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 0xab) abort_30++; } \
     							else if (status == _XABORT_RETRY) abort_retry++; \
     							else if (status == _XABORT_CONFLICT) abort_conflict++; \
     							else if (status == _XABORT_CAPACITY) abort_capacity++; \
@@ -387,7 +387,7 @@
                                          TX_AFTER_FINALIZE();    \
                                          commit_mixed_hw++; \
 							             break;  \
-							         } else if (retriesCommit == 0 || _XABORT_CODE(status) == 30) { \
+							         } else if (retriesCommit == 0 || _XABORT_CODE(status) == 0xab) { \
 							             __sync_add_and_fetch(&is_fallback,1);    \
 							             int ret = STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \

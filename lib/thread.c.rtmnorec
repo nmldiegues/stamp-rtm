@@ -105,7 +105,6 @@ __thread long fallback_mixed;
 __thread long fallback_stm;
 __thread long commit_mixed_hw;
 __thread long commit_mixed_stm;
-__thread long commit_stm;
 
 void abortHTM(Thread* Self) {
     _xabort(0xab);
