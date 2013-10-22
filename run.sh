@@ -116,6 +116,7 @@ locks[43]="1000000"
 locks[44]="1000"
 locks[45]="1"
 
+balias[4]="kmeans"
 balias[9]="array1"
 balias[10]="array2"
 balias[11]="array3"
