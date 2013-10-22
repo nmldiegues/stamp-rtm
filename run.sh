@@ -50,6 +50,9 @@ config[34]="rtmssyncaux"
 config[40]="manlocks"
 config[41]="manlocks"
 config[42]="manlocks"
+config[43]="rtmmanlocks"
+config[44]="rtmmanlocks"
+config[45]="rtmmanlocks"
 
 alias[1]="MCS_LOCKS"
 alias[2]="MCS_LOCKS"
@@ -107,6 +110,9 @@ benchmarkslocks[11]="array-locks"
 locks[40]="1000000"
 locks[41]="1000"
 locks[42]="1"
+locks[43]="1000000"
+locks[44]="1000"
+locks[45]="1"
 
 balias[9]="array1"
 balias[10]="array2"
@@ -162,6 +168,10 @@ ext[34]=".rtm"
 ext[40]=""
 ext[41]=""
 ext[42]=""
+ext[43]=""
+ext[44]=""
+ext[45]=""
+
 
 build[1]="stm"
 build[2]="stm"
@@ -201,6 +211,9 @@ build[34]="rtm"
 build[40]="stm"
 build[41]="stm"
 build[42]="stm"
+build[43]="stm"
+build[44]="stm"
+build[45]="stm"
 
 wait_until_finish() {
     pid3=$1
@@ -218,13 +231,13 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
-for c in 1 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 43 44 45 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
-    echo "building ${build[$c]} ${alias[$c]}"
+    echo "building ${build[$c]} ${alias[$c]} ${locks[$l]}"
     bash config.sh ${config[$c]};
-    bash build.sh ${build[$c]} ${alias[$c]};
-    for b in 2 3 4 5 6 7 8
+    bash build.sh ${build[$c]} ${alias[$c]} ${locks[$l]};
+    for b in 4 9 10 11
     do
         for t in 1 2 3 4 5 6 7 8
         do
@@ -234,13 +247,13 @@ do
             for a in 1 ##2 3 #4 5 #6 7 8 9 10
             do
                 cd $workspace;
-                cd ${benchmarks[$b]};
-                echo "${config[$c]} | ${benchmarks[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.pcm &
+                cd ${benchmarkslocks[$b]};
+                echo "${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
                 pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.pow &
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${benchmarks[$b]}-$t-$a.data &
+                ./${benchmarkslocks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.data &
 		pid3=$!
 		wait_until_finish $pid3
 		wait $pid3
@@ -248,7 +261,7 @@ do
                 kill -9 $pid
                 kill -9 $pid2
                 if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${alias[$c]} | ${config[$c]} | ${benchmarks[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
+                    echo "Error within: ${alias[$c]} | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
                 fi
             done
             cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h    
