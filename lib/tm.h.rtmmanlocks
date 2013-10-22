@@ -372,15 +372,14 @@
                                     unsigned int idx = arr[i]; \
                                     if (is_free(&(local_th_data[idx][phys_id]), &(the_lock[idx])) == 0) _xabort(30); \
                                 } \
-								if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) _xabort(30); \
 								_xend();	\
 								rtm_commits++;	\
 							} else {	\
                                 unsigned int i = 0; \ 
                                 for (; i < len; i++) { \
                                     unsigned int idx = arr[i]; \
-                                    if (flags[idx] == 0) { \
-                                        flags[idx] = 1; \
+                                    if (flags[idx] == 1) { \
+                                        flags[idx] = 0; \
                                         release_write(cluster_id, &(local_th_data[idx][phys_id]), &(the_lock[idx])); \
                                     } \
                                 } \

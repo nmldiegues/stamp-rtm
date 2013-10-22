@@ -9,7 +9,7 @@ ifndef LOCK_VERSION
   LOCK_VERSION=-DUSE_TTAS_LOCKS
 endif
 
-SUFF=.rtm
+SUFF=
 
 CFLAGS   += -DHTM $(LOCKS) -I$(STM)/include $(LOCK_VERSION) # We substitute our RTM implementation for HTM.                                                                                                                                                
 CPPFLAGS := $(CFLAGS)
