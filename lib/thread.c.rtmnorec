@@ -137,7 +137,7 @@ __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);
 __thread void (*sharedWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
 __thread void (*localWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
 
-unsigned long is_fallback = 0;
+volatile unsigned long is_fallback = 0;
 
 
 /* =============================================================================
