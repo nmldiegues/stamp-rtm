@@ -96,8 +96,8 @@ void client_run (void* argPtr) {
 
     long i = 0;
     unsigned int cont_size = (unsigned int) global_params[PARAM_CONTENTION];
-    unsigned int* sorted_locks = (int*) malloc((2 + cont_size) * sizeof(int));
-    unsigned int* read_idxs = (int*) malloc(cont_size * sizeof(int));
+    unsigned int* sorted_locks = (unsigned int*) malloc((2 + cont_size) * sizeof(int));
+    unsigned int* read_idxs = (unsigned int*) malloc(cont_size * sizeof(int));
 
     for (; i < operations; i++) {
         long random_number = ((long) random_generate(randomPtr)) % ((long)global_params[PARAM_SIZE]);
@@ -115,7 +115,7 @@ void client_run (void* argPtr) {
         // TM_BEGIN();
         LI_HASH(&global_array[random_number], &sorted_locks[0]);
         LI_HASH(&global_array[random_number2], &sorted_locks[1]);
-        LI_LOCK(sorted_locks, cont_size + 2);
+        TM_BEGIN(sorted_locks, cont_size + 2);
 
         long r1 = (long)TM_SHARED_READ(global_array[random_number].value);
         long r2 = (long)TM_SHARED_READ(global_array[random_number2].value);
@@ -127,8 +127,7 @@ void client_run (void* argPtr) {
         r2 = r2 - 1;
         TM_SHARED_WRITE(global_array[random_number].value, r1);
         TM_SHARED_WRITE(global_array[random_number2].value, r2);
-        // TM_END();
-        LI_UNLOCK(sorted_locks, cont_size + 2);
+        TM_END(sorted_locks, cont_size + 2);
 
         long k = 0;
         for (;k < (long)global_params[PARAM_INTERVAL]; k++) {

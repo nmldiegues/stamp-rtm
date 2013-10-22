@@ -168,29 +168,25 @@ work (void* argPtr)
             membership[i] = index;
 
             /* Update new cluster centers : sum of objects located within */
-            //TM_BEGIN();
             LI_HASH(new_centers_len[index], &big_arr[0]);
             for (j = 0; j < nfeatures; j++) {
             	LI_HASH(&(new_centers[index][j]), &big_arr[j + 1]);
             }
-            LI_LOCK(big_arr, nfeatures + 1);
+            TM_BEGIN(big_arr, nfeatures + 1);
             TM_SHARED_WRITE(*new_centers_len[index], TM_SHARED_READ(*new_centers_len[index]) + 1);
             for (j = 0; j < nfeatures; j++) {
                 TM_SHARED_WRITE_F( new_centers[index][j], (TM_SHARED_READ_F(new_centers[index][j]) + feature[i][j]) );
             }
-            LI_UNLOCK(big_arr, nfeatures + 1);
-            //TM_END();
+            TM_END(big_arr, nfeatures + 1);
         }
 
         /* Update task queue */
         if (start + CHUNK < npoints) {
-            //TM_BEGIN();
         	LI_HASH(&global_i, &s_arr[0]);
-        	LI_LOCK(s_arr, 1);
+        	TM_BEGIN(s_arr, 1);
             start = (int)TM_SHARED_READ(global_i);
             TM_SHARED_WRITE(global_i, (start + CHUNK));
-            LI_UNLOCK(s_arr, 1);
-            //TM_END();
+            TM_END(s_arr, 1);
         } else {
             break;
         }
@@ -198,10 +194,9 @@ work (void* argPtr)
 
     //TM_BEGIN();
     LI_HASH(&global_delta, &s_arr[0]);
-    LI_LOCK(s_arr, 1);
+    TM_BEGIN(s_arr, 1);
     TM_SHARED_WRITE_F(global_delta, TM_SHARED_READ_F(global_delta) + delta);
-    LI_UNLOCK(s_arr, 1);
-    //TM_END();
+    TM_END(s_arr, 1);
 
     TM_THREAD_EXIT();
 }

@@ -285,7 +285,9 @@
 #  include "thread.h"
 #  include "types.h"
 
-#  include "rtm.h"
+//#  include "rtm.h"
+#include <immintrin.h>
+#include <rtmintrin.h>
 
 #  define TM_ARG                        /* nothing */
 #  define TM_ARG_ALONE                  /* nothing */
@@ -293,15 +295,18 @@
 #  define TM_ARGDECL_ALONE              /* nothing */
 #  define TM_CALLABLE                   /* nothing */
 
-#  define TM_STARTUP(numThread)         { int i = 0; for (; i < LOCKS; i++) { THREAD_MUTEX_INIT(global_rtm_mutex[i]); flags[i] = 0; } }
+#  define TM_STARTUP(numThread)         { \
+                                            unsigned int i = 0; \
+                                            for (; i < LOCKS; i++) { \
+                                                the_lock[i] = init_lock_global(numThread); \
+                                                local_th_data[i] = (lock_local_data *)malloc(numThread * sizeof(lock_local_data)); \
+                                            }  \
+                                        }
+                                        
 #  define TM_SHUTDOWN()                 /* nothing */
 
-#  define LI_HASH(ptr, addr)			{ unsigned int tmp = (int)((size_t)ptr); unsigned int tmp2 = (int)LOCKS; unsigned int idx = (tmp *2654435761) % tmp2; *(addr) = idx; }
-#  define TM_BEGIN(arr, len)				{ quickSort(arr, 0, len); unsigned int i = 0; for (; i < len; i++) { unsigned int idx = arr[i]; if (flags[idx] == 0) { flags[idx] = 1; pthread_spin_lock(&(global_rtm_mutex[idx])); } } }
-#  define TM_END(arr, len)			{ unsigned int i = 0; for (; i < len; i++) { unsigned int idx = arr[i]; if (flags[idx] == 1) { flags[idx] = 0; pthread_spin_unlock(&(global_rtm_mutex[idx])); } } }
-
 #  define TM_THREAD_ENTER()             /* nothing */
-#  define TM_THREAD_EXIT()              /* nothing */
+#  define TM_THREAD_EXIT()              printf("\n\nrtm_commits: %ld\t rtm_aborts: %ld\t lock_commits: %ld\tsuccessful_starts: %ld\tabort_explicit: %ld\tabort_30: %ld\tabort_retry: %ld\nconflict: %ld\tcapacity: %ld\tdebug: %ld\tnested: %ld\tother: %ld\n", rtm_commits, rtm_aborts, lock_commits, successful_starts, abort_explicit, abort_30, abort_retry, abort_conflict, abort_capacity, abort_debug, abort_nested, abort_other);
 #  define TM_BEGIN_WAIVER()
 #  define TM_END_WAIVER()
 
@@ -326,30 +331,67 @@
 
 #  else /* !OTM */
 
-#    define TM_BEGIN()                    { __label__ failure;  \
-                                            int tries = 4;      \
-                                            XFAIL(failure);     \
-                                            tries --;           \
-                                            if (tries <= 0) {     \
-                                                pthread_spin_lock(&(global_rtm_mutex)); \
-                                            } else { \
-                                                XBEGIN(failure); \
-                                                if (*((int*)(&global_rtm_mutex)) != 1) XABORT(0xab); \
-                                            } \
-                                            
+#  define LI_HASH(ptr, addr)            { unsigned int tmp = (int)((size_t)ptr); unsigned int tmp2 = (int)LOCKS; unsigned int idx = (tmp *2654435761) % tmp2; *(addr) = idx; }
 
-#    define TM_END()                      if (tries > 0){        \
-                                              XEND();           \
-                                          } else {                     \
-                                              pthread_spin_unlock(&(global_rtm_mutex)); \
-                                          } \
-                                          };
+#    define TM_BEGIN(arr, len)	{ \
+                        int tries = 4;	\
+                        while (1) {	\
+							int status = _xbegin();	\
+							if (status == _XBEGIN_STARTED) successful_starts++;	\
+							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
+							else if (status == _XABORT_RETRY) abort_retry++; \
+							else if (status == _XABORT_CONFLICT) abort_conflict++; \
+							else if (status == _XABORT_CAPACITY) abort_capacity++; \
+							else if (status == _XABORT_DEBUG) abort_debug++;	\
+							else if (status == _XABORT_NESTED) abort_nested++;	\
+							else abort_other++;	\
+							if (status == _XBEGIN_STARTED) { \
+                                break;	\
+							} else { \
+								rtm_aborts++;	\
+								tries--;	\
+								if (tries == 0) {	\
+								    quickSort(arr, 0, len); \
+								    unsigned int i = 0; \ 
+								    for (; i < len; i++) { \
+								        unsigned int idx = arr[i]; \
+								        if (flags[idx] == 0) { \
+								            flags[idx] = 1; \
+								            acquire_write(&(local_th_data[idx][phys_id]), &(the_lock[idx])); \
+								        } \
+								    } \
+                                    break; 	\
+								}	\
+							}	\
+                         }
 
+
+#    define TM_END(arr, len)		if (tries > 0) {	\
+                                unsigned int i = 0; \ 
+                                for (; i < len; i++) { \
+                                    unsigned int idx = arr[i]; \
+                                    if (is_free(&(local_th_data[idx][phys_id]), &(the_lock[idx])) == 0) _xabort(30); \
+                                } \
+								if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) _xabort(30); \
+								_xend();	\
+								rtm_commits++;	\
+							} else {	\
+                                unsigned int i = 0; \ 
+                                for (; i < len; i++) { \
+                                    unsigned int idx = arr[i]; \
+                                    if (flags[idx] == 0) { \
+                                        flags[idx] = 1; \
+                                        release_write(cluster_id, &(local_th_data[idx][phys_id]), &(the_lock[idx])); \
+                                    } \
+                                } \
+                                lock_commits++;		\
+                            }\
+                     	};
 
 
 
 #    define TM_BEGIN_RO()                 TM_BEGIN()
-#    define TM_RESTART()                  XABORT(0xab);
+#    define TM_RESTART()                  _xabort(0xab);
 #    define TM_EARLY_RELEASE(var)         
 
 #  define TM_SHARED_READ(var)         (var)
