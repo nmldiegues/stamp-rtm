@@ -264,7 +264,7 @@ do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
     bash config.sh ${config[$c]};
-    bash build-locks.sh ${build[$c]} ${alias[$c]};
+    bash build.sh ${build[$c]} ${alias[$c]};
     for b in 9 10 11 12 13 14 15 16 17
     do
         for t in 1 2 3 4 5 6 7 8
