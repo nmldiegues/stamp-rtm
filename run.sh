@@ -103,11 +103,23 @@ benchmarks[8]="yada"
 benchmarks[9]="array"
 benchmarks[10]="array"
 benchmarks[11]="array"
+benchmarks[12]="array"
+benchmarks[13]="array"
+benchmarks[14]="array"
+benchmarks[15]="array"
+benchmarks[16]="array"
+benchmarks[17]="array"
 
 benchmarkslocks[4]="kmeans-locks"
 benchmarkslocks[9]="array-locks"
 benchmarkslocks[10]="array-locks"
 benchmarkslocks[11]="array-locks"
+benchmarkslocks[12]="array-locks"
+benchmarkslocks[13]="array-locks"
+benchmarkslocks[14]="array-locks"
+benchmarkslocks[15]="array-locks"
+benchmarkslocks[16]="array-locks"
+benchmarkslocks[17]="array-locks"
 
 locks[40]="1000000"
 locks[41]="1000"
@@ -253,7 +265,7 @@ do
     echo "building ${build[$c]} ${alias[$c]} ${locks[$c]}"
     bash config.sh ${config[$c]};
     bash build-locks.sh ${build[$c]} ${alias[$c]} ${locks[$c]};
-    for b in 4 9 10 11 12 13 14 15 16 17
+    for b in 9 10 11 12 13 14 15 16 17
     do
         for t in 1 2 3 4 5 6 7 8
         do
