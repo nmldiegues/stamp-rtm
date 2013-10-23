@@ -13,6 +13,7 @@ enum param_types {
     PARAM_OPERATIONS = (unsigned char)'o',
     PARAM_INTERVAL = (unsigned char)'i',
     PARAM_CONTENTION = (unsigned char)'c',
+    PARAM_WORK = (unsigned char)'w',
 };
 
 #define PARAM_DEFAULT_SIZE (1024)
@@ -20,6 +21,7 @@ enum param_types {
 #define PARAM_DEFAULT_OPERATIONS (10000)
 #define PARAM_DEFAULT_INTERVAL (1000)
 #define PARAM_DEFAULT_CONTENTION (100)
+#define PARAM_DEFAULT_WORK (1000)
 
 double global_params[256];
 
@@ -43,6 +45,7 @@ static void setDefaultParams() {
     global_params[PARAM_OPERATIONS] = PARAM_DEFAULT_OPERATIONS;
     global_params[PARAM_INTERVAL] = PARAM_DEFAULT_INTERVAL;
     global_params[PARAM_CONTENTION] = PARAM_DEFAULT_CONTENTION;
+    global_params[PARAM_WORK] = PARAM_DEFAULT_WORK;
 }
 
 static void parseArgs(long argc, char* const argv[]) {
@@ -52,13 +55,14 @@ static void parseArgs(long argc, char* const argv[]) {
 
     setDefaultParams();
 
-    while ((opt = getopt(argc, argv, "s:t:o:i:c:")) != -1) {
+    while ((opt = getopt(argc, argv, "s:t:o:i:c:w:")) != -1) {
         switch (opt) {
         case 's':
         case 'o':
         case 't':
         case 'i':
         case 'c':
+        case 'w':
             global_params[(unsigned char)opt] = atol(optarg);
             break;
         case '?':
@@ -111,6 +115,15 @@ void client_run (void* argPtr) {
         }
         r1 = r1 + 1;
         r2 = r2 - 1;
+
+        int f = 1;
+        int ii;
+        for(ii = 1; ii <= ((unsigned int) global_params[PARAM_WORK]); ii++)
+        {
+            f *= ii;
+        }
+        total += f / 1000000;
+
         TM_SHARED_WRITE(global_array[random_number].value, r1);
         TM_SHARED_WRITE(global_array[random_number2].value, r2);
         TM_END();
