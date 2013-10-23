@@ -112,14 +112,21 @@ benchmarkslocks[11]="array-locks"
 locks[40]="1000000"
 locks[41]="1000"
 locks[42]="1"
-locks[43]="1000000"
-locks[44]="1000"
+locks[43]="10000"
+locks[44]="100"
 locks[45]="1"
 
 balias[4]="kmeans"
 balias[9]="array1"
 balias[10]="array2"
 balias[11]="array3"
+balias[12]="array4"
+balias[13]="array5"
+balias[14]="array6"
+balias[15]="array7"
+balias[16]="array8"
+balias[17]="array9"
+
 
 params[1]="-v32 -r4096 -n10 -p40 -i2 -e8 -s1 -t"
 params[2]="-g16384 -s64 -n16777216 -t"
@@ -129,9 +136,15 @@ params[5]="-i inputs/random-x512-y512-z7-n512.txt -t"
 params[6]="-s20 -i1.0 -u1.0 -l3 -p3 -t"
 params[7]="-n4 -q60 -u90 -r1048576 -t4194304 -c"
 params[8]="-a15 -i inputs/ttimeu1000000.2 -t"
-params[9]="-s 1000 -o10000000 -i10 -c10 -t"
-params[10]="-s 1000 -o1000000 -i1000 -c10 -t"
-params[11]="-s 1000 -o2000000 -i10 -c200 -t"
+params[9]="-s 1000 -o10000000 -i10 -c10 -w0 -t"
+params[10]="-s 1000 -o1000000 -i1000 -c10 -w0 -t"
+params[11]="-s 1000 -o2000000 -i10 -c200 -w0 -t"
+params[12]="-s 1000 -o10000000 -i10 -c10 -w100 -t"
+params[13]="-s 1000 -o1000000 -i1000 -c10 -w100 -t"
+params[14]="-s 1000 -o2000000 -i10 -c200 -w100 -t"
+params[15]="-s 1000 -o10000000 -i10 -c10 -w1000 -t"
+params[16]="-s 1000 -o1000000 -i1000 -c10 -w1000 -t"
+params[17]="-s 1000 -o2000000 -i10 -c200 -w1000 -t"
 
 ext[1]=".rtm"
 ext[2]=""
@@ -240,7 +253,7 @@ do
     echo "building ${build[$c]} ${alias[$c]} ${locks[$c]}"
     bash config.sh ${config[$c]};
     bash build-locks.sh ${build[$c]} ${alias[$c]} ${locks[$c]};
-    for b in 4 9 10 11
+    for b in 4 9 10 11 12 13 14 15 16 17
     do
         for t in 1 2 3 4 5 6 7 8
         do
