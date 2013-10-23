@@ -26,7 +26,7 @@ for F in $FOLDERS
 do
     cd $F
     rm *.o || true
-    make -f Makefile.$name LOCKS="-DLOCKS=$locks"
+    make -f Makefile.$name LOCK_VERSION="-DUSE_$alias" LOCKS="-DLOCKS=$locks"
     rc=$?
     if [[ $rc != 0 ]] ; then
 	echo ""

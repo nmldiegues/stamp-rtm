@@ -13,6 +13,7 @@ enum param_types {
     PARAM_OPERATIONS = (unsigned char)'o',
     PARAM_INTERVAL = (unsigned char)'i',
     PARAM_CONTENTION = (unsigned char)'c',
+    PARAM_WORK = (unsigned char)'w',
 };
 
 #define PARAM_DEFAULT_SIZE (1024)
@@ -20,6 +21,7 @@ enum param_types {
 #define PARAM_DEFAULT_OPERATIONS (10000)
 #define PARAM_DEFAULT_INTERVAL (1000)
 #define PARAM_DEFAULT_CONTENTION (100)
+#define PARAM_DEFAULT_WORK (1000)
 
 double global_params[256];
 
@@ -43,6 +45,7 @@ static void setDefaultParams() {
     global_params[PARAM_OPERATIONS] = PARAM_DEFAULT_OPERATIONS;
     global_params[PARAM_INTERVAL] = PARAM_DEFAULT_INTERVAL;
     global_params[PARAM_CONTENTION] = PARAM_DEFAULT_CONTENTION;
+    global_params[PARAM_WORK] = PARAM_DEFAULT_WORK;
 }
 
 static void parseArgs(long argc, char* const argv[]) {
@@ -125,6 +128,15 @@ void client_run (void* argPtr) {
         }
         r1 = r1 + 1;
         r2 = r2 - 1;
+
+      int f = 1;
+      int ii;
+      for(ii = 1; ii <= ((unsigned int) global_params[PARAM_WORK]); ii++) 
+     {
+          f *= ii;
+      }
+      total += f / 1000000;
+
         TM_SHARED_WRITE(global_array[random_number].value, r1);
         TM_SHARED_WRITE(global_array[random_number2].value, r2);
         TM_END(sorted_locks, cont_size + 2);
@@ -150,6 +162,10 @@ MAIN(argc, argv) {
     parseArgs(argc, (char** const)argv);
     long sz = (long)global_params[PARAM_SIZE];
     global_array = (aligned_type_t*) malloc(sz * sizeof(aligned_type_t));
+    long k = 0;
+    for (; k < sz; k++) {
+        global_array[k].value = 0;
+    }
 
     long numThread = global_params[PARAM_THREADS];
     SIM_GET_NUM_CPU(numThread);
@@ -175,6 +191,7 @@ MAIN(argc, argv) {
     long sum = 0;
     for (;i < sz; i++) {
         sum += global_array[i].value;
+//        printf("%ld\n", global_array[i].value);
     }
     if (sum != 0) {
         printf("Problem, sum was not zero!: %ld\n", sum);
