@@ -47,6 +47,10 @@ config[32]="rtmssyncaux"
 config[33]="rtmssyncaux"
 config[34]="rtmssyncaux"
 
+config[50]="rtmssynconlyaux"
+config[51]="rtmssyncstart"
+config[52]="rtmnoaux"
+
 config[40]="manlocks"
 config[41]="manlocks"
 config[42]="manlocks"
@@ -91,6 +95,10 @@ alias[34]="HTICKET_LOCKS"
 alias[43]="HTICKET_LOCKS"
 alias[44]="HTICKET_LOCKS"
 alias[45]="HTICKET_LOCKS"
+
+alias[50]="HTICKET_LOCKS"
+alias[51]="HTICKET_LOCKS"
+alias[52]="HTICKET_LOCKS"
 
 benchmarks[1]="bayes"
 benchmarks[2]="genome"
@@ -199,6 +207,10 @@ ext[32]=".rtm"
 ext[33]=".rtm"
 ext[34]=".rtm"
 
+ext[50]=".rtm"
+ext[51]=".rtm"
+ext[52]=".rtm"
+
 ext[40]=""
 ext[41]=""
 ext[42]=""
@@ -242,6 +254,10 @@ build[32]="rtm"
 build[33]="rtm"
 build[34]="rtm"
 
+build[50]="rtm"
+build[51]="rtm"
+build[52]="rtm"
+
 build[40]="stm"
 build[41]="stm"
 build[42]="stm"
@@ -265,7 +281,7 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
-for c in 26 27 28 29 30 31 32 33 34 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 34 50 51 52 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
@@ -278,7 +294,7 @@ do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 2 3 4 5 #6 7 8 9 10
+            for a in 1 2 3 4 5 6 7 8 9 10
             do 
                 cd $workspace;
                 cd ${benchmarks[$b]};
