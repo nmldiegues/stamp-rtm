@@ -281,7 +281,7 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
-for c in 34 50 51 52 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 26 27 28 29 31 32 33 34 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
@@ -289,12 +289,12 @@ do
     bash build.sh ${build[$c]} ${alias[$c]};
     for b in 2 3 4 5 6 7 8 9
     do 
-        for t in 1 2 3 4 5 6 7 8 10 12 14 16
+        for t in 1 2 3 4 5 6 7 8
         do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 2 3 4 5 6 7 8 9 10
+            for a in 2
             do 
                 cd $workspace;
                 cd ${benchmarks[$b]};
