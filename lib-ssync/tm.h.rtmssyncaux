@@ -337,6 +337,7 @@
 							else if (status == _XABORT_NESTED) abort_nested++;	\
 							else abort_other++;	\
 							if (status == _XBEGIN_STARTED) { \
+                                                            if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) _xabort(30); \
 	break;	\
 							} else { \
 								rtm_aborts++;	\
@@ -351,7 +352,6 @@
 
 
 #    define TM_END()		if (tries > 0) {	\
-								if (is_free(&(local_th_data[phys_id]), &the_lock) == 0) _xabort(30); \
 								_xend();	\
 								if (tries <= 2) { release_write(cluster_id, &(aux_local[phys_id]), &aux_lock); } \
 								rtm_commits++;	\

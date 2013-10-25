@@ -83,8 +83,8 @@ static void parseArgs(long argc, char* const argv[]) {
     }
 }
 
-//#include <immintrin.h>
-//#include <rtmintrin.h>
+#include <immintrin.h>
+#include <rtmintrin.h>
 
 void client_run (void* argPtr) {
     TM_THREAD_ENTER();
@@ -96,8 +96,10 @@ void client_run (void* argPtr) {
     long tt = 0;
     if (id == 0) {
         while (1) {
+            long v1 = 0;
+            long v2 = 0;
             acquire_write(&(local_th_data[phys_id]), &the_lock);
-            *ptr1 = *ptr1 + 1;
+            *ptr1 = (*ptr1) + 1;
 
             int f = 1;
             int ii;
@@ -107,8 +109,15 @@ void client_run (void* argPtr) {
             }
             tt += f;
 
-            *ptr2 = *ptr2 + 1;
+            *ptr2 = (*ptr2) + 1;
+            v1 = global_array[0].value;
+            v2 = global_array[100].value;
             release_write(cluster_id, &(local_th_data[phys_id]), &the_lock); \
+                if (v1 != v2) {
+                    printf("different2! %ld %ld\n", v1, v2);
+                    exit(1);
+                }
+
         }
     } else {
         while (1) {
@@ -130,10 +139,11 @@ void client_run (void* argPtr) {
                     v1 = *ptr1;
                     v2 = *ptr2;
                     _xend();
-                }
                 if (v1 != v2) {
                     printf("different! %ld %ld\n", v1, v2);
                     exit(1);
+                }
+
                 }
             }
         }
@@ -204,6 +214,9 @@ MAIN(argc, argv) {
     parseArgs(argc, (char** const)argv);
     long sz = (long)global_params[PARAM_SIZE];
     global_array = (aligned_type_t*) malloc(sz * sizeof(aligned_type_t));
+
+    int k = 0;
+    for (; k < sz; k++) global_array[k].value = 0;
 
     long numThread = global_params[PARAM_THREADS];
     SIM_GET_NUM_CPU(numThread);
