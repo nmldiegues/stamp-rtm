@@ -27,7 +27,7 @@ double global_params[256];
 
 typedef struct
 {
-    long value;
+    volatile long value;
     long padding1;
     long padding2;
     long padding3;
@@ -37,7 +37,7 @@ typedef struct
     long padding7;
 } aligned_type_t ;
 
-__attribute__((aligned(64))) aligned_type_t* global_array;
+__attribute__((aligned(64))) volatile aligned_type_t* global_array;
 
 static void setDefaultParams() {
     global_params[PARAM_SIZE] = PARAM_DEFAULT_SIZE;
@@ -83,8 +83,63 @@ static void parseArgs(long argc, char* const argv[]) {
     }
 }
 
+//#include <immintrin.h>
+//#include <rtmintrin.h>
+
 void client_run (void* argPtr) {
     TM_THREAD_ENTER();
+
+    /*long id = thread_getId();
+
+    volatile long* ptr1 = &(global_array[0].value);
+    volatile long* ptr2 = &(global_array[100].value);
+    long tt = 0;
+    if (id == 0) {
+        while (1) {
+            acquire_write(&(local_th_data[phys_id]), &the_lock);
+            *ptr1 = *ptr1 + 1;
+
+            int f = 1;
+            int ii;
+            for(ii = 1; ii <= 100000000; ii++)
+            {
+                f *= ii;
+            }
+            tt += f;
+
+            *ptr2 = *ptr2 + 1;
+            release_write(cluster_id, &(local_th_data[phys_id]), &the_lock); \
+        }
+    } else {
+        while (1) {
+            int i = 0;
+            long sum = 0;
+            for (; i < 100000; i++) {
+                int status = _xbegin();
+                if (status == _XBEGIN_STARTED) {
+                    sum += *ptr1;
+                    sum += *ptr2;
+                    _xend();
+                }
+            }
+            while(1) {
+                long v1 = 0;
+                long v2 = 0;
+                int status = _xbegin();
+                if (status == _XBEGIN_STARTED) {
+                    v1 = *ptr1;
+                    v2 = *ptr2;
+                    _xend();
+                }
+                if (v1 != v2) {
+                    printf("different! %ld %ld\n", v1, v2);
+                    exit(1);
+                }
+            }
+        }
+    }
+    printf("%ld", tt);*/
+
 
     random_t* randomPtr = random_alloc();
     random_seed(randomPtr, time(0));

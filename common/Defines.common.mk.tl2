@@ -5,8 +5,8 @@
 # ==============================================================================
 
 
-CC       := g++
-CFLAGS   += -g -Wall -pthread -fno-exceptions
+CC       := gcc
+CFLAGS   += -g -Wall -pthread
 CFLAGS   += -O3
 CFLAGS   += -I$(LIB)
 CPP      := g++
