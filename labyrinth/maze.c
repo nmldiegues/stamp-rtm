@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -90,7 +90,7 @@ maze_alloc ()
 {
     maze_t* mazePtr;
 
-    mazePtr = (maze_t*)malloc(sizeof(maze_t));
+    mazePtr = (maze_t*)SEQ_MALLOC(sizeof(maze_t));
     if (mazePtr) {
         mazePtr->gridPtr = NULL;
         mazePtr->workQueuePtr = queue_alloc(1024);
@@ -120,7 +120,7 @@ maze_free (maze_t* mazePtr)
     vector_free(mazePtr->wallVectorPtr);
     vector_free(mazePtr->srcVectorPtr);
     vector_free(mazePtr->dstVectorPtr);
-    free(mazePtr);
+    SEQ_FREE(mazePtr);
 }
 
 
@@ -129,7 +129,7 @@ maze_free (maze_t* mazePtr)
  * =============================================================================
  */
 static void
-addToGrid (grid_t* gridPtr, vector_t* vectorPtr, char* type)
+addToGrid (grid_t* gridPtr, vector_t* vectorPtr, const char* type)
 {
     long i;
     long n = vector_getSize(vectorPtr);
@@ -148,6 +148,7 @@ addToGrid (grid_t* gridPtr, vector_t* vectorPtr, char* type)
     grid_addPath(gridPtr, vectorPtr);
 }
 
+comparator_t maze_compare(&coordinate_comparePair, NULL);
 
 /* =============================================================================
  * maze_read
@@ -171,7 +172,7 @@ maze_read (maze_t* mazePtr, char* inputFileName)
     long width  = -1;
     long depth  = -1;
     char line[256];
-    list_t* workListPtr = list_alloc(&coordinate_comparePair);
+    list_t* workListPtr = list_alloc(&maze_compare);
     vector_t* wallVectorPtr = mazePtr->wallVectorPtr;
     vector_t* srcVectorPtr = mazePtr->srcVectorPtr;
     vector_t* dstVectorPtr = mazePtr->dstVectorPtr;
@@ -221,7 +222,7 @@ maze_read (maze_t* mazePtr, char* inputFileName)
                 pair_t* coordinatePairPtr = pair_alloc(srcPtr, dstPtr);
                 assert(coordinatePairPtr);
                 bool_t status = list_insert(workListPtr, (void*)coordinatePairPtr);
-//                assert(status == TRUE);
+                assert(status == TRUE);
                 vector_pushBack(srcVectorPtr, (void*)srcPtr);
                 vector_pushBack(dstVectorPtr, (void*)dstPtr);
                 break;

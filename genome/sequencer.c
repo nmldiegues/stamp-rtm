@@ -20,48 +20,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -79,6 +79,7 @@
 
 
 #include "tm.h"
+
 
 #include <assert.h>
 #include <stdlib.h>
@@ -154,6 +155,13 @@ compareSegment (const pair_t* a, const pair_t* b)
     return strcmp((char*)(a->firstPtr), (char*)(b->firstPtr));
 }
 
+static long
+TMcompareSegment (TM_ARGDECL const pair_t* a, const pair_t* b)
+{
+    return strcmp((char*)(a->firstPtr), (char*)(b->firstPtr));
+}
+
+comparator_t sequencer_comparesegment(&compareSegment, &TMcompareSegment);
 
 /* =============================================================================
  * sequencer_alloc
@@ -167,27 +175,27 @@ sequencer_alloc (long geneLength, long segmentLength, segments_t* segmentsPtr)
     long maxNumUniqueSegment = geneLength - segmentLength + 1;
     long i;
 
-    sequencerPtr = (sequencer_t*)malloc(sizeof(sequencer_t));
+    sequencerPtr = (sequencer_t*)SEQ_MALLOC(sizeof(sequencer_t));
     if (sequencerPtr == NULL) {
         return NULL;
     }
 
     sequencerPtr->uniqueSegmentsPtr =
-        hashtable_alloc(geneLength, &hashSegment, &compareSegment, -1, -1);
+        hashtable_alloc(geneLength, &hashSegment, &sequencer_comparesegment, -1, -1);
     if (sequencerPtr->uniqueSegmentsPtr == NULL) {
         return NULL;
     }
 
     /* For finding a matching entry */
     sequencerPtr->endInfoEntries =
-        (endInfoEntry_t*)malloc(maxNumUniqueSegment * sizeof(endInfoEntry_t));
+        (endInfoEntry_t*)SEQ_MALLOC(maxNumUniqueSegment * sizeof(endInfoEntry_t));
     for (i = 0; i < maxNumUniqueSegment; i++) {
         endInfoEntry_t* endInfoEntryPtr = &sequencerPtr->endInfoEntries[i];
         endInfoEntryPtr->isEnd = TRUE;
         endInfoEntryPtr->jumpToNext = 1;
     }
     sequencerPtr->startHashToConstructEntryTables =
-        (table_t**)malloc(segmentLength * sizeof(table_t*));
+        (table_t**)SEQ_MALLOC(segmentLength * sizeof(table_t*));
     if (sequencerPtr->startHashToConstructEntryTables == NULL) {
         return NULL;
     }
@@ -202,7 +210,7 @@ sequencer_alloc (long geneLength, long segmentLength, segments_t* segmentsPtr)
 
     /* For constructing sequence */
     sequencerPtr->constructEntries =
-        (constructEntry_t*)malloc(maxNumUniqueSegment * sizeof(constructEntry_t));
+        (constructEntry_t*)SEQ_MALLOC(maxNumUniqueSegment * sizeof(constructEntry_t));
     if (sequencerPtr->constructEntries == NULL) {
         return NULL;
     }
@@ -270,7 +278,7 @@ sequencer_run (void* argPtr)
     /*
      * Step 1: Remove duplicate segments
      */
-// #if defined(HTM) || defined(STM)
+#if defined(HTM) || defined(STM)
     long numThread = thread_getNumThread();
     {
         /* Choose disjoint segments [i_start,i_stop) for each thread */
@@ -282,10 +290,10 @@ sequencer_run (void* argPtr)
             i_stop = i_start + partitionSize;
         }
     }
-// #else /* !(HTM || STM) */
-//     i_start = 0;
-//     i_stop = numSegment;
-// #endif /* !(HTM || STM) */
+#else /* !(HTM || STM) */
+    i_start = 0;
+    i_stop = numSegment;
+#endif /* !(HTM || STM) */
     for (i = i_start; i < i_stop; i+=CHUNK_STEP1) {
         TM_BEGIN();
         {
@@ -327,7 +335,7 @@ sequencer_run (void* argPtr)
     numUniqueSegment = hashtable_getSize(uniqueSegmentsPtr);
     entryIndex = 0;
 
-// #if defined(HTM) || defined(STM)
+#if defined(HTM) || defined(STM)
     {
         /* Choose disjoint segments [i_start,i_stop) for each thread */
         long num = uniqueSegmentsPtr->numBucket;
@@ -344,11 +352,11 @@ sequencer_run (void* argPtr)
         long partitionSize = (numUniqueSegment + numThread/2) / numThread; /* with rounding */
         entryIndex = threadId * partitionSize;
     }
-// #else /* !(HTM || STM) */
-//    i_start = 0;
-//    i_stop = uniqueSegmentsPtr->numBucket;
-//    entryIndex = 0;
-//#endif /* !(HTM || STM) */
+#else /* !(HTM || STM) */
+    i_start = 0;
+    i_stop = uniqueSegmentsPtr->numBucket;
+    entryIndex = 0;
+#endif /* !(HTM || STM) */
 
     for (i = i_start; i < i_stop; i++) {
 
@@ -429,7 +437,7 @@ sequencer_run (void* argPtr)
         long index_start;
         long index_stop;
 
-// #if defined(HTM) || defined(STM)
+#if defined(HTM) || defined(STM)
         {
             /* Choose disjoint segments [index_start,index_stop) for each thread */
             long partitionSize = (numUniqueSegment + numThread/2) / numThread; /* with rounding */
@@ -440,10 +448,10 @@ sequencer_run (void* argPtr)
                 index_stop = index_start + partitionSize;
             }
         }
-// #else /* !(HTM || STM) */
-//        index_start = 0;
-//        index_stop = numUniqueSegment;
-//#endif /* !(HTM || STM) */
+#else /* !(HTM || STM) */
+        index_start = 0;
+        index_stop = numUniqueSegment;
+#endif /* !(HTM || STM) */
 
         /* Iterating over disjoint itervals in the range [0, numUniqueSegment) */
         for (entryIndex = index_start;
@@ -476,19 +484,19 @@ sequencer_run (void* argPtr)
                 TM_BEGIN();
 
                 /* Check if matches */
-                if (TM_SHARED_READ(startConstructEntryPtr->isStart) &&
+                if (TM_SHARED_READ_L(startConstructEntryPtr->isStart) &&
                     (TM_SHARED_READ_P(endConstructEntryPtr->startPtr) != startConstructEntryPtr) &&
                     (strncmp(startSegment,
                              &endSegment[segmentLength - substringLength],
                              substringLength) == 0))
                 {
-                    TM_SHARED_WRITE(startConstructEntryPtr->isStart, FALSE);
+                    TM_SHARED_WRITE_L(startConstructEntryPtr->isStart, FALSE);
 
                     constructEntry_t* startConstructEntry_endPtr;
                     constructEntry_t* endConstructEntry_startPtr;
 
                     /* Update endInfo (appended something so no longer end) */
-                    TM_LOCAL_WRITE(endInfoEntries[entryIndex].isEnd, FALSE);
+                    TM_LOCAL_WRITE_L(endInfoEntries[entryIndex].isEnd, FALSE);
 
                     /* Update segment chain construct info */
                     startConstructEntry_endPtr =
@@ -504,11 +512,11 @@ sequencer_run (void* argPtr)
                                      startConstructEntryPtr);
                     TM_SHARED_WRITE_P(endConstructEntry_startPtr->endPtr,
                                       startConstructEntry_endPtr);
-                    TM_SHARED_WRITE(endConstructEntryPtr->overlap, substringLength);
-                    newLength = (long)TM_SHARED_READ(endConstructEntry_startPtr->length) +
-                                (long)TM_SHARED_READ(startConstructEntryPtr->length) -
+                    TM_SHARED_WRITE_L(endConstructEntryPtr->overlap, substringLength);
+                    newLength = (long)TM_SHARED_READ_L(endConstructEntry_startPtr->length) +
+                                (long)TM_SHARED_READ_L(startConstructEntryPtr->length) -
                                 substringLength;
-                    TM_SHARED_WRITE(endConstructEntry_startPtr->length, newLength);
+                    TM_SHARED_WRITE_L(endConstructEntry_startPtr->length, newLength);
                 } /* if (matched) */
 
                 TM_END();
@@ -628,20 +636,20 @@ sequencer_free (sequencer_t* sequencerPtr)
     long i;
 
     table_free(sequencerPtr->hashToConstructEntryTable);
-    free(sequencerPtr->constructEntries);
+    SEQ_FREE(sequencerPtr->constructEntries);
     for (i = 1; i < sequencerPtr->segmentLength; i++) {
         table_free(sequencerPtr->startHashToConstructEntryTables[i]);
     }
-    free(sequencerPtr->startHashToConstructEntryTables);
-    free(sequencerPtr->endInfoEntries);
+    SEQ_FREE(sequencerPtr->startHashToConstructEntryTables);
+    SEQ_FREE(sequencerPtr->endInfoEntries);
 #if 0
     /* TODO: fix mixed sequential/parallel allocation */
     hashtable_free(sequencerPtr->uniqueSegmentsPtr);
     if (sequencerPtr->sequence != NULL) {
-        free(sequencerPtr->sequence);
+        SEQ_FREE(sequencerPtr->sequence);
     }
 #endif
-    free(sequencerPtr);
+    SEQ_FREE(sequencerPtr);
 }
 
 
@@ -863,7 +871,7 @@ static segments_t*
 createSegments (char* segments[])
 {
     long i = 0;
-    segments_t* segmentsPtr = (segments_t*)malloc(sizeof(segments));
+    segments_t* segmentsPtr = (segments_t*)SEQ_MALLOC(sizeof(segments));
 
     segmentsPtr->length = strlen(segments[0]);
     segmentsPtr->contentsPtr = vector_alloc(1);

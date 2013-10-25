@@ -44,6 +44,8 @@
 #define TM_THREAD_EXIT()          wlpdstm_end_thread_profiling_desc(tx); \
                                   wlpdstm_thread_shutdown()
 
+#      define SEQ_MALLOC(size)          malloc(size)
+#      define SEQ_FREE(ptr)             free(ptr)
 #define P_MALLOC(size)            wlpdstm_s_malloc(size)
 #define P_FREE(ptr)               wlpdstm_s_free(ptr)
 #define TM_MALLOC(size)           wlpdstm_tx_malloc_desc(tx, size)
@@ -58,16 +60,25 @@
 #define TM_EARLY_RELEASE(var)       /* nothing */
 
 #define TM_SHARED_READ(var)           wlpdstm_read_word_desc(tx, (Word *)(&var))
+#define TM_SHARED_READ_I(var)           wlpdstm_read_word_desc(tx, (Word *)(&var))
 #define TM_SHARED_READ_P(var)         (void *)wlpdstm_read_word_desc(tx, (Word *)(&var))
 #define TM_SHARED_READ_F(var)         wlpdstm_read_float_desc(tx, (&var))
+#define TM_SHARED_READ_L(var)         wlpdstm_read_64_desc(tx, (uint64_t*) (&var))
 
 #define TM_SHARED_WRITE(var, val)     wlpdstm_write_word_desc(tx, (Word *)(&var), (Word)(val))
+#define TM_SHARED_WRITE_I(var, val)     wlpdstm_write_word_desc(tx, (Word *)(&var), (Word)(val))
 #define TM_SHARED_WRITE_P(var, val)   wlpdstm_write_word_desc(tx, (Word *)(&var), (Word)(val))
 #define TM_SHARED_WRITE_F(var, val)   wlpdstm_write_float_desc(tx, (&var), (val))
+#define TM_SHARED_WRITE_L(var, val)         wlpdstm_write_64_desc(tx, (uint64_t*) (&var), (uint64_t) val)
 
 #define TM_LOCAL_WRITE(var, val)      ({var = val; var;})
 #define TM_LOCAL_WRITE_P(var, val)    ({var = val; var;})
 #define TM_LOCAL_WRITE_F(var, val)    ({var = val; var;})
+#define TM_LOCAL_WRITE_I(var, val)    ({var = val; var;})
+#define TM_LOCAL_WRITE_L(var, val)    ({var = val; var;})
+
+#  define TM_BEGIN_WAIVER()
+#  define TM_END_WAIVER()
 
 #define TM_CALLABLE                     /* nothing */
 #define TM_PURE                         /* nothing */

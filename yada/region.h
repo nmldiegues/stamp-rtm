@@ -88,6 +88,8 @@ typedef struct region  region_t;
  */
 region_t*
 Pregion_alloc ();
+region_t*
+TMregion_alloc (TM_ARGDECL_ALONE);
 
 
 /* =============================================================================
@@ -96,6 +98,8 @@ Pregion_alloc ();
  */
 void
 Pregion_free (region_t* regionPtr);
+void
+TMregion_free (TM_ARGDECL region_t* regionPtr);
 
 
 /* =============================================================================

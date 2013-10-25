@@ -35,48 +35,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -118,10 +118,10 @@ extern double global_time;
  * usage
  * =============================================================================
  */
-void
+static void
 usage (char* argv0)
 {
-    char* help =
+    const char* help =
         "Usage: %s [switches] -i filename\n"
         "       -i filename:     file containing data to be clustered\n"
         "       -b               input file is in binary format\n"
@@ -162,10 +162,6 @@ MAIN(argc, argv)
     float   threshold = 0.001;
     int     opt;
 
-    GOTO_REAL();
-
-    line = (char*)malloc(MAX_LINE_LENGTH); /* reserve memory line */
-
     nthreads = 1;
     while ((opt = getopt(argc,(char**)argv,"p:i:m:n:t:bz")) != EOF) {
         switch (opt) {
@@ -189,6 +185,12 @@ MAIN(argc, argv)
                       break;
         }
     }
+
+    // [RSTM] moved this allocation so that we only allocate after
+    //        an MMPolicy has been created
+
+    line = (char*)SEQ_MALLOC(MAX_LINE_LENGTH); /* reserve memory line */
+
 
     if (filename == 0) {
         usage((char*)argv[0]);
@@ -217,11 +219,11 @@ MAIN(argc, argv)
         read(infile, &numAttributes, sizeof(int));
 
         /* Allocate space for attributes[] and read attributes of all objects */
-        buf = (float*)malloc(numObjects * numAttributes * sizeof(float));
+        buf = (float*)SEQ_MALLOC(numObjects * numAttributes * sizeof(float));
         assert(buf);
-        attributes = (float**)malloc(numObjects * sizeof(float*));
+        attributes = (float**)SEQ_MALLOC(numObjects * sizeof(float*));
         assert(attributes);
-        attributes[0] = (float*)malloc(numObjects * numAttributes * sizeof(float));
+        attributes[0] = (float*)SEQ_MALLOC(numObjects * numAttributes * sizeof(float));
         assert(attributes[0]);
         for (i = 1; i < numObjects; i++) {
             attributes[i] = attributes[i-1] + numAttributes;
@@ -251,11 +253,11 @@ MAIN(argc, argv)
         }
 
         /* Allocate space for attributes[] and read attributes of all objects */
-        buf = (float*)malloc(numObjects * numAttributes * sizeof(float));
+        buf = (float*)SEQ_MALLOC(numObjects * numAttributes * sizeof(float));
         assert(buf);
-        attributes = (float**)malloc(numObjects * sizeof(float*));
+        attributes = (float**)SEQ_MALLOC(numObjects * sizeof(float*));
         assert(attributes);
-        attributes[0] = (float*)malloc(numObjects * numAttributes * sizeof(float));
+        attributes[0] = (float*)SEQ_MALLOC(numObjects * numAttributes * sizeof(float));
         assert(attributes[0]);
         for (i = 1; i < numObjects; i++) {
             attributes[i] = attributes[i-1] + numAttributes;
@@ -280,7 +282,7 @@ MAIN(argc, argv)
     /*
      * The core of the clustering
      */
-    cluster_assign = (int*)malloc(numObjects * sizeof(int));
+    cluster_assign = (int*)SEQ_MALLOC(numObjects * sizeof(int));
     assert(cluster_assign);
 
     nloops = 1;
@@ -312,7 +314,7 @@ MAIN(argc, argv)
     {
         FILE** fptr;
         char outFileName[1024];
-        fptr = (FILE**)malloc(best_nclusters * sizeof(FILE*));
+        fptr = (FILE**)SEQ_MALLOC(best_nclusters * sizeof(FILE*));
         for (i = 0; i < best_nclusters; i++) {
             sprintf(outFileName, "group.%d", i);
             fptr[i] = fopen(outFileName, "w");
@@ -326,7 +328,7 @@ MAIN(argc, argv)
         for (i = 0; i < best_nclusters; i++) {
             fclose(fptr[i]);
         }
-        free(fptr);
+        SEQ_FREE(fptr);
     }
 #endif /* GNUPLOT_OUTPUT */
 
@@ -373,15 +375,13 @@ MAIN(argc, argv)
 
     printf("Time: %lg seconds\n", global_time);
 
-    free(cluster_assign);
-    free(attributes);
-    free(cluster_centres[0]);
-    free(cluster_centres);
-    free(buf);
+    SEQ_FREE(cluster_assign);
+    SEQ_FREE(attributes);
+    SEQ_FREE(cluster_centres[0]);
+    SEQ_FREE(cluster_centres);
+    SEQ_FREE(buf);
 
     TM_SHUTDOWN();
-
-    GOTO_SIM();
 
     thread_shutdown();
 

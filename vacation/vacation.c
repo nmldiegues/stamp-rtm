@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -214,7 +214,7 @@ initializeManager ()
     long numRelation;
     random_t* randomPtr;
     long* ids;
-    bool_t (*manager_add[])(manager_t*, long, long, long) = {
+    bool_t (*manager_add[])( manager_t*, long, long, long) = {
         &manager_addCar_seq,
         &manager_addFlight_seq,
         &manager_addRoom_seq,
@@ -233,7 +233,7 @@ initializeManager ()
     assert(managerPtr != NULL);
 
     numRelation = (long)global_params[PARAM_RELATIONS];
-    ids = (long*)malloc(numRelation * sizeof(long));
+    ids = (long*)SEQ_MALLOC(numRelation * sizeof(long));
     for (i = 0; i < numRelation; i++) {
         ids[i] = i + 1;
     }
@@ -248,7 +248,6 @@ initializeManager ()
             ids[x] = ids[y];
             ids[y] = tmp;
         }
-
         /* Populate table */
         for (i = 0; i < numRelation; i++) {
             bool_t status;
@@ -265,8 +264,7 @@ initializeManager ()
     fflush(stdout);
 
     random_free(randomPtr);
-    free(ids);
-
+    SEQ_FREE(ids);
     return managerPtr;
 }
 
@@ -296,7 +294,7 @@ initializeClients (manager_t* managerPtr)
     randomPtr = random_alloc();
     assert(randomPtr != NULL);
 
-    clients = (client_t**)malloc(numClient * sizeof(client_t*));
+    clients = (client_t**)SEQ_MALLOC(numClient * sizeof(client_t*));
     assert(clients != NULL);
     numTransactionPerClient = (long)((double)numTransaction / (double)numClient + 0.5);
     queryRange = (long)((double)percentQuery / 100.0 * (double)numRelation + 0.5);
@@ -334,7 +332,7 @@ initializeClients (manager_t* managerPtr)
  * -- dependent on tasks generated for clients in initializeClients()
  * =============================================================================
  */
-void
+static void
 checkTables (manager_t* managerPtr)
 {
     long i;
@@ -414,15 +412,15 @@ MAIN(argc, argv)
     TIMER_T start;
     TIMER_T stop;
 
-    GOTO_REAL();
-
     /* Initialization */
     parseArgs(argc, (char** const)argv);
     SIM_GET_NUM_CPU(global_params[PARAM_CLIENTS]);
+
     managerPtr = initializeManager();
     assert(managerPtr != NULL);
     clients = initializeClients(managerPtr);
     assert(clients != NULL);
+
     long numThread = global_params[PARAM_CLIENTS];
     TM_STARTUP(numThread);
     P_MEMORY_STARTUP(numThread);
@@ -431,8 +429,8 @@ MAIN(argc, argv)
     /* Run transactions */
     printf("Running clients... ");
     fflush(stdout);
-    TIMER_READ(start);
     GOTO_SIM();
+    TIMER_READ(start);
 #ifdef OTM
 #pragma omp parallel
     {
@@ -441,8 +439,8 @@ MAIN(argc, argv)
 #else
     thread_start(client_run, (void*)clients);
 #endif
-    GOTO_REAL();
     TIMER_READ(stop);
+    GOTO_REAL();
     puts("done.");
     printf("Time = %0.6lf\n",
            TIMER_DIFF_SECONDS(start, stop));
@@ -462,8 +460,6 @@ MAIN(argc, argv)
 
     TM_SHUTDOWN();
     P_MEMORY_SHUTDOWN();
-
-    GOTO_SIM();
 
     thread_shutdown();
 

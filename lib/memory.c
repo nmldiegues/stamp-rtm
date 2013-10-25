@@ -12,48 +12,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -121,14 +121,14 @@ allocBlock (size_t capacity)
 
     assert(capacity > 0);
 
-    blockPtr = (block_t*)malloc(sizeof(block_t));
+    blockPtr = (block_t*)SEQ_MALLOC(sizeof(block_t));
     if (blockPtr == NULL) {
         return NULL;
     }
 
     blockPtr->size = 0;
     blockPtr->capacity = capacity;
-    blockPtr->contents = (char*)malloc(capacity / sizeof(char) + 1);
+    blockPtr->contents = (char*)SEQ_MALLOC(capacity / sizeof(char) + 1);
     if (blockPtr->contents == NULL) {
         return NULL;
     }
@@ -145,8 +145,8 @@ allocBlock (size_t capacity)
 static void
 freeBlock (block_t* blockPtr)
 {
-    free(blockPtr->contents);
-    free(blockPtr);
+    SEQ_FREE(blockPtr->contents);
+    SEQ_FREE(blockPtr);
 }
 
 
@@ -160,7 +160,7 @@ allocPool (size_t initBlockCapacity, long blockGrowthFactor)
 {
     pool_t* poolPtr;
 
-    poolPtr = (pool_t*)malloc(sizeof(pool_t));
+    poolPtr = (pool_t*)SEQ_MALLOC(sizeof(pool_t));
     if (poolPtr == NULL) {
         return NULL;
     }
@@ -204,7 +204,7 @@ static void
 freePool (pool_t* poolPtr)
 {
     freeBlocks(poolPtr->blocksPtr);
-    free(poolPtr);
+    SEQ_FREE(poolPtr);
 }
 
 
@@ -220,12 +220,12 @@ memory_init (long numThread, size_t initBlockCapacity, long blockGrowthFactor)
 
     assert(numThread > 0);
 
-    global_memoryPtr = (memory_t*)malloc(sizeof(memory_t));
+    global_memoryPtr = (memory_t*)SEQ_MALLOC(sizeof(memory_t));
     if (global_memoryPtr == NULL) {
         return FALSE;
     }
 
-    global_memoryPtr->pools = (pool_t**)malloc(numThread * sizeof(pool_t*));
+    global_memoryPtr->pools = (pool_t**)SEQ_MALLOC(numThread * sizeof(pool_t*));
     if (global_memoryPtr->pools == NULL) {
         return FALSE;
     }
@@ -256,8 +256,8 @@ memory_destroy (void)
     for (i = 0; i < numThread; i++) {
         freePool(global_memoryPtr->pools[i]);
     }
-    free(global_memoryPtr->pools);
-    free(global_memoryPtr);
+    SEQ_FREE(global_memoryPtr->pools);
+    SEQ_FREE(global_memoryPtr);
 }
 
 

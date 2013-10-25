@@ -6,48 +6,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -113,7 +113,7 @@ prefix_sums (ULONGINT_T* result, LONGINT_T* input, ULONGINT_T arraySize)
         end = arraySize;
     }
 
-    ULONGINT_T j;
+    LONGINT_T j;
     for (j = start; j < end; j++) {
         result[j] = input[j-1] + result[j-1];
     }
@@ -181,9 +181,9 @@ computeGraph (void* argPtr)
     }
 
     TM_BEGIN();
-    long tmp_maxNumVertices = (long)TM_SHARED_READ(global_maxNumVertices);
-    long new_maxNumVertices = MAX(tmp_maxNumVertices, maxNumVertices) + 1;
-    TM_SHARED_WRITE(global_maxNumVertices, new_maxNumVertices);
+    long tmp_maxNumVertices = (long)TM_SHARED_READ_L(global_maxNumVertices);
+    long new_maxNumVertices = MAX((unsigned long)tmp_maxNumVertices, maxNumVertices) + 1;
+    TM_SHARED_WRITE_L(global_maxNumVertices, (unsigned long)new_maxNumVertices);
     TM_END();
 
     thread_barrier_wait();
@@ -197,7 +197,7 @@ computeGraph (void* argPtr)
         GPtr->intWeight   = SDGdataPtr->intWeight;
         GPtr->strWeight   = SDGdataPtr->strWeight;
 
-        for (i = 0; i < numEdgesPlaced; i++) {
+        for (i = 0; i < (long)numEdgesPlaced; i++) {
             if (GPtr->intWeight[numEdgesPlaced-i-1] < 0) {
                 GPtr->numStrEdges = -(GPtr->intWeight[numEdgesPlaced-i-1]) + 1;
                 GPtr->numIntEdges = numEdgesPlaced - GPtr->numStrEdges;
@@ -250,11 +250,11 @@ computeGraph (void* argPtr)
         }
 
         for (j = i0; j < numEdgesPlaced; j++) {
-            if (i == GPtr->numVertices-1) {
+            if (i == (long)GPtr->numVertices-1) {
                 break;
             }
-            if ((i != SDGdataPtr->startVertex[j])) {
-                if ((j > 0) && (i == SDGdataPtr->startVertex[j-1])) {
+            if ((i != (long)SDGdataPtr->startVertex[j])) {
+                if ((j > 0) && (i == (long)SDGdataPtr->startVertex[j-1])) {
                     if (j-i0 >= 1) {
                         outVertexListSize++;
                         GPtr->outDegree[i]++;
@@ -274,7 +274,7 @@ computeGraph (void* argPtr)
             }
         }
 
-        if (i == GPtr->numVertices-1) {
+        if (i == (long)GPtr->numVertices-1) {
             if (numEdgesPlaced-i0 >= 0) {
                 outVertexListSize++;
                 GPtr->outDegree[i]++;
@@ -297,9 +297,9 @@ computeGraph (void* argPtr)
     thread_barrier_wait();
 
     TM_BEGIN();
-    TM_SHARED_WRITE(
+    TM_SHARED_WRITE_L(
         global_outVertexListSize,
-        ((long)TM_SHARED_READ(global_outVertexListSize) + outVertexListSize)
+        ((long)TM_SHARED_READ_L(global_outVertexListSize) + outVertexListSize)
     );
     TM_END();
 
@@ -339,16 +339,16 @@ computeGraph (void* argPtr)
             k--;
         }
 
-        if ((i0 == -1) && (k == 0)) {
+        if (((long)i0 == -1) && (k == 0)) {
             i0 = 0;
         }
 
         for (j = i0; j < numEdgesPlaced; j++) {
-            if (i == GPtr->numVertices-1) {
+            if (i == (long)GPtr->numVertices-1) {
                 break;
             }
-            if (i != SDGdataPtr->startVertex[j]) {
-                if ((j > 0) && (i == SDGdataPtr->startVertex[j-1])) {
+            if (i != (long)SDGdataPtr->startVertex[j]) {
+                if ((j > 0) && (i == (long)SDGdataPtr->startVertex[j-1])) {
                     if (j-i0 >= 1) {
                         long ii = GPtr->outVertexIndex[i];
                         ULONGINT_T r = 0;
@@ -373,7 +373,7 @@ computeGraph (void* argPtr)
             }
         } /* for j */
 
-        if (i == GPtr->numVertices-1) {
+        if (i == (long)GPtr->numVertices-1) {
             ULONGINT_T r = 0;
             if (numEdgesPlaced-i0 >= 0) {
                 long ii = GPtr->outVertexIndex[i];
@@ -467,18 +467,18 @@ computeGraph (void* argPtr)
                  k < (GPtr->outVertexIndex[v] + GPtr->outDegree[v]);
                  k++)
             {
-                if (GPtr->outVertexList[k] == i) {
+                if ((long)GPtr->outVertexList[k] == i) {
                     break;
                 }
             }
             if (k == GPtr->outVertexIndex[v]+GPtr->outDegree[v]) {
                 TM_BEGIN();
                 /* Add i to the impliedEdgeList of v */
-                long inDegree = (long)TM_SHARED_READ(GPtr->inDegree[v]);
-                TM_SHARED_WRITE(GPtr->inDegree[v], (inDegree + 1));
+                long inDegree = (long)TM_SHARED_READ_L(GPtr->inDegree[v]);
+                TM_SHARED_WRITE_L(GPtr->inDegree[v], (inDegree + 1));
                 if (inDegree < MAX_CLUSTER_SIZE) {
-                    TM_SHARED_WRITE(impliedEdgeList[v*MAX_CLUSTER_SIZE+inDegree],
-                                    i);
+                    TM_SHARED_WRITE_L(impliedEdgeList[v*MAX_CLUSTER_SIZE+inDegree],
+                                    (unsigned long)i);
                 } else {
                     /* Use auxiliary array to store the implied edge */
                     /* Create an array if it's not present already */
@@ -491,7 +491,7 @@ computeGraph (void* argPtr)
                     } else {
                         a = auxArr[v];
                     }
-                    TM_SHARED_WRITE(a[inDegree % MAX_CLUSTER_SIZE], i);
+                    TM_SHARED_WRITE_L(a[inDegree % MAX_CLUSTER_SIZE], (unsigned long)i);
                 }
                 TM_END();
             }
@@ -520,7 +520,7 @@ computeGraph (void* argPtr)
              j < (GPtr->inVertexIndex[i] + GPtr->inDegree[i]);
              j++)
         {
-            if ((j - GPtr->inVertexIndex[i]) < MAX_CLUSTER_SIZE) {
+            if ((j - GPtr->inVertexIndex[i]) < (unsigned long)MAX_CLUSTER_SIZE) {
                 GPtr->inVertexList[j] =
                     impliedEdgeList[i*MAX_CLUSTER_SIZE+j-GPtr->inVertexIndex[i]];
             } else {

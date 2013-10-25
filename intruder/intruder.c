@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -98,13 +98,26 @@ enum param_defaults {
     PARAM_DEFAULT_THREAD = 1,
 };
 
-long global_params[256] = { /* 256 = ascii limit */
+long global_params[256];
+#if 0
+= { /* 256 = ascii limit */
     [PARAM_ATTACK] = PARAM_DEFAULT_ATTACK,
     [PARAM_LENGTH] = PARAM_DEFAULT_LENGTH,
     [PARAM_NUM]    = PARAM_DEFAULT_NUM,
     [PARAM_SEED]   = PARAM_DEFAULT_SEED,
     [PARAM_THREAD] = PARAM_DEFAULT_THREAD,
 };
+#endif
+
+void global_param_init()
+{
+    global_params[PARAM_ATTACK] = PARAM_DEFAULT_ATTACK;
+    global_params[PARAM_LENGTH] = PARAM_DEFAULT_LENGTH;
+    global_params[PARAM_NUM]    = PARAM_DEFAULT_NUM;
+    global_params[PARAM_SEED]   = PARAM_DEFAULT_SEED;
+    global_params[PARAM_THREAD] = PARAM_DEFAULT_THREAD;
+}
+
 
 typedef struct arg {
   /* input: */
@@ -206,7 +219,7 @@ processPackets (void* argPtr)
         packet_t* packetPtr = (packet_t*)bytes;
         long flowId = packetPtr->flowId;
 
-        error_t error;
+        int_error_t error;
         TM_BEGIN();
         error = TMDECODER_PROCESS(decoderPtr,
                                   bytes,
@@ -227,13 +240,13 @@ processPackets (void* argPtr)
         data = TMDECODER_GETCOMPLETE(decoderPtr, &decodedFlowId);
         TM_END();
         if (data) {
-            error_t error = PDETECTOR_PROCESS(detectorPtr, data);
+            int_error_t error = PDETECTOR_PROCESS(detectorPtr, data);
             P_FREE(data);
             if (error) {
                 bool_t status = PVECTOR_PUSHBACK(errorVectorPtr,
-                                                 (void*)decodedFlowId);
+             (void*)decodedFlowId);
                 assert(status);
-            }
+      }
         }
 
     }
@@ -250,12 +263,10 @@ processPackets (void* argPtr)
  */
 MAIN(argc, argv)
 {
-    GOTO_REAL();
-
     /*
      * Initialization
      */
-
+    global_param_init();
     parseArgs(argc, (char** const)argv);
     long numThread = global_params[PARAM_THREAD];
     SIM_GET_NUM_CPU(numThread);
@@ -286,7 +297,7 @@ MAIN(argc, argv)
     decoder_t* decoderPtr = decoder_alloc();
     assert(decoderPtr);
 
-    vector_t** errorVectors = (vector_t**)malloc(numThread * sizeof(vector_t*));
+    vector_t** errorVectors = (vector_t**)SEQ_MALLOC(numThread * sizeof(vector_t*));
     assert(errorVectors);
     long i;
     for (i = 0; i < numThread; i++) {
@@ -303,22 +314,27 @@ MAIN(argc, argv)
     /*
      * Run transactions
      */
-
+    // NB: Since ASF/PTLSim "REAL" is native execution, and since we are using
+    //     wallclock time, we want to be sure we read time inside the
+    //     simulator, or else we report native cycles spent on the benchmark
+    //     instead of simulator cycles.
+    GOTO_SIM();
     TIMER_T startTime;
     TIMER_READ(startTime);
-    GOTO_SIM();
 #ifdef OTM
 #pragma omp parallel
     {
         processPackets((void*)&arg);
     }
-    
+
 #else
     thread_start(processPackets, (void*)&arg);
 #endif
-    GOTO_REAL();
     TIMER_T stopTime;
     TIMER_READ(stopTime);
+    // NB: As above, timer reads must be done inside of the simulated region
+    //     for PTLSim/ASF
+    GOTO_REAL();
     printf("Elapsed time    = %f seconds\n", TIMER_DIFF_SECONDS(startTime, stopTime));
 
     /*
@@ -339,7 +355,6 @@ MAIN(argc, argv)
     }
     printf("Num found       = %li\n", numFound);
     assert(numFound == numAttack);
-
     /*
      * Clean up
      */
@@ -347,15 +362,13 @@ MAIN(argc, argv)
     for (i = 0; i < numThread; i++) {
         vector_free(errorVectors[i]);
     }
-    free(errorVectors);
+    SEQ_FREE(errorVectors);
     decoder_free(decoderPtr);
     stream_free(streamPtr);
     dictionary_free(dictionaryPtr);
 
     TM_SHUTDOWN();
     P_MEMORY_SHUTDOWN();
-
-    GOTO_SIM();
 
     thread_shutdown();
 

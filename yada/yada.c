@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -87,7 +87,7 @@
 #define PARAM_DEFAULT_ANGLE       (20.0)
 
 
-char*    global_inputPrefix     = PARAM_DEFAULT_INPUTPREFIX;
+const char*    global_inputPrefix     = PARAM_DEFAULT_INPUTPREFIX;
 long     global_numThread       = PARAM_DEFAULT_NUMTHREAD;
 double   global_angleConstraint = PARAM_DEFAULT_ANGLE;
 mesh_t*  global_meshPtr;
@@ -164,7 +164,6 @@ initializeWork (heap_t* workHeapPtr, mesh_t* meshPtr)
     random_seed(randomPtr, 0);
     mesh_shuffleBad(meshPtr, randomPtr);
     random_free(randomPtr);
-
     long numBad = 0;
 
     while (1) {
@@ -205,7 +204,7 @@ process ()
         element_t* elementPtr;
 
         TM_BEGIN();
-        elementPtr = TMHEAP_REMOVE(workHeapPtr);
+        elementPtr = (element_t*)TMHEAP_REMOVE(workHeapPtr);
         TM_END();
         if (elementPtr == NULL) {
             break;
@@ -252,17 +251,17 @@ process ()
     }
 
     TM_BEGIN();
-    TM_SHARED_WRITE(global_totalNumAdded,
-                    TM_SHARED_READ(global_totalNumAdded) + totalNumAdded);
-    TM_SHARED_WRITE(global_numProcess,
-                    TM_SHARED_READ(global_numProcess) + numProcess);
+    TM_SHARED_WRITE_L(global_totalNumAdded,
+                    TM_SHARED_READ_L(global_totalNumAdded) + totalNumAdded);
+    TM_SHARED_WRITE_L(global_numProcess,
+                    TM_SHARED_READ_L(global_numProcess) + numProcess);
     TM_END();
 
     PREGION_FREE(regionPtr);
-
     TM_THREAD_EXIT();
 }
 
+comparator_t yada_heapcompare(&element_heapCompare, &TMelement_heapCompare);
 
 /* =============================================================================
  * main
@@ -270,8 +269,6 @@ process ()
  */
 MAIN(argc, argv)
 {
-    GOTO_REAL();
-
     /*
      * Initialization
      */
@@ -285,9 +282,9 @@ MAIN(argc, argv)
     assert(global_meshPtr);
     printf("Angle constraint = %lf\n", global_angleConstraint);
     printf("Reading input... ");
-    long initNumElement = mesh_read(global_meshPtr, global_inputPrefix);
+    long initNumElement = mesh_read(global_meshPtr, (char*)global_inputPrefix);
     puts("done.");
-    global_workHeapPtr = heap_alloc(1, &element_heapCompare);
+    global_workHeapPtr = heap_alloc(1, &yada_heapcompare);
     assert(global_workHeapPtr);
     long initNumBadElement = initializeWork(global_workHeapPtr, global_meshPtr);
 
@@ -300,20 +297,26 @@ MAIN(argc, argv)
      * Run benchmark
      */
 
+    // NB: Since ASF/PTLSim "REAL" is native execution, and since we are using
+    //     wallclock time, we want to be sure we read time inside the
+    //     simulator, or else we report native cycles spent on the benchmark
+    //     instead of simulator cycles.
+    GOTO_SIM();
     TIMER_T start;
     TIMER_READ(start);
-    GOTO_SIM();
 #ifdef OTM
 #pragma omp parallel
     {
         process();
     }
 #else
-    thread_start(process, NULL);
+    thread_start((void(*)(void*))process, NULL);
 #endif
-    GOTO_REAL();
     TIMER_T stop;
     TIMER_READ(stop);
+    // NB: As above, timer reads must be done inside of the simulated region
+    //     for PTLSim/ASF
+    GOTO_REAL();
 
     puts(" done.");
     printf("Elapsed time                    = %0.3lf\n",
@@ -329,19 +332,10 @@ MAIN(argc, argv)
     printf("Number of elements processed    = %li\n", global_numProcess);
     fflush(stdout);
 
-#if 0
-    bool_t isSuccess = mesh_check(global_meshPtr, finalNumElement);
-#else
-    bool_t isSuccess = TRUE;
-#endif
-    printf("Final mesh is %s\n", (isSuccess ? "valid." : "INVALID!"));
-    fflush(stdout);
-    assert(isSuccess);
 
     /*
      * TODO: deallocate mesh and work heap
      */
-
     TM_SHUTDOWN();
     P_MEMORY_SHUTDOWN();
 

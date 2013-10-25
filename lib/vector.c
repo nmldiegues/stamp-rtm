@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -88,12 +88,12 @@ vector_alloc (long initCapacity)
     vector_t* vectorPtr;
     long capacity = MAX(initCapacity, 1);
 
-    vectorPtr = (vector_t*)malloc(sizeof(vector_t));
+    vectorPtr = (vector_t*)SEQ_MALLOC(sizeof(vector_t));
 
     if (vectorPtr != NULL) {
         vectorPtr->size = 0;
         vectorPtr->capacity = capacity;
-        vectorPtr->elements = (void**)malloc(capacity * sizeof(void*));
+        vectorPtr->elements = (void**)SEQ_MALLOC(capacity * sizeof(void*));
         if (vectorPtr->elements == NULL) {
             return NULL;
         }
@@ -136,8 +136,8 @@ Pvector_alloc (long initCapacity)
 void
 vector_free (vector_t* vectorPtr)
 {
-    free(vectorPtr->elements);
-    free(vectorPtr);
+    SEQ_FREE(vectorPtr->elements);
+    SEQ_FREE(vectorPtr);
 }
 
 
@@ -180,7 +180,7 @@ vector_pushBack (vector_t* vectorPtr, void* dataPtr)
     if (vectorPtr->size == vectorPtr->capacity) {
         long i;
         long newCapacity = vectorPtr->capacity * 2;
-        void** newElements = (void**)malloc(newCapacity * sizeof(void*));
+        void** newElements = (void**)SEQ_MALLOC(newCapacity * sizeof(void*));
         if (newElements == NULL) {
             return FALSE;
         }
@@ -188,7 +188,7 @@ vector_pushBack (vector_t* vectorPtr, void* dataPtr)
         for (i = 0; i < vectorPtr->size; i++) {
             newElements[i] = vectorPtr->elements[i];
         }
-        free(vectorPtr->elements);
+        SEQ_FREE(vectorPtr->elements);
         vectorPtr->elements = newElements;
     }
 
@@ -269,10 +269,14 @@ vector_clear (vector_t* vectorPtr)
  * vector_sort
  * =============================================================================
  */
+extern "C"
+{
+
 void
 vector_sort (vector_t* vectorPtr, int (*compare) (const void*, const void*))
 {
     qsort((void*)vectorPtr->elements, vectorPtr->size, sizeof(void**), compare);
+}
 }
 
 
@@ -287,11 +291,11 @@ vector_copy (vector_t* dstVectorPtr, vector_t* srcVectorPtr)
     long srcSize = srcVectorPtr->size;
     if (dstCapacity < srcSize) {
         long srcCapacity = srcVectorPtr->capacity;
-        void** elements = (void**)malloc(srcCapacity * sizeof(void*));
+        void** elements = (void**)SEQ_MALLOC(srcCapacity * sizeof(void*));
         if (elements == NULL) {
             return FALSE;
         }
-        free(dstVectorPtr->elements);
+        SEQ_FREE(dstVectorPtr->elements);
         dstVectorPtr->elements = elements;
         dstVectorPtr->capacity = srcCapacity;
     }

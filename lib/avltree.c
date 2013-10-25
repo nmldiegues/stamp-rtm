@@ -20,48 +20,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -81,8 +81,8 @@
 #ifdef __cplusplus
 #include <cstdlib>
 
-using std::malloc;
-using std::free;
+// using std::malloc;
+//using std::free;
 using std::size_t;
 #else
 #include <stdlib.h>
@@ -193,7 +193,7 @@ struct jsw_avltrav {
 
 static jsw_avlnode_t *new_node ( jsw_avltree_t *tree, void *data )
 {
-  jsw_avlnode_t *rn = (jsw_avlnode_t *)malloc ( sizeof *rn );
+  jsw_avlnode_t *rn = (jsw_avlnode_t *)P_MALLOC ( sizeof *rn );
 
   if ( rn == NULL )
     return NULL;
@@ -234,7 +234,7 @@ jsw_avltree_t *jsw_avlnew ( cmp_f cmp, dup_f dup, rel_f rel )
 jsw_avltree_t *jsw_avlnew ( cmp_f cmp )
 #endif
 {
-  jsw_avltree_t *rt = (jsw_avltree_t *)malloc ( sizeof *rt );
+  jsw_avltree_t *rt = (jsw_avltree_t *)P_MALLOC ( sizeof *rt );
 
   if ( rt == NULL )
     return NULL;
@@ -286,34 +286,6 @@ void jsw_avldelete ( jsw_avltree_t *tree )
 #if USE_DUP_AND_REL
       tree->rel ( it->data );
 #endif
-      free ( it );
-    }
-    else {
-      /* Rotate right */
-      save = it->link[0];
-      it->link[0] = save->link[1];
-      save->link[1] = it;
-    }
-
-    it = save;
-  }
-
-  free ( tree );
-}
-
-void Pjsw_avldelete ( jsw_avltree_t *tree )
-{
-  jsw_avlnode_t *it = tree->root;
-  jsw_avlnode_t *save;
-
-  /* Destruction by rotation */
-  while ( it != NULL ) {
-    if ( it->link[0] == NULL ) {
-      /* Remove node */
-      save = it->link[1];
-#if USE_DUP_AND_REL
-      tree->rel ( it->data );
-#endif
       P_FREE ( it );
     }
     else {
@@ -327,6 +299,37 @@ void Pjsw_avldelete ( jsw_avltree_t *tree )
   }
 
   P_FREE ( tree );
+}
+
+void Pjsw_avldelete (TM_ARGDECL
+        jsw_avltree_t *tree )
+{
+  jsw_avlnode_t *it = tree->root;
+  jsw_avlnode_t *save;
+
+  /* Destruction by rotation */
+  while ( it != NULL ) {
+    if ( it->link[0] == NULL ) {
+      /* Remove node */
+      save = it->link[1];
+#if USE_DUP_AND_REL
+      tree->rel ( it->data );
+#endif
+      //P_FREE ( it );
+      TM_FREE (it);
+    }
+    else {
+      /* Rotate right */
+      save = it->link[0];
+      it->link[0] = save->link[1];
+      save->link[1] = it;
+    }
+
+    it = save;
+  }
+
+  //P_FREE ( tree );
+  TM_FREE (tree);
 }
 
 
@@ -507,7 +510,7 @@ long jsw_avlerase ( jsw_avltree_t *tree, void *data )
 #if USE_DUP_AND_REL
       tree->rel ( it->data );
 #endif
-      free ( it );
+      P_FREE ( it );
     }
     else {
       /* Find the inorder successor */
@@ -535,7 +538,7 @@ long jsw_avlerase ( jsw_avltree_t *tree, void *data )
 #if USE_DUP_AND_REL
       tree->rel ( heir->data );
 #endif
-      free ( heir );
+      P_FREE ( heir );
     }
 
     /* Walk back up the search path */
@@ -663,12 +666,12 @@ size_t jsw_avlsize ( jsw_avltree_t *tree )
 
 jsw_avltrav_t *jsw_avltnew ( void )
 {
-  return malloc ( sizeof ( jsw_avltrav_t ) );
+  return (jsw_avltrav_t*)SEQ_MALLOC ( sizeof ( jsw_avltrav_t ) );
 }
 
 void jsw_avltdelete ( jsw_avltrav_t *trav )
 {
-  free ( trav );
+  SEQ_FREE ( trav );
 }
 
 /*

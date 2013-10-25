@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -351,6 +351,51 @@ element_listCompare (const void* aPtr, const void* bPtr)
 }
 
 
+long
+TMelement_compare (TM_ARGDECL element_t* aElementPtr, element_t* bElementPtr)
+{
+    element_t *aEP = NULL, *bEP = NULL;
+    aEP = (element_t*) TM_SHARED_READ_P(aElementPtr);
+    bEP = (element_t*) TM_SHARED_READ_P(bElementPtr);
+    long aNumCoordinate = TM_SHARED_READ_L(aEP->numCoordinate);
+    long bNumCoordinate = TM_SHARED_READ_L(bEP->numCoordinate);
+    coordinate_t* aCoordinates = aEP->coordinates;
+    coordinate_t* bCoordinates = bEP->coordinates;
+
+    if (aNumCoordinate < bNumCoordinate) {
+        return -1;
+    } else if (aNumCoordinate > bNumCoordinate) {
+        return 1;
+    }
+
+    long i;
+    for (i = 0; i < aNumCoordinate; i++) {
+        long compareCoordinate =
+            TMcoordinate_compare(TM_ARG &aCoordinates[i], &bCoordinates[i]);
+        if (compareCoordinate != 0) {
+            return compareCoordinate;
+        }
+    }
+
+    return 0;
+}
+
+
+/* =============================================================================
+ * element_listCompare
+ *
+ * For use in list_t
+ * =============================================================================
+ */
+long
+TMelement_listCompare (TM_ARGDECL const void* aPtr, const void* bPtr)
+{
+    element_t* aElementPtr = (element_t*)aPtr;
+    element_t* bElementPtr = (element_t*)bPtr;
+    return TMelement_compare(TM_ARG aElementPtr, bElementPtr);
+}
+
+
 /* =============================================================================
  * element_mapCompare
  *
@@ -366,6 +411,7 @@ element_mapCompare (const pair_t* aPtr, const pair_t* bPtr)
     return element_compare(aElementPtr, bElementPtr);
 }
 
+comparator_t element_listcompare(&element_listCompare, &TMelement_listCompare);
 
 /* =============================================================================
  * element_alloc
@@ -378,7 +424,7 @@ element_alloc (coordinate_t* coordinates, long numCoordinate)
 {
     element_t* elementPtr;
 
-    elementPtr = (element_t*)malloc(sizeof(element_t));
+    elementPtr = (element_t*)SEQ_MALLOC(sizeof(element_t));
     if (elementPtr) {
         long i;
         for (i = 0; i < numCoordinate; i++) {
@@ -389,7 +435,7 @@ element_alloc (coordinate_t* coordinates, long numCoordinate)
         checkAngles(elementPtr);
         calculateCircumCircle(elementPtr);
         initEdges(elementPtr, coordinates, numCoordinate);
-        elementPtr->neighborListPtr = list_alloc(element_listCompare);
+        elementPtr->neighborListPtr = Plist_alloc(&element_listcompare);
         assert(elementPtr->neighborListPtr);
         elementPtr->isGarbage = FALSE;
         elementPtr->isReferenced = FALSE;
@@ -421,7 +467,7 @@ Pelement_alloc (coordinate_t* coordinates, long numCoordinate)
         checkAngles(elementPtr);
         calculateCircumCircle(elementPtr);
         initEdges(elementPtr, coordinates, numCoordinate);
-        elementPtr->neighborListPtr = PLIST_ALLOC(element_listCompare);
+        elementPtr->neighborListPtr = PLIST_ALLOC(&element_listcompare);
         assert(elementPtr->neighborListPtr);
         elementPtr->isGarbage = FALSE;
         elementPtr->isReferenced = FALSE;
@@ -438,9 +484,9 @@ Pelement_alloc (coordinate_t* coordinates, long numCoordinate)
  * =============================================================================
  */
 element_t*
-TMelement_alloc (TM_ARGDECL  coordinate_t* coordinates, long numCoordinate)
+TMelement_alloc (TM_ARGDECL coordinate_t* coordinates, long numCoordinate)
 {
-    element_t* elementPtr;
+    element_t* elementPtr = NULL;
 
     elementPtr = (element_t*)TM_MALLOC(sizeof(element_t));
     if (elementPtr) {
@@ -453,7 +499,7 @@ TMelement_alloc (TM_ARGDECL  coordinate_t* coordinates, long numCoordinate)
         checkAngles(elementPtr);
         calculateCircumCircle(elementPtr);
         initEdges(elementPtr, coordinates, numCoordinate);
-        elementPtr->neighborListPtr = TMLIST_ALLOC(element_listCompare);
+        elementPtr->neighborListPtr = TMLIST_ALLOC(&element_listcompare);
         assert(elementPtr->neighborListPtr);
         elementPtr->isGarbage = FALSE;
         elementPtr->isReferenced = FALSE;
@@ -471,7 +517,7 @@ void
 element_free (element_t* elementPtr)
 {
     list_free(elementPtr->neighborListPtr);
-    free(elementPtr);
+    SEQ_FREE(elementPtr);
 }
 
 
@@ -543,6 +589,18 @@ compareEdge (edge_t* aEdgePtr, edge_t* bEdgePtr)
                                 (coordinate_t*)bEdgePtr->secondPtr)));
 }
 
+static long
+TMcompareEdge (TM_ARGDECL edge_t* aEdgePtr, edge_t* bEdgePtr)
+{
+  long diffFirst = TMcoordinate_compare(TM_ARG (coordinate_t*)TM_SHARED_READ_P(aEdgePtr->firstPtr),
+                                        (coordinate_t*)TM_SHARED_READ_P(bEdgePtr->firstPtr));
+
+    return ((diffFirst != 0) ?
+            (diffFirst) :
+            (TMcoordinate_compare(TM_ARG (coordinate_t*)aEdgePtr->secondPtr,
+                                (coordinate_t*)bEdgePtr->secondPtr)));
+}
+
 
 /* ============================================================================
  * element_listCompareEdge
@@ -557,6 +615,15 @@ element_listCompareEdge (const void* aPtr, const void* bPtr)
     edge_t* bEdgePtr = (edge_t*)(bPtr);
 
     return compareEdge(aEdgePtr, bEdgePtr);
+}
+
+long
+TMelement_listCompareEdge (TM_ARGDECL const void* aPtr, const void* bPtr)
+{
+    edge_t* aEdgePtr = (edge_t*)(aPtr);
+    edge_t* bEdgePtr = (edge_t*)(bPtr);
+
+    return TMcompareEdge(TM_ARG aEdgePtr, bEdgePtr);
 }
 
 
@@ -584,6 +651,27 @@ element_mapCompareEdge (const pair_t* aPtr, const pair_t* bPtr)
  */
 long
 element_heapCompare (const void* aPtr, const void* bPtr)
+{
+    element_t* aElementPtr = (element_t*)aPtr;
+    element_t* bElementPtr = (element_t*)bPtr;
+
+    if (aElementPtr->encroachedEdgePtr) {
+        if (bElementPtr->encroachedEdgePtr) {
+            return 0; /* do not care */
+        } else {
+            return 1;
+        }
+    }
+
+    if (bElementPtr->encroachedEdgePtr) {
+        return -1;
+    }
+
+    return 0; /* do not care */
+}
+
+long
+TMelement_heapCompare (TM_ARGDECL const void* aPtr, const void* bPtr)
 {
     element_t* aElementPtr = (element_t*)aPtr;
     element_t* bElementPtr = (element_t*)bPtr;
@@ -695,7 +783,7 @@ element_isReferenced (element_t* elementPtr)
 bool_t
 TMelement_isReferenced (TM_ARGDECL  element_t* elementPtr)
 {
-    return (bool_t)TM_SHARED_READ(elementPtr->isReferenced);
+    return (bool_t)TM_SHARED_READ_L(elementPtr->isReferenced);
 }
 
 
@@ -717,7 +805,7 @@ element_setIsReferenced (element_t* elementPtr, bool_t status)
 void
 TMelement_setIsReferenced (TM_ARGDECL  element_t* elementPtr, bool_t status)
 {
-    TM_SHARED_WRITE(elementPtr->isReferenced, status);
+    TM_SHARED_WRITE_L(elementPtr->isReferenced, status);
 }
 
 
@@ -741,7 +829,7 @@ element_isGarbage (element_t* elementPtr)
 bool_t
 TMelement_isGarbage (TM_ARGDECL  element_t* elementPtr)
 {
-    return (bool_t)TM_SHARED_READ(elementPtr->isGarbage);
+    return (bool_t)TM_SHARED_READ_L(elementPtr->isGarbage);
 }
 
 
@@ -763,7 +851,7 @@ element_setIsGarbage (element_t* elementPtr, bool_t status)
 void
 TMelement_setIsGarbage (TM_ARGDECL  element_t* elementPtr, bool_t status)
 {
-    TM_SHARED_WRITE(elementPtr->isGarbage, status);
+    TM_SHARED_WRITE_L(elementPtr->isGarbage, status);
 }
 
 
@@ -800,6 +888,12 @@ element_getNeighborListPtr (element_t* elementPtr)
     return elementPtr->neighborListPtr;
 }
 
+list_t*
+TMelement_getNeighborListPtr (TM_ARGDECL element_t* elementPtr)
+{
+    return (list_t*) TM_SHARED_READ_P(elementPtr->neighborListPtr);
+}
+
 
 /* =============================================================================
  * element_getCommonEdge
@@ -830,6 +924,29 @@ element_getCommonEdge (element_t* aElementPtr, element_t* bElementPtr)
     return NULL;
 }
 
+edge_t*
+TMelement_getCommonEdge (TM_ARGDECL element_t* aElementPtr, element_t* bElementPtr)
+{
+    edge_t* aEdges = aElementPtr->edges;
+    edge_t* bEdges = bElementPtr->edges;
+    long aNumEdge = aElementPtr->numEdge;
+    long bNumEdge = bElementPtr->numEdge;
+    long a;
+    long b;
+
+    for (a = 0; a < aNumEdge; a++) {
+        edge_t* aEdgePtr = &aEdges[a];
+        for (b = 0; b < bNumEdge; b++) {
+            edge_t* bEdgePtr = &bEdges[b];
+            if (TMcompareEdge(TM_ARG aEdgePtr, bEdgePtr) == 0) {
+                return aEdgePtr;
+            }
+        }
+    }
+
+    return NULL;
+}
+
 
 /* =============================================================================
  * element_getNewPoint
@@ -847,6 +964,27 @@ element_getNewPoint (element_t* elementPtr)
         edge_t* edges = elementPtr->edges;
         for (e = 0; e < numEdge; e++) {
             if (compareEdge(encroachedEdgePtr, &edges[e]) == 0) {
+                return elementPtr->midpoints[e];
+            }
+        }
+        assert(0);
+    }
+
+    return elementPtr->circumCenter;
+}
+coordinate_t
+TMelement_getNewPoint (TM_ARGDECL element_t* elementPtr)
+{
+    edge_t* encroachedEdgePtr = (edge_t*) TM_SHARED_READ_P(elementPtr->encroachedEdgePtr);
+    void *edge;
+    if (encroachedEdgePtr) {
+        long e;
+        long numEdge = TM_SHARED_READ_L(elementPtr->numEdge);
+        edge_t *edges = elementPtr->edges;
+        for (e = 0; e < numEdge; e++) {
+            edge = &edges[e];
+            edge = TM_SHARED_READ_P(edge);
+            if (TMcompareEdge(TM_ARG encroachedEdgePtr, (edge_t*)edge) == 0) {
                 return elementPtr->midpoints[e];
             }
         }

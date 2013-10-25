@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -71,6 +71,7 @@
 
 #include <assert.h>
 #include <getopt.h>
+#include <stdlib.h>
 #include "data.h"
 #include "learner.h"
 #include "net.h"
@@ -230,8 +231,6 @@ score (net_t* netPtr, adtree_t* adtreePtr)
  */
 MAIN(argc, argv)
 {
-    GOTO_REAL();
-
     /*
      * Initialization
      */
@@ -311,7 +310,6 @@ MAIN(argc, argv)
     /*
      * Learn structure of Bayesian network
      */
-
     learner_t* learnerPtr = learner_alloc(dataPtr, adtreePtr, numThread);
     assert(learnerPtr);
     data_free(dataPtr); /* save memory */
@@ -319,22 +317,27 @@ MAIN(argc, argv)
     printf("Learning structure...");
     fflush(stdout);
 
+    // NB: Since ASF/PTLSim "REAL" is native execution, and since we are using
+    //     wallclock time, we want to be sure we read time inside the
+    //     simulator, or else we report native cycles spent on the benchmark
+    //     instead of simulator cycles.
+    GOTO_SIM();
     TIMER_T learnStartTime;
     TIMER_READ(learnStartTime);
-    GOTO_SIM();
 
     learner_run(learnerPtr);
 
-    GOTO_REAL();
     TIMER_T learnStopTime;
     TIMER_READ(learnStopTime);
+    // NB: As above, timer reads must be done inside of the simulated region
+    //     for PTLSim/ASF
+    GOTO_REAL();
 
     puts("done.");
     fflush(stdout);
     printf("Learn time = %f\n",
            TIMER_DIFF_SECONDS(learnStartTime, learnStopTime));
     fflush(stdout);
-
     /*
      * Check solution
      */
@@ -356,15 +359,13 @@ MAIN(argc, argv)
     random_free(randomPtr);
 #ifndef SIMULATOR
     adtree_free(adtreePtr);
-#  if 0    
+#  if 0
     learner_free(learnerPtr);
-#  endif    
+#  endif
 #endif
 
     TM_SHUTDOWN();
     P_MEMORY_SHUTDOWN();
-
-    GOTO_SIM();
 
     thread_shutdown();
 

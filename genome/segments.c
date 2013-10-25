@@ -12,48 +12,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -95,18 +95,18 @@ segments_alloc (long length, long minNum)
     long i;
     char* string;
 
-    segmentsPtr = (segments_t*)malloc(sizeof(segments_t));
+    segmentsPtr = (segments_t*)SEQ_MALLOC(sizeof(segments_t));
     if (segmentsPtr == NULL) {
         return NULL;
     }
 
     /* Preallocate for the min number of segments we will need */
-    segmentsPtr->strings = (char**)malloc(minNum * sizeof(char*));
+    segmentsPtr->strings = (char**)SEQ_MALLOC(minNum * sizeof(char*));
     if (segmentsPtr->strings == NULL) {
         return NULL;
     }
 
-    string = (char*)malloc(minNum * (length+1) * sizeof(char));
+    string = (char*)SEQ_MALLOC(minNum * (length+1) * sizeof(char));
     if (string == NULL) {
         return NULL;
     }
@@ -172,7 +172,7 @@ segments_create (segments_t* segmentsPtr, gene_t* genePtr, random_t* randomPtr)
     /* Make sure segment covers start */
     i = 0;
     if (!bitmap_isSet(startBitmapPtr, i)) {
-        char* string = (char*)malloc((segmentLength+1) * sizeof(char));
+        char* string = (char*)SEQ_MALLOC((segmentLength+1) * sizeof(char));
         string[segmentLength] = '\0';
         memcpy(string, &(geneString[i]), segmentLength * sizeof(char));
         bool_t status = vector_pushBack(segmentsContentsPtr, (void*)string);
@@ -192,7 +192,7 @@ segments_create (segments_t* segmentsPtr, gene_t* genePtr, random_t* randomPtr)
         }
         if (i == i_stop) {
             /* Found big enough hole */
-            char* string = (char*)malloc((segmentLength+1) * sizeof(char));
+            char* string = (char*)SEQ_MALLOC((segmentLength+1) * sizeof(char));
             string[segmentLength] = '\0';
             i = i - 1;
             memcpy(string, &(geneString[i]), segmentLength * sizeof(char));
@@ -212,10 +212,10 @@ segments_create (segments_t* segmentsPtr, gene_t* genePtr, random_t* randomPtr)
 void
 segments_free (segments_t* segmentsPtr)
 {
-    free(vector_at(segmentsPtr->contentsPtr, 0));
+    SEQ_FREE(vector_at(segmentsPtr->contentsPtr, 0));
     vector_free(segmentsPtr->contentsPtr);
-    free(segmentsPtr->strings);
-    free(segmentsPtr);
+    SEQ_FREE(segmentsPtr->strings);
+    SEQ_FREE(segmentsPtr);
 }
 
 

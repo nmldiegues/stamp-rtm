@@ -6,48 +6,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -193,9 +193,9 @@ all_countsort_node_aux_seq (long q,
                             long bitOff,
                             long m)
 {
-    long* myHisto = (long*)malloc(R * sizeof(long));
+    long* myHisto = (long*)SEQ_MALLOC(R * sizeof(long));
     assert(myHisto);
-    long* psHisto = (long*)malloc(R * sizeof(long));
+    long* psHisto = (long*)SEQ_MALLOC(R * sizeof(long));
     assert(psHisto);
 
     long* mhp = myHisto;
@@ -232,8 +232,8 @@ all_countsort_node_aux_seq (long q,
         mhp[j]++;
     }
 
-    free(psHisto);
-    free(myHisto);
+    SEQ_FREE(psHisto);
+    SEQ_FREE(myHisto);
 }
 
 
@@ -424,17 +424,17 @@ all_radixsort_node_aux_s3_seq (long q,
     unsigned long* lTemp  = NULL;
     unsigned long* lTemp2 = NULL;
 
-    lTemp = (unsigned long*)malloc(q * sizeof(unsigned long));
+    lTemp = (unsigned long*)SEQ_MALLOC(q * sizeof(unsigned long));
     assert(lTemp);
-    lTemp2 = (unsigned long*)malloc(q * sizeof(unsigned long));
+    lTemp2 = (unsigned long*)SEQ_MALLOC(q * sizeof(unsigned long));
     assert(lTemp2);
 
     all_countsort_node_aux_seq(q, lKeys, lSorted, auxKey, auxSorted, (1<<11),  0, 11);
     all_countsort_node_aux_seq(q, lSorted, lTemp, auxSorted, lTemp2, (1<<11), 11, 11);
     all_countsort_node_aux_seq(q, lTemp, lSorted, lTemp2, auxSorted, (1<<10), 22, 10);
 
-    free(lTemp);
-    free(lTemp2);
+    SEQ_FREE(lTemp);
+    SEQ_FREE(lTemp2);
 }
 
 

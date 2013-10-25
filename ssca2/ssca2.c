@@ -6,48 +6,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -82,8 +82,6 @@
 
 MAIN(argc, argv)
 {
-    GOTO_REAL();
-
     /*
      * Tuple for Scalable Data Generation
      * stores startVertex, endVertex, long weight and other info
@@ -163,14 +161,20 @@ MAIN(argc, argv)
 
     printf("\nScalable Data Generator - genScalData() beginning execution...\n");
 
-    SDGdata = (graphSDG*)malloc(sizeof(graphSDG));
+    SDGdata = (graphSDG*)SEQ_MALLOC(sizeof(graphSDG));
     assert(SDGdata);
 
+#ifdef USE_PARALLEL_DATA_GENERATION
+    // NB: Since ASF/PTLSim "REAL" is native execution, and since we are using
+    //     wallclock time, we want to be sure we read time inside the
+    //     simulator, or else we report native cycles spent on the benchmark
+    //     instead of simulator cycles.
+    GOTO_SIM();
+#endif
     TIMER_T start;
     TIMER_READ(start);
 
 #ifdef USE_PARALLEL_DATA_GENERATION
-    GOTO_SIM();
 #ifdef OTM
 #pragma omp parallel
     {
@@ -179,13 +183,17 @@ MAIN(argc, argv)
 #else
     thread_start(genScalData, (void*)SDGdata);
 #endif
-    GOTO_REAL();
 #else /* !USE_PARALLEL_DATA_GENERATION */
     genScalData_seq(SDGdata);
 #endif /* !USE_PARALLEL_DATA_GENERATION */
 
     TIMER_T stop;
     TIMER_READ(stop);
+#ifdef USE_PARALLEL_DATA_GENERATION
+    // NB: As above, timer reads must be done inside of the simulated region
+    //     for PTLSim/ASF
+    GOTO_REAL();
+#endif
 
     double time = TIMER_DIFF_SECONDS(start, stop);
     totalTime += time;
@@ -205,16 +213,20 @@ MAIN(argc, argv)
 
     printf("\nKernel 1 - computeGraph() beginning execution...\n");
 
-    G = (graph*)malloc(sizeof(graph));
+    G = (graph*)SEQ_MALLOC(sizeof(graph));
     assert(G);
 
     computeGraph_arg_t computeGraphArgs;
     computeGraphArgs.GPtr       = G;
     computeGraphArgs.SDGdataPtr = SDGdata;
 
+    // NB: Since ASF/PTLSim "REAL" is native execution, and since we are using
+    //     wallclock time, we want to be sure we read time inside the
+    //     simulator, or else we report native cycles spent on the benchmark
+    //     instead of simulator cycles.
+    GOTO_SIM();
     TIMER_READ(start);
 
-    GOTO_SIM();
 #ifdef OTM
 #pragma omp parallel
     {
@@ -223,9 +235,10 @@ MAIN(argc, argv)
 #else
     thread_start(computeGraph, (void*)&computeGraphArgs);
 #endif
-    GOTO_REAL();
-
     TIMER_READ(stop);
+    // NB: As above, timer reads must be done inside of the simulated region
+    //     for PTLSim/ASF
+    GOTO_REAL();
 
     time = TIMER_DIFF_SECONDS(start, stop);
     totalTime += time;
@@ -246,9 +259,9 @@ MAIN(argc, argv)
 
     maxIntWtListSize = 0;
     soughtStrWtListSize = 0;
-    maxIntWtList = (edge*)malloc(sizeof(edge));
+    maxIntWtList = (edge*)SEQ_MALLOC(sizeof(edge));
     assert(maxIntWtList);
-    soughtStrWtList = (edge*)malloc(sizeof(edge));
+    soughtStrWtList = (edge*)SEQ_MALLOC(sizeof(edge));
     assert(soughtStrWtList);
 
     getStartLists_arg_t getStartListsArg;
@@ -258,9 +271,12 @@ MAIN(argc, argv)
     getStartListsArg.soughtStrWtListPtr  = &soughtStrWtList;
     getStartListsArg.soughtStrWtListSize = &soughtStrWtListSize;
 
-    TIMER_READ(start);
-
+    // NB: Since ASF/PTLSim "REAL" is native execution, and since we are using
+    //     wallclock time, we want to be sure we read time inside the
+    //     simulator, or else we report native cycles spent on the benchmark
+    //     instead of simulator cycles.
     GOTO_SIM();
+    TIMER_READ(start);
 #ifdef OTM
 #pragma omp parallel
     {
@@ -269,9 +285,10 @@ MAIN(argc, argv)
 #else
     thread_start(getStartLists, (void*)&getStartListsArg);
 #endif
-    GOTO_REAL();
-
     TIMER_READ(stop);
+    // NB: As above, timer reads must be done inside of the simulated region
+    //     for PTLSim/ASF
+    GOTO_REAL();
 
     time = TIMER_DIFF_SECONDS(start, stop);
     totalTime += time;
@@ -292,9 +309,9 @@ MAIN(argc, argv)
 
     if (K3_DS == 0) {
 
-        intWtVList = (V*)malloc(G->numVertices * maxIntWtListSize * sizeof(V));
+        intWtVList = (V*)SEQ_MALLOC(G->numVertices * maxIntWtListSize * sizeof(V));
         assert(intWtVList);
-        strWtVList = (V*)malloc(G->numVertices * soughtStrWtListSize * sizeof(V));
+        strWtVList = (V*)SEQ_MALLOC(G->numVertices * soughtStrWtListSize * sizeof(V));
         assert(strWtVList);
 
         findSubGraphs0_arg_t findSubGraphs0Arg;
@@ -306,9 +323,12 @@ MAIN(argc, argv)
         findSubGraphs0Arg.soughtStrWtList     = soughtStrWtList;
         findSubGraphs0Arg.soughtStrWtListSize = soughtStrWtListSize;
 
-        TIMER_READ(start);
-
+        // NB: Since ASF/PTLSim "REAL" is native execution, and since we are
+        //     using wallclock time, we want to be sure we read time inside the
+        //     simulator, or else we report native cycles spent on the
+        //     benchmark instead of simulator cycles.
         GOTO_SIM();
+        TIMER_READ(start);
 #ifdef OTM
 #pragma omp parallel
         {
@@ -317,15 +337,15 @@ MAIN(argc, argv)
 #else
         thread_start(findSubGraphs0, (void*)&findSubGraphs0Arg);
 #endif
-        GOTO_REAL();
-
         TIMER_READ(stop);
-
+        // NB: As above, timer reads must be done inside of the simulated
+        //     region for PTLSim/ASF
+        GOTO_REAL();
     } else if (K3_DS == 1) {
 
-        intWtVLList = (Vl**)malloc(maxIntWtListSize * sizeof(Vl*));
+        intWtVLList = (Vl**)SEQ_MALLOC(maxIntWtListSize * sizeof(Vl*));
         assert(intWtVLList);
-        strWtVLList = (Vl**)malloc(soughtStrWtListSize * sizeof(Vl*));
+        strWtVLList = (Vl**)SEQ_MALLOC(soughtStrWtListSize * sizeof(Vl*));
         assert(strWtVLList);
 
         findSubGraphs1_arg_t findSubGraphs1Arg;
@@ -337,9 +357,12 @@ MAIN(argc, argv)
         findSubGraphs1Arg.soughtStrWtList     = soughtStrWtList;
         findSubGraphs1Arg.soughtStrWtListSize = soughtStrWtListSize;
 
-        TIMER_READ(start);
-
+        // NB: Since ASF/PTLSim "REAL" is native execution, and since we are
+        //     using wallclock time, we want to be sure we read time inside the
+        //     simulator, or else we report native cycles spent on the
+        //     benchmark instead of simulator cycles.
         GOTO_SIM();
+        TIMER_READ(start);
 #ifdef OTM
 #pragma omp parallel
         {
@@ -348,9 +371,10 @@ MAIN(argc, argv)
 #else
         thread_start(findSubGraphs1, (void*)&findSubGraphs1Arg);
 #endif
-        GOTO_REAL();
-
         TIMER_READ(stop);
+        // NB: As above, timer reads must be done inside of the simulated
+        //     region for PTLSim/ASF
+        GOTO_REAL();
 
         /*  Verification
         on_one_thread {
@@ -379,9 +403,9 @@ MAIN(argc, argv)
 
     } else if (K3_DS == 2) {
 
-        intWtVDList = (Vd *) malloc(maxIntWtListSize * sizeof(Vd));
+        intWtVDList = (Vd *) SEQ_MALLOC(maxIntWtListSize * sizeof(Vd));
         assert(intWtVDList);
-        strWtVDList = (Vd *) malloc(soughtStrWtListSize * sizeof(Vd));
+        strWtVDList = (Vd *) SEQ_MALLOC(soughtStrWtListSize * sizeof(Vd));
         assert(strWtVDList);
 
         findSubGraphs2_arg_t findSubGraphs2Arg;
@@ -393,9 +417,12 @@ MAIN(argc, argv)
         findSubGraphs2Arg.soughtStrWtList     = soughtStrWtList;
         findSubGraphs2Arg.soughtStrWtListSize = soughtStrWtListSize;
 
-        TIMER_READ(start);
-
+        // NB: Since ASF/PTLSim "REAL" is native execution, and since we are
+        //     using wallclock time, we want to be sure we read time inside the
+        //     simulator, or else we report native cycles spent on the
+        //     benchmark instead of simulator cycles.
         GOTO_SIM();
+        TIMER_READ(start);
 #ifdef OTM
 #pragma omp parallel
         {
@@ -404,9 +431,10 @@ MAIN(argc, argv)
 #else
         thread_start(findSubGraphs2, (void*)&findSubGraphs2Arg);
 #endif
-        GOTO_REAL();
-
         TIMER_READ(stop);
+        // NB: As above, timer reads must be done inside of the simulated
+        //     region for PTLSim/ASF
+        GOTO_REAL();
 
         /* Verification */
         /*
@@ -463,9 +491,12 @@ MAIN(argc, argv)
 
     printf("\nKernel 4 - cutClusters() beginning execution...\n");
 
-    TIMER_READ(start);
-
+    // NB: Since ASF/PTLSim "REAL" is native execution, and since we are using
+    //     wallclock time, we want to be sure we read time inside the
+    //     simulator, or else we report native cycles spent on the benchmark
+    //     instead of simulator cycles.
     GOTO_SIM();
+    TIMER_READ(start);
 #ifdef OTM
 #pragma omp parallel
     {
@@ -474,9 +505,10 @@ MAIN(argc, argv)
 #else
     thread_start(cutClusters, (void*)G);
 #endif
-    GOTO_REAL();
-
     TIMER_READ(stop);
+    // NB: As above, timer reads must be done inside of the simulated region
+    //     for PTLSim/ASF
+    GOTO_REAL();
 
     time = TIMER_DIFF_SECONDS(start, stop);
     totalTime += time;
@@ -566,8 +598,6 @@ MAIN(argc, argv)
 
     TM_SHUTDOWN();
     P_MEMORY_SHUTDOWN();
-
-    GOTO_SIM();
 
     thread_shutdown();
 

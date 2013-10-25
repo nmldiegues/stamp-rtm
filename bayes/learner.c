@@ -58,48 +58,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -204,6 +204,25 @@ compareTask (const void* aPtr, const void* bPtr)
     }
 }
 
+static long
+TMcompareTask (TM_ARGDECL const void* aPtr, const void* bPtr)
+{
+    learner_task_t* aTaskPtr = (learner_task_t*)aPtr;
+    learner_task_t* bTaskPtr = (learner_task_t*)bPtr;
+    float aScore = aTaskPtr->score;
+    float bScore = bTaskPtr->score;
+
+    if (aScore < bScore) {
+        return 1;
+    } else if (aScore > bScore) {
+        return -1;
+    } else {
+        return (aTaskPtr->toId - bTaskPtr->toId);
+    }
+}
+
+comparator_t learner_comparetask(&compareTask, &TMcompareTask);
+
 
 /* =============================================================================
  * compareQuery
@@ -230,19 +249,19 @@ learner_alloc (data_t* dataPtr, adtree_t* adtreePtr, long numThread)
 {
     learner_t* learnerPtr;
 
-    learnerPtr = (learner_t*)malloc(sizeof(learner_t));
+    learnerPtr = (learner_t*)SEQ_MALLOC(sizeof(learner_t));
     if (learnerPtr) {
         learnerPtr->adtreePtr = adtreePtr;
         learnerPtr->netPtr = net_alloc(dataPtr->numVar);
         assert(learnerPtr->netPtr);
         learnerPtr->localBaseLogLikelihoods =
-            (float*)malloc(dataPtr->numVar * sizeof(float));
+            (float*)SEQ_MALLOC(dataPtr->numVar * sizeof(float));
         assert(learnerPtr->localBaseLogLikelihoods);
         learnerPtr->baseLogLikelihood = 0.0F;
         learnerPtr->tasks =
-            (learner_task_t*)malloc(dataPtr->numVar * sizeof(learner_task_t));
+            (learner_task_t*)SEQ_MALLOC(dataPtr->numVar * sizeof(learner_task_t));
         assert(learnerPtr->tasks);
-        learnerPtr->taskListPtr = list_alloc(&compareTask);
+        learnerPtr->taskListPtr = Plist_alloc(&learner_comparetask);
         assert(learnerPtr->taskListPtr);
         learnerPtr->numTotalParent = 0;
     }
@@ -259,12 +278,11 @@ void
 learner_free (learner_t* learnerPtr)
 {
     list_free(learnerPtr->taskListPtr);
-    free(learnerPtr->tasks);
-    free(learnerPtr->localBaseLogLikelihoods);
+    SEQ_FREE(learnerPtr->tasks);
+    SEQ_FREE(learnerPtr->localBaseLogLikelihoods);
     net_free(learnerPtr->netPtr);
-    free(learnerPtr);
+    SEQ_FREE(learnerPtr);
 }
-
 
 /* =============================================================================
  * computeSpecificLocalLogLikelihood
@@ -644,7 +662,7 @@ computeLocalLogLikelihoodHelper (long i,
 
     float localLogLikelihood = 0.0;
 
-    query_t* parentQueryPtr = vector_at(parentQueryVectorPtr, i);
+    query_t* parentQueryPtr = (query_t*)vector_at(parentQueryVectorPtr, i);
     long parentIndex = parentQueryPtr->index;
 
     queries[parentIndex].value = 0;
@@ -887,7 +905,7 @@ TMfindBestRemoveTask (TM_ARGDECL  findBestTaskArg_t* argPtr)
         long p;
         for (p = 0; p < numParent; p++) {
             if (p != fromId) {
-                query_t* queryPtr = PVECTOR_AT(origParentQueryVectorPtr, p);
+                query_t* queryPtr = (query_t*)PVECTOR_AT(origParentQueryVectorPtr, p);
                 status = PVECTOR_PUSHBACK(parentQueryVectorPtr,
                                           (void*)&queries[queryPtr->index]);
                 assert(status);
@@ -1013,7 +1031,7 @@ TMfindBestReverseTask (TM_ARGDECL  findBestTaskArg_t* argPtr)
         long p;
         for (p = 0; p < numParent; p++) {
             if (p != fromId) {
-                query_t* queryPtr = PVECTOR_AT(toOrigParentQueryVectorPtr, p);
+                query_t* queryPtr = (query_t*)PVECTOR_AT(toOrigParentQueryVectorPtr, p);
                 status = PVECTOR_PUSHBACK(parentQueryVectorPtr,
                                           (void*)&queries[queryPtr->index]);
                 assert(status);
@@ -1286,8 +1304,8 @@ learnStructure (void* argPtr)
                                       newBaseLogLikelihood);
                     TM_END();
                     TM_BEGIN();
-                    long numTotalParent = (long)TM_SHARED_READ(learnerPtr->numTotalParent);
-                    TM_SHARED_WRITE(learnerPtr->numTotalParent, (numTotalParent + 1));
+                    long numTotalParent = (long)TM_SHARED_READ_L(learnerPtr->numTotalParent);
+                    TM_SHARED_WRITE_L(learnerPtr->numTotalParent, (numTotalParent + 1));
                     TM_END();
                     break;
                 }
@@ -1315,8 +1333,8 @@ learnStructure (void* argPtr)
                                       newBaseLogLikelihood);
                     TM_END();
                     TM_BEGIN();
-                    long numTotalParent = (long)TM_SHARED_READ(learnerPtr->numTotalParent);
-                    TM_SHARED_WRITE(learnerPtr->numTotalParent, (numTotalParent - 1));
+                    long numTotalParent = (long)TM_SHARED_READ_L(learnerPtr->numTotalParent);
+                    TM_SHARED_WRITE_L(learnerPtr->numTotalParent, (numTotalParent - 1));
                     TM_END();
                     break;
                 }
@@ -1388,7 +1406,7 @@ learnStructure (void* argPtr)
         float newBaseLogLikelihood = oldBaseLogLikelihood + deltaLogLikelihood;
         TM_SHARED_WRITE_F(learnerPtr->baseLogLikelihood, newBaseLogLikelihood);
         baseLogLikelihood = newBaseLogLikelihood;
-        numTotalParent = (long)TM_SHARED_READ(learnerPtr->numTotalParent);
+        numTotalParent = (long)TM_SHARED_READ_L(learnerPtr->numTotalParent);
         TM_END();
 
         /*
@@ -1513,7 +1531,7 @@ learner_score (learner_t* learnerPtr)
     assert(parentQueryVectorPtr);
 
     long numVar = adtreePtr->numVar;
-    query_t* queries = (query_t*)malloc(numVar * sizeof(query_t));
+    query_t* queries = (query_t*)SEQ_MALLOC(numVar * sizeof(query_t));
     assert(queries);
     long v;
     for (v = 0; v < numVar; v++) {
@@ -1546,7 +1564,7 @@ learner_score (learner_t* learnerPtr)
 
     vector_free(queryVectorPtr);
     vector_free(parentQueryVectorPtr);
-    free(queries);
+    SEQ_FREE(queries);
 
     long numRecord = adtreePtr->numRecord;
     float penalty = (float)(-0.5 * (double)numTotalParent * log((double)numRecord));

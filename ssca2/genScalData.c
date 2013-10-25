@@ -6,48 +6,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -108,10 +108,10 @@ genScalData_seq (graphSDG* SDGdataPtr)
     random_seed(stream, 0);
 
     ULONGINT_T* permV; /* the vars associated with the graph tuple */
-    permV = (ULONGINT_T*)malloc(TOT_VERTICES * sizeof(ULONGINT_T));
+    permV = (ULONGINT_T*)SEQ_MALLOC(TOT_VERTICES * sizeof(ULONGINT_T));
     assert(permV);
 
-    long i;
+    unsigned long i;
 
     /* Initialize the array */
     for (i = 0; i < TOT_VERTICES; i++) {
@@ -120,7 +120,7 @@ genScalData_seq (graphSDG* SDGdataPtr)
 
     for (i = 0; i < TOT_VERTICES; i++) {
         long t1 = random_generate(stream);
-        long t = i + t1 % (TOT_VERTICES - i);
+        unsigned long t = i + t1 % (TOT_VERTICES - i);
         if (t != i) {
             ULONGINT_T t2 = permV[t];
             permV[t] = permV[i];
@@ -140,12 +140,12 @@ genScalData_seq (graphSDG* SDGdataPtr)
      * Allocate mem for Clique array
      * Estimate number of clique required and pad by 50%
      */
-    cliqueSizes = (long*)malloc(estTotCliques * sizeof(long));
+    cliqueSizes = (long*)SEQ_MALLOC(estTotCliques * sizeof(long));
     assert(cliqueSizes);
 
 
     /* Generate random clique sizes. */
-    for (i = 0; i < estTotCliques; i++) {
+    for (i = 0; i < (unsigned long)estTotCliques; i++) {
         cliqueSizes[i] = 1 + (random_generate(stream) % MAX_CLIQUE_SIZE);
     }
 
@@ -158,9 +158,9 @@ genScalData_seq (graphSDG* SDGdataPtr)
     ULONGINT_T* lastVsInCliques;
     ULONGINT_T* firstVsInCliques;
 
-    lastVsInCliques = (ULONGINT_T*)malloc(estTotCliques * sizeof(ULONGINT_T));
+    lastVsInCliques = (ULONGINT_T*)SEQ_MALLOC(estTotCliques * sizeof(ULONGINT_T));
     assert(lastVsInCliques);
-    firstVsInCliques = (ULONGINT_T*)malloc(estTotCliques * sizeof(ULONGINT_T));
+    firstVsInCliques = (ULONGINT_T*)SEQ_MALLOC(estTotCliques * sizeof(ULONGINT_T));
     assert(firstVsInCliques);
 
     /*
@@ -168,7 +168,7 @@ genScalData_seq (graphSDG* SDGdataPtr)
      */
 
     lastVsInCliques[0] = cliqueSizes[0] - 1;
-    for (i = 1; i < estTotCliques; i++) {
+    for (i = 1; i < (unsigned long)estTotCliques; i++) {
         lastVsInCliques[i] = cliqueSizes[i] + lastVsInCliques[i-1];
         if (lastVsInCliques[i] >= TOT_VERTICES-1) {
             break;
@@ -189,7 +189,7 @@ genScalData_seq (graphSDG* SDGdataPtr)
     /*
      * Compute start Vertices in cliques.
      */
-    for (i = 1; i < totCliques; i++) {
+    for (i = 1; i < (unsigned long)totCliques; i++) {
         firstVsInCliques[i] = lastVsInCliques[i-1] + 1;
     }
 
@@ -217,7 +217,7 @@ genScalData_seq (graphSDG* SDGdataPtr)
      */
     long estTotEdges;
     if (SCALE >= 12) {
-        estTotEdges = ceil(((MAX_CLIQUE_SIZE-1) * TOT_VERTICES));
+        estTotEdges = ceil((double)((MAX_CLIQUE_SIZE-1) * TOT_VERTICES));
     } else {
         estTotEdges = ceil(1.2 * (((MAX_CLIQUE_SIZE-1)*TOT_VERTICES)
                                   * ((1 + MAX_PARAL_EDGES)/2) + TOT_VERTICES*2));
@@ -236,8 +236,8 @@ genScalData_seq (graphSDG* SDGdataPtr)
     ULONGINT_T* startV;
     ULONGINT_T* endV;
     long numByte = (estTotEdges) * sizeof(ULONGINT_T);
-    startV = (ULONGINT_T*)malloc(numByte);
-    endV = (ULONGINT_T*)malloc(numByte);
+    startV = (ULONGINT_T*)SEQ_MALLOC(numByte);
+    endV = (ULONGINT_T*)SEQ_MALLOC(numByte);
     assert(startV);
     assert(endV);
 
@@ -245,11 +245,11 @@ genScalData_seq (graphSDG* SDGdataPtr)
      * Tmp array to keep track of the no. of parallel edges in each direction
      */
     ULONGINT_T** tmpEdgeCounter =
-        (ULONGINT_T**)malloc(MAX_CLIQUE_SIZE * sizeof(ULONGINT_T *));
+        (ULONGINT_T**)SEQ_MALLOC(MAX_CLIQUE_SIZE * sizeof(ULONGINT_T *));
     assert(tmpEdgeCounter);
-    for (i = 0; i < MAX_CLIQUE_SIZE; i++) {
+    for (i = 0; i < (unsigned long)MAX_CLIQUE_SIZE; i++) {
         tmpEdgeCounter[i] =
-            (ULONGINT_T*)malloc(MAX_CLIQUE_SIZE * sizeof(ULONGINT_T));
+            (ULONGINT_T*)SEQ_MALLOC(MAX_CLIQUE_SIZE * sizeof(ULONGINT_T));
         assert(tmpEdgeCounter[i]);
     }
 
@@ -271,9 +271,9 @@ genScalData_seq (graphSDG* SDGdataPtr)
          * First create at least one edge between two vetices in a clique
          */
 
-        for (i = 0; i < i_cliqueSize; i++) {
+        for (i = 0; i < (unsigned long)i_cliqueSize; i++) {
 
-            long j;
+            unsigned long j;
             for (j = 0; j < i; j++) {
 
                 float r = (float)(random_generate(stream) % 1000) / (float)1000;
@@ -316,8 +316,8 @@ genScalData_seq (graphSDG* SDGdataPtr)
             long i_paralEdge;
             for (i_paralEdge = 0; i_paralEdge < randNumEdges; i_paralEdge++) {
                 i = (random_generate(stream) % i_cliqueSize);
-                long j = (random_generate(stream) % i_cliqueSize);
-                if ((i != j) && (tmpEdgeCounter[i][j] < MAX_PARAL_EDGES)) {
+                unsigned long j = (random_generate(stream) % i_cliqueSize);
+                if ((i != j) && (tmpEdgeCounter[i][j] < (unsigned long)MAX_PARAL_EDGES)) {
                     float r = (float)(random_generate(stream) % 1000) / (float)1000;
                     if (r >= p) {
                         /* Copy to edge structure. */
@@ -332,11 +332,11 @@ genScalData_seq (graphSDG* SDGdataPtr)
 
     } /* for i_clique */
 
-    for (i = 0; i < MAX_CLIQUE_SIZE; i++) {
-        free(tmpEdgeCounter[i]);
+    for (i = 0; i < (unsigned long)MAX_CLIQUE_SIZE; i++) {
+        SEQ_FREE(tmpEdgeCounter[i]);
     }
 
-    free(tmpEdgeCounter);
+    SEQ_FREE(tmpEdgeCounter);
 
 
     /*
@@ -356,13 +356,13 @@ genScalData_seq (graphSDG* SDGdataPtr)
 
     if (SCALE < 10) {
         long numByte = 2 * edgeNum * sizeof(ULONGINT_T);
-        startVertex = (ULONGINT_T*)malloc(numByte);
-        endVertex = (ULONGINT_T*)malloc(numByte);
+        startVertex = (ULONGINT_T*)SEQ_MALLOC(numByte);
+        endVertex = (ULONGINT_T*)SEQ_MALLOC(numByte);
     } else {
         long numByte = (edgeNum + MAX_PARAL_EDGES * TOT_VERTICES)
                        * sizeof(ULONGINT_T);
-        startVertex = (ULONGINT_T*)malloc(numByte);
-        endVertex = (ULONGINT_T*)malloc(numByte);
+        startVertex = (ULONGINT_T*)SEQ_MALLOC(numByte);
+        endVertex = (ULONGINT_T*)SEQ_MALLOC(numByte);
     }
     assert(startVertex);
     assert(endVertex);
@@ -547,19 +547,19 @@ genScalData_seq (graphSDG* SDGdataPtr)
     printf("No. of inter-clique edges - %lu\n", numEdgesPlacedOutside);
     printf("Total no. of edges        - %lu\n", numEdgesPlaced);
 
-    free(cliqueSizes);
-    free(firstVsInCliques);
-    free(lastVsInCliques);
+    SEQ_FREE(cliqueSizes);
+    SEQ_FREE(firstVsInCliques);
+    SEQ_FREE(lastVsInCliques);
 
-    free(startV);
-    free(endV);
+    SEQ_FREE(startV);
+    SEQ_FREE(endV);
 
     /*
      * STEP 4: Generate edge weights
      */
 
     SDGdataPtr->intWeight =
-        (LONGINT_T*)malloc(numEdgesPlaced * sizeof(LONGINT_T));
+        (LONGINT_T*)SEQ_MALLOC(numEdgesPlaced * sizeof(LONGINT_T));
     assert(SDGdataPtr->intWeight);
 
     p = PERC_INT_WEIGHTS;
@@ -585,7 +585,7 @@ genScalData_seq (graphSDG* SDGdataPtr)
     }
 
     SDGdataPtr->strWeight =
-        (char*)malloc(numStrWtEdges * MAX_STRLEN * sizeof(char));
+        (char*)SEQ_MALLOC(numStrWtEdges * MAX_STRLEN * sizeof(char));
     assert(SDGdataPtr->strWeight);
 
     for (i = 0; i < numEdgesPlaced; i++) {
@@ -602,8 +602,8 @@ genScalData_seq (graphSDG* SDGdataPtr)
      * Choose SOUGHT STRING randomly if not assigned
      */
 
-    if (strlen(SOUGHT_STRING) != MAX_STRLEN) {
-        SOUGHT_STRING = (char*)malloc(MAX_STRLEN * sizeof(char));
+    if (strlen(SOUGHT_STRING) != (unsigned long)MAX_STRLEN) {
+        SOUGHT_STRING = (char*)SEQ_MALLOC(MAX_STRLEN * sizeof(char));
         assert(SOUGHT_STRING);
     }
 
@@ -632,9 +632,9 @@ genScalData_seq (graphSDG* SDGdataPtr)
      */
 
     numByte = numEdgesPlaced * sizeof(ULONGINT_T);
-    SDGdataPtr->startVertex = (ULONGINT_T*)malloc(numByte);
+    SDGdataPtr->startVertex = (ULONGINT_T*)SEQ_MALLOC(numByte);
     assert(SDGdataPtr->startVertex);
-    SDGdataPtr->endVertex = (ULONGINT_T*)malloc(numByte);
+    SDGdataPtr->endVertex = (ULONGINT_T*)SEQ_MALLOC(numByte);
     assert(SDGdataPtr->endVertex);
 
     all_radixsort_node_aux_s3_seq(numEdgesPlaced,
@@ -643,8 +643,8 @@ genScalData_seq (graphSDG* SDGdataPtr)
                                   endVertex,
                                   SDGdataPtr->endVertex);
 
-    free(startVertex);
-    free(endVertex);
+    SEQ_FREE(startVertex);
+    SEQ_FREE(endVertex);
 
     if (SCALE < 12) {
 
@@ -684,9 +684,9 @@ genScalData_seq (graphSDG* SDGdataPtr)
             if (SDGdataPtr->startVertex[i0] != TOT_VERTICES-1) {
                 i0 = i1;
             } else {
-                long j;
+                unsigned long j;
                 for (j=i0; j<numEdgesPlaced; j++) {
-                    long k;
+                    unsigned long k;
                     for (k=j+1; k<numEdgesPlaced; k++) {
                         if (SDGdataPtr->endVertex[k] <
                             SDGdataPtr->endVertex[j])
@@ -704,7 +704,7 @@ genScalData_seq (graphSDG* SDGdataPtr)
     } else {
 
         ULONGINT_T* tempIndex =
-            (ULONGINT_T*)malloc((TOT_VERTICES + 1) * sizeof(ULONGINT_T));
+            (ULONGINT_T*)SEQ_MALLOC((TOT_VERTICES + 1) * sizeof(ULONGINT_T));
 
         /*
          * Update degree of each vertex
@@ -716,7 +716,7 @@ genScalData_seq (graphSDG* SDGdataPtr)
 
         for (i=0; i < TOT_VERTICES; i++) {
             tempIndex[i+1] = tempIndex[i];
-            long j;
+            unsigned long j;
             for (j = i0; j < numEdgesPlaced; j++) {
                 if (SDGdataPtr->startVertex[j] !=
                     SDGdataPtr->startVertex[i0])
@@ -734,9 +734,9 @@ genScalData_seq (graphSDG* SDGdataPtr)
          * Insertion sort for now, replace with something better later on
          */
         for (i = 0; i < TOT_VERTICES; i++) {
-            long j;
+            unsigned long j;
             for (j = tempIndex[i]; j < tempIndex[i+1]; j++) {
-                long k;
+                unsigned long k;
                 for (k = (j + 1); k < tempIndex[i+1]; k++) {
                     if (SDGdataPtr->endVertex[k] <
                         SDGdataPtr->endVertex[j])
@@ -749,12 +749,12 @@ genScalData_seq (graphSDG* SDGdataPtr)
             }
         }
 
-       free(tempIndex);
+       SEQ_FREE(tempIndex);
 
     } /* SCALE >= 12 */
 
     random_free(stream);
-    free(permV);
+    SEQ_FREE(permV);
 }
 
 
@@ -809,9 +809,9 @@ genScalData (void* argPtr)
         long t = i + t1 % (TOT_VERTICES - i);
         if (t != i) {
             TM_BEGIN();
-            long t2 = (long)TM_SHARED_READ(permV[t]);
-            TM_SHARED_WRITE(permV[t], TM_SHARED_READ(permV[i]));
-            TM_SHARED_WRITE(permV[i], t2);
+            long t2 = (long)TM_SHARED_READ_L(permV[t]);
+            TM_SHARED_WRITE_L(permV[t], TM_SHARED_READ_L(permV[i]));
+            TM_SHARED_WRITE_L(permV[i], (unsigned long)t2);
             TM_END();
         }
     }
@@ -933,7 +933,7 @@ genScalData (void* argPtr)
      */
     long estTotEdges;
     if (SCALE >= 12) {
-        estTotEdges = ceil(((MAX_CLIQUE_SIZE-1) * TOT_VERTICES));
+        estTotEdges = ceil((double)((MAX_CLIQUE_SIZE-1) * TOT_VERTICES));
     } else {
         estTotEdges = ceil(1.2 * (((MAX_CLIQUE_SIZE-1)*TOT_VERTICES)
                                   * ((1 + MAX_PARAL_EDGES)/2) + TOT_VERTICES*2));
@@ -1041,7 +1041,7 @@ genScalData (void* argPtr)
             for (i_paralEdge = 0; i_paralEdge < randNumEdges; i_paralEdge++) {
                 i = (PRANDOM_GENERATE(stream) % i_cliqueSize);
                 long j = (PRANDOM_GENERATE(stream) % i_cliqueSize);
-                if ((i != j) && (tmpEdgeCounter[i][j] < MAX_PARAL_EDGES)) {
+                if ((i != j) && (tmpEdgeCounter[i][j] < (unsigned long)MAX_PARAL_EDGES)) {
                     float r = (float)(PRANDOM_GENERATE(stream) % 1000) / (float)1000;
                     if (r >= p) {
                         /* Copy to edge structure. */
@@ -1097,8 +1097,8 @@ genScalData (void* argPtr)
     }
 
     TM_BEGIN();
-    TM_SHARED_WRITE(global_edgeNum,
-                    ((long)TM_SHARED_READ(global_edgeNum) + i_edgePtr));
+    TM_SHARED_WRITE_L(global_edgeNum,
+                    ((long)TM_SHARED_READ_L(global_edgeNum) + i_edgePtr));
     TM_END();
 
     thread_barrier_wait();
@@ -1134,7 +1134,7 @@ genScalData (void* argPtr)
     startVertex = global_startVertex;
     endVertex = global_endVertex;
 
-    for (i = i_edgeStartCounter[myId]; i < i_edgeEndCounter[myId]; i++) {
+    for (i = i_edgeStartCounter[myId]; i < (long)i_edgeEndCounter[myId]; i++) {
         startVertex[i] = startV[i-i_edgeStartCounter[myId]];
         endVertex[i] = endV[i-i_edgeStartCounter[myId]];
     }
@@ -1315,8 +1315,8 @@ genScalData (void* argPtr)
     }
 
     TM_BEGIN();
-    TM_SHARED_WRITE(global_edgeNum,
-                    ((long)TM_SHARED_READ(global_edgeNum) + i_edgePtr));
+    TM_SHARED_WRITE_L(global_edgeNum,
+                    ((long)TM_SHARED_READ_L(global_edgeNum) + i_edgePtr));
     TM_END();
 
 
@@ -1325,7 +1325,7 @@ genScalData (void* argPtr)
     edgeNum = global_edgeNum;
     ULONGINT_T numEdgesPlacedOutside = global_edgeNum;
 
-    for (i = i_edgeStartCounter[myId]; i < i_edgeEndCounter[myId]; i++) {
+    for (i = i_edgeStartCounter[myId]; i < (long)i_edgeEndCounter[myId]; i++) {
         startVertex[i+numEdgesPlacedInCliques] = startV[i-i_edgeStartCounter[myId]];
         endVertex[i+numEdgesPlacedInCliques] = endV[i-i_edgeStartCounter[myId]];
     }
@@ -1388,7 +1388,7 @@ genScalData (void* argPtr)
 
     if (myId == 0) {
         long t = 0;
-        for (i = 0; i < numEdgesPlaced; i++) {
+        for (i = 0; i < (long)numEdgesPlaced; i++) {
             if (SDGdataPtr->intWeight[i] < 0) {
                 SDGdataPtr->intWeight[i] = -t;
                 t++;
@@ -1397,8 +1397,8 @@ genScalData (void* argPtr)
     }
 
     TM_BEGIN();
-    TM_SHARED_WRITE(global_numStrWtEdges,
-                    ((long)TM_SHARED_READ(global_numStrWtEdges) + numStrWtEdges));
+    TM_SHARED_WRITE_L(global_numStrWtEdges,
+                    ((long)TM_SHARED_READ_L(global_numStrWtEdges) + numStrWtEdges));
     TM_END();
 
     thread_barrier_wait();
@@ -1431,7 +1431,7 @@ genScalData (void* argPtr)
 
     if (myId == 0) {
 
-        if (strlen(SOUGHT_STRING) != MAX_STRLEN) {
+        if (strlen(SOUGHT_STRING) != (unsigned long)MAX_STRLEN) {
             SOUGHT_STRING = (char*)P_MALLOC(MAX_STRLEN * sizeof(char));
             assert(SOUGHT_STRING);
         }
@@ -1503,9 +1503,9 @@ genScalData (void* argPtr)
             long i1 = 0;
             i = 0;
 
-            while (i < numEdgesPlaced) {
+            while (i < (long)numEdgesPlaced) {
 
-                for (i = i0; i < numEdgesPlaced; i++) {
+                for (i = i0; i < (long)numEdgesPlaced; i++) {
                     if (SDGdataPtr->startVertex[i] !=
                         SDGdataPtr->startVertex[i1])
                     {
@@ -1531,9 +1531,9 @@ genScalData (void* argPtr)
                 if (SDGdataPtr->startVertex[i0] != TOT_VERTICES-1) {
                     i0 = i1;
                 } else {
-                    long j;
+                    unsigned long j;
                     for (j=i0; j<numEdgesPlaced; j++) {
-                        long k;
+                        unsigned long k;
                         for (k=j+1; k<numEdgesPlaced; k++) {
                             if (SDGdataPtr->endVertex[k] <
                                 SDGdataPtr->endVertex[j])
@@ -1569,14 +1569,14 @@ genScalData (void* argPtr)
             tempIndex[TOT_VERTICES] = numEdgesPlaced;
             long i0 = 0;
 
-            for (i=0; i < TOT_VERTICES; i++) {
+            for (i=0; i < (long)TOT_VERTICES; i++) {
                 tempIndex[i+1] = tempIndex[i];
-                long j;
+                unsigned long j;
                 for (j = i0; j < numEdgesPlaced; j++) {
                     if (SDGdataPtr->startVertex[j] !=
                         SDGdataPtr->startVertex[i0])
                     {
-                        if (SDGdataPtr->startVertex[i0] == i) {
+                        if ((long)SDGdataPtr->startVertex[i0] == i) {
                             tempIndex[i+1] = j;
                             i0 = j;
                             break;
@@ -1613,10 +1613,10 @@ genScalData (void* argPtr)
         }
 #else
         if (myId == 0) {
-            for (i = 0; i < TOT_VERTICES; i++) {
-                long j;
+            for (i = 0; i < (long)TOT_VERTICES; i++) {
+                unsigned long j;
                 for (j = tempIndex[i]; j < tempIndex[i+1]; j++) {
-                    long k;
+                    unsigned long k;
                     for (k = (j + 1); k < tempIndex[i+1]; k++) {
                         if (SDGdataPtr->endVertex[k] <
                             SDGdataPtr->endVertex[j])

@@ -80,10 +80,6 @@
 #include "omp.h"
 #endif
 
-#include "atomic_ops.h"
-#include "utils.h"
-#include "lock_if.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -105,7 +101,7 @@ extern "C" {
 #define THREAD_LOCAL_GET(key)               pthread_getspecific(key)
 
 #define THREAD_MUTEX_T                      pthread_mutex_t
-#define THREAD_MUTEX_INIT(lock)             pthread_spin_init(&(lock), NULL)
+#define THREAD_MUTEX_INIT(lock)             pthread_mutex_init(&(lock), NULL)
 #define THREAD_MUTEX_LOCK(lock)             pthread_mutex_lock(&(lock))
 #define THREAD_MUTEX_UNLOCK(lock)           pthread_mutex_unlock(&(lock))
 
@@ -138,11 +134,7 @@ extern "C" {
 #endif /* !LOG_BARRIER */
 #endif /* !SIMULATOR */
 
-extern volatile lock_global_data the_lock;
-extern __attribute__((aligned(CACHE_LINE_SIZE))) volatile lock_local_data* local_th_data;
-
-extern __thread uint32_t phys_id;
-extern __thread uint32_t cluster_id;
+extern THREAD_MUTEX_T global_rtm_mutex;
 
 #ifdef LOG_BARRIER
 typedef struct thread_barrier {

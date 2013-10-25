@@ -72,6 +72,7 @@
 #ifndef COORDINATE_H
 #define COORDINATE_H 1
 
+#include "tm.h"
 
 typedef struct coordinate {
     double x;
@@ -85,6 +86,8 @@ typedef struct coordinate {
  */
 long
 coordinate_compare (coordinate_t* aPtr, coordinate_t* bPtr);
+long
+TMcoordinate_compare (TM_ARGDECL coordinate_t* aPtr, coordinate_t* bPtr);
 
 
 /* =============================================================================

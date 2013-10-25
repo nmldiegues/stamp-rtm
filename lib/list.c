@@ -13,48 +13,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -81,18 +81,15 @@
  * DECLARATION OF TM_CALLABLE FUNCTIONS
  * =============================================================================
  */
-
-TM_CALLABLE
-static list_node_t*
+static TM_CALLABLE list_node_t*
 TMfindPrevious (TM_ARGDECL  list_t* listPtr, void* dataPtr);
 
-TM_CALLABLE
-static void
+static TM_CALLABLE void
 TMfreeList (TM_ARGDECL  list_node_t* nodePtr);
 
-TM_CALLABLE
-void
-TMlist_free (TM_ARGDECL  list_t* listPtr);
+// [RSTM] declared in list.h
+/* void */
+/* TMlist_free (TM_ARGDECL  list_t* listPtr); */
 
 /* =============================================================================
  * compareDataPtrAddresses
@@ -101,6 +98,12 @@ TMlist_free (TM_ARGDECL  list_t* listPtr);
  */
 static long
 compareDataPtrAddresses (const void* a, const void* b)
+{
+    return ((long)a - (long)b);
+}
+
+static TM_CALLABLE long
+TMcompareDataPtrAddresses (TM_ARGDECL const void* a, const void* b)
 {
     return ((long)a - (long)b);
 }
@@ -175,7 +178,7 @@ TMlist_iter_next (TM_ARGDECL  list_iter_t* itPtr, list_t* listPtr)
     list_iter_t next = (list_iter_t)TM_SHARED_READ_P((*itPtr)->nextPtr);
     TM_LOCAL_WRITE_P(*itPtr, next);
 
-    return next->dataPtr;
+    return TM_SHARED_READ_P(next->dataPtr);
 }
 
 
@@ -187,7 +190,7 @@ TMlist_iter_next (TM_ARGDECL  list_iter_t* itPtr, list_t* listPtr)
 static list_node_t*
 allocNode (void* dataPtr)
 {
-    list_node_t* nodePtr = (list_node_t*)malloc(sizeof(list_node_t));
+    list_node_t* nodePtr = (list_node_t*)SEQ_MALLOC(sizeof(list_node_t));
     if (nodePtr == NULL) {
         return NULL;
     }
@@ -224,7 +227,7 @@ PallocNode (void* dataPtr)
  * -- Returns NULL on failure
  * =============================================================================
  */
-static list_node_t*
+static TM_CALLABLE list_node_t*
 TMallocNode (TM_ARGDECL  void* dataPtr)
 {
     list_node_t* nodePtr = (list_node_t*)TM_MALLOC(sizeof(list_node_t));
@@ -234,9 +237,11 @@ TMallocNode (TM_ARGDECL  void* dataPtr)
 
     nodePtr->dataPtr = dataPtr;
     nodePtr->nextPtr = NULL;
-
     return nodePtr;
 }
+
+comparator_t default_list_comparator(&compareDataPtrAddresses,
+                                     &TMcompareDataPtrAddresses);
 
 
 /* =============================================================================
@@ -246,9 +251,9 @@ TMallocNode (TM_ARGDECL  void* dataPtr)
  * =============================================================================
  */
 list_t*
-list_alloc (long (*compare)(const void*, const void*))
+TMlist_alloc (TM_ARGDECL comparator_t* comp)
 {
-    list_t* listPtr = (list_t*)malloc(sizeof(list_t));
+    list_t* listPtr = (list_t*)TM_MALLOC(sizeof(list_t));
     if (listPtr == NULL) {
         return NULL;
     }
@@ -257,10 +262,10 @@ list_alloc (long (*compare)(const void*, const void*))
     listPtr->head.nextPtr = NULL;
     listPtr->size = 0;
 
-    if (compare == NULL) {
-        listPtr->compare = &compareDataPtrAddresses; /* default */
+    if (comp == NULL) {
+        listPtr->comparator = &default_list_comparator; /* default */
     } else {
-        listPtr->compare = compare;
+        listPtr->comparator = comp;
     }
 
     return listPtr;
@@ -274,7 +279,7 @@ list_alloc (long (*compare)(const void*, const void*))
  * =============================================================================
  */
 list_t*
-Plist_alloc (long (*compare)(const void*, const void*))
+Plist_alloc (comparator_t* comp)
 {
     list_t* listPtr = (list_t*)P_MALLOC(sizeof(list_t));
     if (listPtr == NULL) {
@@ -285,26 +290,18 @@ Plist_alloc (long (*compare)(const void*, const void*))
     listPtr->head.nextPtr = NULL;
     listPtr->size = 0;
 
-    if (compare == NULL) {
-        listPtr->compare = &compareDataPtrAddresses; /* default */
+    if (comp == NULL) {
+        listPtr->comparator = &default_list_comparator; /* default */
     } else {
-        listPtr->compare = compare;
+        listPtr->comparator = comp;
     }
-
     return listPtr;
 }
 
-
-/* =============================================================================
- * TMlist_alloc
- * -- If NULL passed for 'compare' function, will compare data pointer addresses
- * -- Returns NULL on failure
- * =============================================================================
- */
 list_t*
-TMlist_alloc (TM_ARGDECL  long (*compare)(const void*, const void*))
+list_alloc (comparator_t* comp)
 {
-    list_t* listPtr = (list_t*)TM_MALLOC(sizeof(list_t));
+    list_t* listPtr = (list_t*)P_MALLOC(sizeof(list_t));
     if (listPtr == NULL) {
         return NULL;
     }
@@ -313,12 +310,11 @@ TMlist_alloc (TM_ARGDECL  long (*compare)(const void*, const void*))
     listPtr->head.nextPtr = NULL;
     listPtr->size = 0;
 
-    if (compare == NULL) {
-        listPtr->compare = &compareDataPtrAddresses; /* default */
+    if (comp == NULL) {
+        listPtr->comparator = &default_list_comparator; /* default */
     } else {
-        listPtr->compare = compare;
+        listPtr->comparator = comp;
     }
-
     return listPtr;
 }
 
@@ -330,7 +326,7 @@ TMlist_alloc (TM_ARGDECL  long (*compare)(const void*, const void*))
 static void
 freeNode (list_node_t* nodePtr)
 {
-    free(nodePtr);
+    SEQ_FREE(nodePtr);
 }
 
 
@@ -349,7 +345,7 @@ PfreeNode (list_node_t* nodePtr)
  * TMfreeNode
  * =============================================================================
  */
-static void
+static TM_CALLABLE void
 TMfreeNode (TM_ARGDECL  list_node_t* nodePtr)
 {
     TM_FREE(nodePtr);
@@ -407,7 +403,7 @@ void
 list_free (list_t* listPtr)
 {
     freeList(listPtr->head.nextPtr);
-    free(listPtr);
+    SEQ_FREE(listPtr);
 }
 
 
@@ -481,7 +477,7 @@ list_getSize (list_t* listPtr)
 long
 TMlist_getSize (TM_ARGDECL  list_t* listPtr)
 {
-    return (long)TM_SHARED_READ(listPtr->size);
+    return (long)TM_SHARED_READ_L(listPtr->size);
 }
 
 
@@ -495,8 +491,12 @@ findPrevious (list_t* listPtr, void* dataPtr)
     list_node_t* prevPtr = &(listPtr->head);
     list_node_t* nodePtr = prevPtr->nextPtr;
 
+    // cache the comparison function
+    long int (*compare)(const void*, const void*) =
+      listPtr->comparator->compare_notm;
+
     for (; nodePtr != NULL; nodePtr = nodePtr->nextPtr) {
-        if (listPtr->compare(nodePtr->dataPtr, dataPtr) >= 0) {
+        if (compare(nodePtr->dataPtr, dataPtr) >= 0) {
             return prevPtr;
         }
         prevPtr = nodePtr;
@@ -516,11 +516,15 @@ TMfindPrevious (TM_ARGDECL  list_t* listPtr, void* dataPtr)
     list_node_t* prevPtr = &(listPtr->head);
     list_node_t* nodePtr;
 
+    // cache the comparison function
+    long int (*compare)(TM_ARGDECL const void*, const void*) =
+      listPtr->comparator->compare_tm;
+
     for (nodePtr = (list_node_t*)TM_SHARED_READ_P(prevPtr->nextPtr);
          nodePtr != NULL;
          nodePtr = (list_node_t*)TM_SHARED_READ_P(nodePtr->nextPtr))
     {
-        if (listPtr->compare(nodePtr->dataPtr, dataPtr) >= 0) {
+        if (compare(TM_ARG TM_SHARED_READ_P(nodePtr->dataPtr), dataPtr) >= 0) {
             return prevPtr;
         }
         prevPtr = nodePtr;
@@ -544,7 +548,7 @@ list_find (list_t* listPtr, void* dataPtr)
     nodePtr = prevPtr->nextPtr;
 
     if ((nodePtr == NULL) ||
-        (listPtr->compare(nodePtr->dataPtr, dataPtr) != 0)) {
+        (listPtr->comparator->compare_notm(nodePtr->dataPtr, dataPtr) != 0)) {
         return NULL;
     }
 
@@ -566,7 +570,8 @@ TMlist_find (TM_ARGDECL  list_t* listPtr, void* dataPtr)
     nodePtr = (list_node_t*)TM_SHARED_READ_P(prevPtr->nextPtr);
 
     if ((nodePtr == NULL) ||
-        (listPtr->compare(nodePtr->dataPtr, dataPtr) != 0)) {
+        (listPtr->comparator->compare_tm(TM_ARG nodePtr->dataPtr, dataPtr) != 0))
+    {
         return NULL;
     }
 
@@ -591,7 +596,7 @@ list_insert (list_t* listPtr, void* dataPtr)
 
 #ifdef LIST_NO_DUPLICATES
     if ((currPtr != NULL) &&
-        listPtr->compare(currPtr->dataPtr, dataPtr) == 0) {
+        listPtr->comparator->compare_notm(currPtr->dataPtr, dataPtr) == 0) {
         return FALSE;
     }
 #endif
@@ -626,7 +631,7 @@ Plist_insert (list_t* listPtr, void* dataPtr)
 
 #ifdef LIST_NO_DUPLICATES
     if ((currPtr != NULL) &&
-        listPtr->compare(currPtr->dataPtr, dataPtr) == 0) {
+        listPtr->comparator->compare_notm(currPtr->dataPtr, dataPtr) == 0) {
         return FALSE;
     }
 #endif
@@ -642,7 +647,6 @@ Plist_insert (list_t* listPtr, void* dataPtr)
 
     return TRUE;
 }
-
 
 /* =============================================================================
  * TMlist_insert
@@ -661,7 +665,7 @@ TMlist_insert (TM_ARGDECL  list_t* listPtr, void* dataPtr)
 
 #ifdef LIST_NO_DUPLICATES
     if ((currPtr != NULL) &&
-        listPtr->compare(currPtr->dataPtr, dataPtr) == 0) {
+        listPtr->comparator->compare_tm(TM_ARG TM_SHARED_READ_P(currPtr->dataPtr), dataPtr) == 0) {
         return FALSE;
     }
 #endif
@@ -671,9 +675,9 @@ TMlist_insert (TM_ARGDECL  list_t* listPtr, void* dataPtr)
         return FALSE;
     }
 
-    nodePtr->nextPtr = currPtr;
+    TM_SHARED_WRITE_P(nodePtr->nextPtr, currPtr);
     TM_SHARED_WRITE_P(prevPtr->nextPtr, nodePtr);
-    TM_SHARED_WRITE(listPtr->size, (TM_SHARED_READ(listPtr->size) + 1));
+    TM_SHARED_WRITE_L(listPtr->size, (TM_SHARED_READ_L(listPtr->size) + 1));
 
     return TRUE;
 }
@@ -694,7 +698,7 @@ list_remove (list_t* listPtr, void* dataPtr)
 
     nodePtr = prevPtr->nextPtr;
     if ((nodePtr != NULL) &&
-        (listPtr->compare(nodePtr->dataPtr, dataPtr) == 0))
+        (listPtr->comparator->compare_notm(nodePtr->dataPtr, dataPtr) == 0))
     {
         prevPtr->nextPtr = nodePtr->nextPtr;
         nodePtr->nextPtr = NULL;
@@ -723,7 +727,7 @@ Plist_remove (list_t* listPtr, void* dataPtr)
 
     nodePtr = prevPtr->nextPtr;
     if ((nodePtr != NULL) &&
-        (listPtr->compare(nodePtr->dataPtr, dataPtr) == 0))
+        (listPtr->comparator->compare_notm(nodePtr->dataPtr, dataPtr) == 0))
     {
         prevPtr->nextPtr = nodePtr->nextPtr;
         nodePtr->nextPtr = NULL;
@@ -752,13 +756,14 @@ TMlist_remove (TM_ARGDECL  list_t* listPtr, void* dataPtr)
 
     nodePtr = (list_node_t*)TM_SHARED_READ_P(prevPtr->nextPtr);
     if ((nodePtr != NULL) &&
-        (listPtr->compare(nodePtr->dataPtr, dataPtr) == 0))
+        (listPtr->comparator->compare_tm(TM_ARG TM_SHARED_READ_P(nodePtr->dataPtr), dataPtr) == 0))
     {
         TM_SHARED_WRITE_P(prevPtr->nextPtr, TM_SHARED_READ_P(nodePtr->nextPtr));
         TM_SHARED_WRITE_P(nodePtr->nextPtr, (struct list_node*)NULL);
         TMfreeNode(TM_ARG  nodePtr);
-        TM_SHARED_WRITE(listPtr->size, (TM_SHARED_READ(listPtr->size) - 1));
+        TM_SHARED_WRITE_L(listPtr->size, (TM_SHARED_READ_L(listPtr->size) - 1));
         assert(listPtr->size >= 0);
+
         return TRUE;
     }
 
@@ -772,9 +777,9 @@ TMlist_remove (TM_ARGDECL  list_t* listPtr, void* dataPtr)
  * =============================================================================
  */
 void
-list_clear (list_t* listPtr)
+TMlist_clear (TM_ARGDECL list_t* listPtr)
 {
-    freeList(listPtr->head.nextPtr);
+    TMfreeList(TM_ARG listPtr->head.nextPtr);
     listPtr->head.nextPtr = NULL;
     listPtr->size = 0;
 }

@@ -31,48 +31,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -114,9 +114,7 @@ extractMoments (float *data, int num_elts, int num_moments)
     int j;
     float* moments;
 
-    moments = (float*)malloc(num_moments*sizeof(float));
-    moments[0] = 0;
-    moments[1] = 0;
+    moments = (float*)calloc(num_moments, sizeof(float));
     assert(moments);
     for (i = 0; i < num_elts; i++) {
         moments[0] += data[i];
@@ -148,10 +146,7 @@ zscoreTransform (float** data, /* in & out: [numObjects][numAttributes] */
     int i;
     int j;
 
-    single_variable = (float*)malloc(numObjects*sizeof(float));
-    for (i = 0; i < numObjects; i++) {
-        single_variable[i];
-    }
+    single_variable = (float*)calloc(numObjects, sizeof(float));
     assert(single_variable);
     for (i = 0; i < numAttributes; i++) {
         for (j = 0; j < numObjects; j++) {
@@ -162,9 +157,9 @@ zscoreTransform (float** data, /* in & out: [numObjects][numAttributes] */
         for (j = 0; j < numObjects; j++) {
             data[j][i] = (data[j][i]-moments[0])/moments[1];
         }
-        free(moments);
+        SEQ_FREE(moments);
     }
-    free(single_variable);
+    SEQ_FREE(single_variable);
 }
 
 
@@ -193,7 +188,7 @@ cluster_exec (
     float** tmp_cluster_centres;
     random_t* randomPtr;
 
-    membership = (int*)malloc(numObjects * sizeof(int));
+    membership = (int*)SEQ_MALLOC(numObjects * sizeof(int));
     assert(membership);
 
     randomPtr = random_alloc();
@@ -223,8 +218,8 @@ cluster_exec (
 
         {
             if (*cluster_centres) {
-                free((*cluster_centres)[0]);
-                free(*cluster_centres);
+                SEQ_FREE((*cluster_centres)[0]);
+                SEQ_FREE(*cluster_centres);
             }
 
             *cluster_centres = tmp_cluster_centres;
@@ -234,7 +229,7 @@ cluster_exec (
         itime++;
     } /* nclusters */
 
-    free(membership);
+    SEQ_FREE(membership);
     random_free(randomPtr);
 
     return 0;

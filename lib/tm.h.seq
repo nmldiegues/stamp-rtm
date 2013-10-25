@@ -584,6 +584,13 @@
 
 #  endif /* !SIMULATOR */
 
+#      define SEQ_MALLOC(size)          malloc(size)
+#      define SEQ_FREE(ptr)             free(ptr)
+
+#  define TM_BEGIN_WAIVER()
+#  define TM_END_WAIVER()
+
+
 #  define TM_BEGIN()                    pthread_mutex_lock(&global_rtm_mutex) /* nothing */
 #  define TM_BEGIN_RO()                 pthread_mutex_lock(&global_rtm_mutex) /* nothing */
 #  define TM_END()                      pthread_mutex_unlock(&global_rtm_mutex) /* nothing */
@@ -653,6 +660,7 @@
 #endif /* !OTM */
 
 #else /* !STM */
+
 
 #  define TM_SHARED_READ(var)         (var)
 #  define TM_SHARED_WRITE(var, val)   ({var = val; var;})

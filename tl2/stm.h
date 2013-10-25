@@ -27,17 +27,9 @@
 #define STM_MALLOC(size)                TxAlloc(STM_SELF, size)
 #define STM_FREE(ptr)                   TxFree(STM_SELF, ptr)
 
-
-#  define malloc(size)                  tmalloc_reserve(size)
-#  define calloc(n, size)               ({ \
-                                            size_t numByte = (n) * (size); \
-                                            void* ptr = tmalloc_reserve(numByte); \
-                                            if (ptr) { \
-                                                memset(ptr, 0, numByte); \
-                                            } \
-                                            ptr; \
-                                        })
-#  define realloc(ptr, size)            tmalloc_reserveAgain(ptr, size)
+#  define malloc(size)                  tmalloc_reserve_tl2(size)
+#  define calloc(n, size)               tm_calloc(n, size)
+#  define realloc(ptr, size)            tmalloc_reserve_tl2Again(ptr, size)
 #  define free(ptr)                     tmalloc_release(ptr)
 
 #  include <setjmp.h>

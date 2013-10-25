@@ -12,48 +12,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -82,8 +82,7 @@
  * =============================================================================
  */
 
-TM_CALLABLE
-static void
+static TM_CALLABLE void
 checkReservation (TM_ARGDECL  reservation_t* reservationPtr);
 
 /* =============================================================================
@@ -142,17 +141,17 @@ reservation_info_compare (reservation_info_t* aPtr, reservation_info_t* bPtr)
 static void
 checkReservation (TM_ARGDECL  reservation_t* reservationPtr)
 {
-    long numUsed = (long)TM_SHARED_READ(reservationPtr->numUsed);
+    long numUsed = (long)TM_SHARED_READ_L(reservationPtr->numUsed);
     if (numUsed < 0) {
         TM_RESTART();
     }
-    
-    long numFree = (long)TM_SHARED_READ(reservationPtr->numFree);
+
+    long numFree = (long)TM_SHARED_READ_L(reservationPtr->numFree);
     if (numFree < 0) {
         TM_RESTART();
     }
 
-    long numTotal = (long)TM_SHARED_READ(reservationPtr->numTotal);
+    long numTotal = (long)TM_SHARED_READ_L(reservationPtr->numTotal);
     if (numTotal < 0) {
         TM_RESTART();
     }
@@ -161,7 +160,7 @@ checkReservation (TM_ARGDECL  reservation_t* reservationPtr)
         TM_RESTART();
     }
 
-    long price = (long)TM_SHARED_READ(reservationPtr->price);
+    long price = (long)TM_SHARED_READ_L(reservationPtr->price);
     if (price < 0) {
         TM_RESTART();
     }
@@ -212,7 +211,7 @@ reservation_alloc_seq (long id, long numTotal, long price)
 {
     reservation_t* reservationPtr;
 
-    reservationPtr = (reservation_t*)malloc(sizeof(reservation_t));
+    reservationPtr = (reservation_t*)SEQ_MALLOC(sizeof(reservation_t));
     if (reservationPtr != NULL) {
         reservationPtr->id = id;
         reservationPtr->numUsed = 0;
@@ -235,15 +234,15 @@ reservation_alloc_seq (long id, long numTotal, long price)
 bool_t
 reservation_addToTotal (TM_ARGDECL  reservation_t* reservationPtr, long num)
 {
-    long numFree = (long)TM_SHARED_READ(reservationPtr->numFree);
+    long numFree = (long)TM_SHARED_READ_L(reservationPtr->numFree);
 
     if (numFree + num < 0) {
         return FALSE;
     }
 
-    TM_SHARED_WRITE(reservationPtr->numFree, (numFree + num));
-    TM_SHARED_WRITE(reservationPtr->numTotal,
-                    ((long)TM_SHARED_READ(reservationPtr->numTotal) + num));
+    TM_SHARED_WRITE_L(reservationPtr->numFree, (numFree + num));
+    TM_SHARED_WRITE_L(reservationPtr->numTotal,
+                    ((long)TM_SHARED_READ_L(reservationPtr->numTotal) + num));
 
     CHECK_RESERVATION(reservationPtr);
 
@@ -275,14 +274,14 @@ reservation_addToTotal_seq (reservation_t* reservationPtr, long num)
 bool_t
 reservation_make (TM_ARGDECL  reservation_t* reservationPtr)
 {
-    long numFree = (long)TM_SHARED_READ(reservationPtr->numFree);
+    long numFree = (long)TM_SHARED_READ_L(reservationPtr->numFree);
 
     if (numFree < 1) {
         return FALSE;
     }
-    TM_SHARED_WRITE(reservationPtr->numUsed,
-                    ((long)TM_SHARED_READ(reservationPtr->numUsed) + 1));
-    TM_SHARED_WRITE(reservationPtr->numFree, (numFree - 1));
+    TM_SHARED_WRITE_L(reservationPtr->numUsed,
+                    ((long)TM_SHARED_READ_L(reservationPtr->numUsed) + 1));
+    TM_SHARED_WRITE_L(reservationPtr->numFree, (numFree - 1));
 
     CHECK_RESERVATION(reservationPtr);
 
@@ -314,15 +313,15 @@ reservation_make_seq (reservation_t* reservationPtr)
 bool_t
 reservation_cancel (TM_ARGDECL  reservation_t* reservationPtr)
 {
-    long numUsed = (long)TM_SHARED_READ(reservationPtr->numUsed);
+    long numUsed = (long)TM_SHARED_READ_L(reservationPtr->numUsed);
 
     if (numUsed < 1) {
         return FALSE;
     }
 
-    TM_SHARED_WRITE(reservationPtr->numUsed, (numUsed - 1));
-    TM_SHARED_WRITE(reservationPtr->numFree,
-                    ((long)TM_SHARED_READ(reservationPtr->numFree) + 1));
+    TM_SHARED_WRITE_L(reservationPtr->numUsed, (numUsed - 1));
+    TM_SHARED_WRITE_L(reservationPtr->numFree,
+                    ((long)TM_SHARED_READ_L(reservationPtr->numFree) + 1));
 
     CHECK_RESERVATION(reservationPtr);
 
@@ -359,7 +358,7 @@ reservation_updatePrice (TM_ARGDECL  reservation_t* reservationPtr, long newPric
         return FALSE;
     }
 
-    TM_SHARED_WRITE(reservationPtr->price, newPrice);
+    TM_SHARED_WRITE_L(reservationPtr->price, newPrice);
 
     CHECK_RESERVATION(reservationPtr);
 

@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -111,6 +111,17 @@ compareId (const void* aPtr, const void* bPtr)
     return (a - b);
 }
 
+static long
+TMcompareId (TM_ARGDECL const void* aPtr, const void* bPtr)
+{
+    long a = (long)aPtr;
+    long b = (long)bPtr;
+
+    return (a - b);
+}
+
+comparator_t net_compareid(&compareId, &TMcompareId);
+
 
 /* =============================================================================
  * allocNode
@@ -121,17 +132,17 @@ allocNode (long id)
 {
     net_node_t* nodePtr;
 
-    nodePtr = (net_node_t*)malloc(sizeof(net_node_t));
+    nodePtr = (net_node_t*)SEQ_MALLOC(sizeof(net_node_t));
     if (nodePtr) {
-        nodePtr->parentIdListPtr = list_alloc(&compareId);
+        nodePtr->parentIdListPtr = Plist_alloc(&net_compareid);
         if (nodePtr->parentIdListPtr == NULL) {
-            free(nodePtr);
+            SEQ_FREE(nodePtr);
             return NULL;
         }
-        nodePtr->childIdListPtr = list_alloc(&compareId);
+        nodePtr->childIdListPtr = Plist_alloc(&net_compareid);
         if (nodePtr->childIdListPtr == NULL) {
             list_free(nodePtr->parentIdListPtr);
-            free(nodePtr);
+            SEQ_FREE(nodePtr);
             return NULL;
         }
         nodePtr->id = id;
@@ -150,8 +161,9 @@ freeNode (net_node_t* nodePtr)
 {
     Plist_free(nodePtr->childIdListPtr);
     Plist_free(nodePtr->parentIdListPtr);
-    free(nodePtr);
+    SEQ_FREE(nodePtr);
 }
+
 
 
 /* =============================================================================
@@ -163,11 +175,11 @@ net_alloc (long numNode)
 {
     net_t* netPtr;
 
-    netPtr = (net_t*)malloc(sizeof(net_t));
+    netPtr = (net_t*)SEQ_MALLOC(sizeof(net_t));
     if (netPtr) {
         vector_t* nodeVectorPtr = vector_alloc(numNode);
         if (nodeVectorPtr == NULL) {
-            free(netPtr);
+            SEQ_FREE(netPtr);
             return NULL;
         }
         long i;
@@ -180,7 +192,7 @@ net_alloc (long numNode)
                     freeNode(nodePtr);
                 }
                 vector_free(nodeVectorPtr);
-                free(netPtr);
+                SEQ_FREE(netPtr);
                 return NULL;
             }
             bool_t status = vector_pushBack(nodeVectorPtr, (void*)nodePtr);
@@ -191,7 +203,6 @@ net_alloc (long numNode)
 
     return netPtr;
 }
-
 
 /* =============================================================================
  * net_free
@@ -208,9 +219,8 @@ net_free (net_t* netPtr)
         freeNode(nodePtr);
     }
     vector_free(netPtr->nodeVectorPtr);
-    free(netPtr);
+    SEQ_FREE(netPtr);
 }
-
 
 /* =============================================================================
  * insertEdge

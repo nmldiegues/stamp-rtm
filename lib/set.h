@@ -75,6 +75,7 @@
 
 
 #include <stdlib.h>
+#include "tm.h"
 #include "types.h"
 
 
@@ -85,6 +86,8 @@
 #  define SET_T                       rbtree_t
 #  define SET_ALLOC(hash, cmp)        rbtree_alloc(cmp)
 #  define SET_FREE(map)               rbtree_free(map)
+#  define TMSET_ALLOC(hash, cmp)        TMrbtree_alloc(TM_ARG cmp)
+#  define TMSET_FREE(map)               TMrbtree_free(map)
 
 #  define SET_CONTAINS(map, key)      rbtree_contains(map, (void*)(key))
 #  define SET_INSERT(map, key)        rbtree_insert(map, (void*)(key), NULL)

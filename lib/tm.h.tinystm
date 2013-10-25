@@ -463,8 +463,11 @@
 
 #  else /* !OTM */
 
+#      define SEQ_MALLOC(size)          malloc(size)
+#      define SEQ_FREE(ptr)             free(ptr)
+
 #    define TM_START(ro)                do { \
-                                            stm_tx_attr_t _a = {{.read_only = ro}}; \
+                                            stm_tx_attr_t _a = {{.id = 16, .read_only = ro}}; \
                                             sigjmp_buf *_e = stm_start(_a); \
                                             if (_e != NULL) sigsetjmp(*_e, 0); \
                                         } while (0)
@@ -559,17 +562,26 @@
 
 /* We could also map macros to the stm_(load|store)_long functions if needed */
 
+#  define TM_BEGIN_WAIVER()
+#  define TM_END_WAIVER()
+
 #  define TM_SHARED_READ(var)           stm_load((volatile stm_word_t *)(void *)&(var))
 #  define TM_SHARED_READ_P(var)         stm_load_ptr((volatile void **)(void *)&(var))
 #  define TM_SHARED_READ_F(var)         stm_load_float((volatile float *)(void *)&(var))
+#  define TM_SHARED_READ_L(var)         stm_load_long((volatile long *)(void *)&(var))
+#  define TM_SHARED_READ_I(var)         stm_load_int((volatile int *)(void *)&(var))
 
 #  define TM_SHARED_WRITE(var, val)     stm_store((volatile stm_word_t *)(void *)&(var), (stm_word_t)val)
 #  define TM_SHARED_WRITE_P(var, val)   stm_store_ptr((volatile void **)(void *)&(var), val)
 #  define TM_SHARED_WRITE_F(var, val)   stm_store_float((volatile float *)(void *)&(var), val)
+#  define TM_SHARED_WRITE_L(var, val)   stm_store_long((volatile long *)(void *)&(var), val)
+#  define TM_SHARED_WRITE_I(var, val)   stm_store_int((volatile int *)(void *)&(var), val)
 
 #  define TM_LOCAL_WRITE(var, val)      ({var = val; var;})
 #  define TM_LOCAL_WRITE_P(var, val)    ({var = val; var;})
 #  define TM_LOCAL_WRITE_F(var, val)    ({var = val; var;})
+#  define TM_LOCAL_WRITE_L(var, val)    ({var = val; var;})
+#  define TM_LOCAL_WRITE_I(var, val)    ({var = val; var;})
 
 #endif /* !OTM */
 

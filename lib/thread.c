@@ -90,11 +90,7 @@ static void            (*global_funcPtr)(void*) = NULL;
 static void*             global_argPtr          = NULL;
 static volatile bool_t   global_doShutdown      = FALSE;
 
-volatile lock_global_data the_lock;
-__attribute__((aligned(CACHE_LINE_SIZE))) volatile lock_local_data * local_th_data;
-
-__thread uint32_t phys_id;
-__thread uint32_t cluster_id;
+THREAD_MUTEX_T global_rtm_mutex;
 
 /* =============================================================================
  * threadWait
@@ -107,10 +103,6 @@ threadWait (void* argPtr)
     long threadId = *(long*)argPtr;
 
     THREAD_LOCAL_SET(global_threadId, (long)threadId);
-
-    phys_id = the_cores[(int)threadId];
-    cluster_id = get_cluster(phys_id);
-    local_th_data[phys_id] = init_lock_local(phys_id, the_lock);
 
     cpu_set_t my_set;
     CPU_ZERO(&my_set);

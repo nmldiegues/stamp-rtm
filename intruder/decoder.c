@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -91,6 +91,10 @@ typedef struct decoded {
     char* data;
 } decoded_t;
 
+static comparator_t decoder_comparator(&packet_compareFragmentId,
+                                       &TMpacket_compareFragmentId);
+
+
 
 /* =============================================================================
  * decoder_alloc
@@ -101,7 +105,7 @@ decoder_alloc ()
 {
     decoder_t* decoderPtr;
 
-    decoderPtr = (decoder_t*)malloc(sizeof(decoder_t));
+    decoderPtr = (decoder_t*)SEQ_MALLOC(sizeof(decoder_t));
     if (decoderPtr) {
         decoderPtr->fragmentedMapPtr = MAP_ALLOC(NULL, NULL);
         assert(decoderPtr->fragmentedMapPtr);
@@ -122,7 +126,7 @@ decoder_free (decoder_t* decoderPtr)
 {
     queue_free(decoderPtr->decodedQueuePtr);
     MAP_FREE(decoderPtr->fragmentedMapPtr);
-    free(decoderPtr);
+    SEQ_FREE(decoderPtr);
 }
 
 
@@ -130,7 +134,7 @@ decoder_free (decoder_t* decoderPtr)
  * decoder_process
  * =============================================================================
  */
-error_t
+int_error_t
 decoder_process (decoder_t* decoderPtr, char* bytes, long numByte)
 {
     bool_t status;
@@ -139,7 +143,7 @@ decoder_process (decoder_t* decoderPtr, char* bytes, long numByte)
      * Basic error checking
      */
 
-    if (numByte < PACKET_HEADER_LENGTH) {
+    if (numByte < (long)PACKET_HEADER_LENGTH) {
         return ERROR_SHORT;
     }
 
@@ -182,7 +186,7 @@ decoder_process (decoder_t* decoderPtr, char* bytes, long numByte)
 
         if (fragmentListPtr == NULL) {
 
-            fragmentListPtr = list_alloc(&packet_compareFragmentId);
+            fragmentListPtr = list_alloc(&decoder_comparator);
             assert(fragmentListPtr);
             status = list_insert(fragmentListPtr, (void*)packetPtr);
             assert(status);
@@ -231,7 +235,7 @@ decoder_process (decoder_t* decoderPtr, char* bytes, long numByte)
                     i++;
                 }
 
-                char* data = (char*)malloc(numByte + 1);
+                char* data = (char*)SEQ_MALLOC(numByte + 1);
                 assert(data);
                 data[numByte] = '\0';
                 char* dst = data;
@@ -239,12 +243,12 @@ decoder_process (decoder_t* decoderPtr, char* bytes, long numByte)
                 while (list_iter_hasNext(&it, fragmentListPtr)) {
                     packet_t* fragmentPtr =
                         (packet_t*)list_iter_next(&it, fragmentListPtr);
-                    memcpy(dst, fragmentPtr->data, fragmentPtr->length);
+                    memcpy(dst, (void*)fragmentPtr->data, fragmentPtr->length);
                     dst += fragmentPtr->length;
                 }
                 assert(dst == data + numByte);
 
-                decoded_t* decodedPtr = (decoded_t*)malloc(sizeof(decoded_t));
+                decoded_t* decodedPtr = (decoded_t*)SEQ_MALLOC(sizeof(decoded_t));
                 assert(decodedPtr);
                 decodedPtr->flowId = flowId;
                 decodedPtr->data = data;
@@ -270,12 +274,12 @@ decoder_process (decoder_t* decoderPtr, char* bytes, long numByte)
             return ERROR_FRAGMENTID;
         }
 
-        char* data = (char*)malloc(length + 1);
+        char* data = (char*)SEQ_MALLOC(length + 1);
         assert(data);
         data[length] = '\0';
-        memcpy(data, packetPtr->data, length);
+        memcpy(data, (void*)packetPtr->data, length);
 
-        decoded_t* decodedPtr = (decoded_t*)malloc(sizeof(decoded_t));
+        decoded_t* decodedPtr = (decoded_t*)SEQ_MALLOC(sizeof(decoded_t));
         assert(decodedPtr);
         decodedPtr->flowId = flowId;
         decodedPtr->data = data;
@@ -294,7 +298,7 @@ decoder_process (decoder_t* decoderPtr, char* bytes, long numByte)
  * TMdecoder_process
  * =============================================================================
  */
-error_t
+int_error_t
 TMdecoder_process (TM_ARGDECL  decoder_t* decoderPtr, char* bytes, long numByte)
 {
     bool_t status;
@@ -303,7 +307,7 @@ TMdecoder_process (TM_ARGDECL  decoder_t* decoderPtr, char* bytes, long numByte)
      * Basic error checking
      */
 
-    if (numByte < PACKET_HEADER_LENGTH) {
+    if (numByte < (long)PACKET_HEADER_LENGTH) {
         return ERROR_SHORT;
     }
 
@@ -346,7 +350,7 @@ TMdecoder_process (TM_ARGDECL  decoder_t* decoderPtr, char* bytes, long numByte)
 
         if (fragmentListPtr == NULL) {
 
-            fragmentListPtr = TMLIST_ALLOC(&packet_compareFragmentId);
+            fragmentListPtr = TMLIST_ALLOC(&decoder_comparator);
             assert(fragmentListPtr);
             status = TMLIST_INSERT(fragmentListPtr, (void*)packetPtr);
             assert(status);
@@ -403,7 +407,7 @@ TMdecoder_process (TM_ARGDECL  decoder_t* decoderPtr, char* bytes, long numByte)
                 while (TMLIST_ITER_HASNEXT(&it, fragmentListPtr)) {
                     packet_t* fragmentPtr =
                         (packet_t*)TMLIST_ITER_NEXT(&it, fragmentListPtr);
-                    memcpy(dst, fragmentPtr->data, fragmentPtr->length);
+                    memcpy(dst, (void*)fragmentPtr->data, fragmentPtr->length);
                     dst += fragmentPtr->length;
                 }
                 assert(dst == data + numByte);
@@ -437,7 +441,7 @@ TMdecoder_process (TM_ARGDECL  decoder_t* decoderPtr, char* bytes, long numByte)
         char* data = (char*)TM_MALLOC(length + 1);
         assert(data);
         data[length] = '\0';
-        memcpy(data, packetPtr->data, length);
+        memcpy(data, (void*)packetPtr->data, length);
 
         decoded_t* decodedPtr = (decoded_t*)TM_MALLOC(sizeof(decoded_t));
         assert(decodedPtr);
@@ -463,12 +467,12 @@ char*
 decoder_getComplete (decoder_t* decoderPtr, long* decodedFlowIdPtr)
 {
     char* data;
-    decoded_t* decodedPtr = queue_pop(decoderPtr->decodedQueuePtr);
+    decoded_t* decodedPtr = (decoded_t*)queue_pop(decoderPtr->decodedQueuePtr);
 
     if (decodedPtr) {
         *decodedFlowIdPtr = decodedPtr->flowId;
         data = decodedPtr->data;
-        free(decodedPtr);
+        SEQ_FREE(decodedPtr);
     } else {
         *decodedFlowIdPtr = -1;
         data = NULL;
@@ -487,7 +491,7 @@ char*
 TMdecoder_getComplete (TM_ARGDECL  decoder_t* decoderPtr, long* decodedFlowIdPtr)
 {
     char* data;
-    decoded_t* decodedPtr = TMQUEUE_POP(decoderPtr->decodedQueuePtr);
+    decoded_t* decodedPtr = (decoded_t*)TMQUEUE_POP(decoderPtr->decodedQueuePtr);
 
     if (decodedPtr) {
         *decodedFlowIdPtr = decodedPtr->flowId;
@@ -524,7 +528,7 @@ main ()
     long numDataByte = 3;
     long numPacketByte = PACKET_HEADER_LENGTH + numDataByte;
 
-    char* abcBytes = (char*)malloc(numPacketByte);
+    char* abcBytes = (char*)SEQ_MALLOC(numPacketByte);
     assert(abcBytes);
     packet_t* abcPacketPtr;
     abcPacketPtr = (packet_t*)abcBytes;
@@ -536,7 +540,7 @@ main ()
     abcPacketPtr->data[1] = 'b';
     abcPacketPtr->data[2] = 'c';
 
-    char* defBytes = (char*)malloc(numPacketByte);
+    char* defBytes = (char*)SEQ_MALLOC(numPacketByte);
     assert(defBytes);
     packet_t* defPacketPtr;
     defPacketPtr = (packet_t*)defBytes;
@@ -585,14 +589,14 @@ main ()
     assert(decoder_process(decoderPtr, abcBytes, numPacketByte) == ERROR_NONE);
     char* str = decoder_getComplete(decoderPtr, &flowId);
     assert(strcmp(str, "abcdef") == 0);
-    free(str);
+    SEQ_FREE(str);
     assert(flowId == 1);
 
     abcPacketPtr->numFragment = 1;
     assert(decoder_process(decoderPtr, abcBytes, numPacketByte) == ERROR_NONE);
     str = decoder_getComplete(decoderPtr, &flowId);
     assert(strcmp(str, "abc") == 0);
-    free(str);
+    SEQ_FREE(str);
     abcPacketPtr->numFragment = 2;
     assert(flowId == 1);
 
@@ -602,8 +606,8 @@ main ()
 
     decoder_free(decoderPtr);
 
-    free(abcBytes);
-    free(defBytes);
+    SEQ_FREE(abcBytes);
+    SEQ_FREE(defBytes);
 
     puts("All tests passed.");
 

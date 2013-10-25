@@ -2278,7 +2278,7 @@ TxCommit (Thread* Self)
 void*
 TxAlloc (Thread* Self, size_t size)
 {
-    void* ptr = tmalloc_reserve(size);
+    void* ptr = tmalloc_reserve_tl2(size);
     if (ptr) {
         tmalloc_append(Self->allocPtr, ptr);
     }
@@ -2286,6 +2286,14 @@ TxAlloc (Thread* Self, size_t size)
     return ptr;
 }
 
+void *tm_calloc (size_t n, size_t size) {
+    size_t numByte = (n) * (size);
+    void* ptr = tmalloc_reserve_tl2(numByte);
+    if (ptr) {
+        memset(ptr, 0, numByte);
+    }
+    return ptr;
+}
 
 /* =============================================================================
  * TxFree

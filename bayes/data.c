@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -95,12 +95,12 @@ data_alloc (long numVar, long numRecord, random_t* randomPtr)
 {
     data_t* dataPtr;
 
-    dataPtr = (data_t*)malloc(sizeof(data_t));
+    dataPtr = (data_t*)SEQ_MALLOC(sizeof(data_t));
     if (dataPtr) {
         long numDatum = numVar * numRecord;
-        dataPtr->records = (char*)malloc(numDatum * sizeof(char));
+        dataPtr->records = (char*)SEQ_MALLOC(numDatum * sizeof(char));
         if (dataPtr->records == NULL) {
-            free(dataPtr);
+            SEQ_FREE(dataPtr);
             return NULL;
         }
         memset(dataPtr->records, DATA_INIT, (numDatum * sizeof(char)));
@@ -120,8 +120,8 @@ data_alloc (long numVar, long numRecord, random_t* randomPtr)
 void
 data_free (data_t* dataPtr)
 {
-    free(dataPtr->records);
-    free(dataPtr);
+    SEQ_FREE(dataPtr->records);
+    SEQ_FREE(dataPtr);
 }
 
 
@@ -154,13 +154,13 @@ data_generate (data_t* dataPtr, long seed, long maxNumParent, long percentParent
      * value instances
      */
 
-    long** thresholdsTable = (long**)malloc(numVar * sizeof(long*));
+    long** thresholdsTable = (long**)SEQ_MALLOC(numVar * sizeof(long*));
     assert(thresholdsTable);
     long v;
     for (v = 0; v < numVar; v++) {
         list_t* parentIdListPtr = net_getParentIdListPtr(netPtr, v);
         long numThreshold = 1 << list_getSize(parentIdListPtr);
-        long* thresholds = (long*)malloc(numThreshold * sizeof(long));
+        long* thresholds = (long*)SEQ_MALLOC(numThreshold * sizeof(long));
         assert(thresholds);
         long t;
         for (t = 0; t < numThreshold; t++) {
@@ -174,7 +174,7 @@ data_generate (data_t* dataPtr, long seed, long maxNumParent, long percentParent
      * Create variable dependency ordering for record generation
      */
 
-    long* order = (long*)malloc(numVar * sizeof(long));
+    long* order = (long*)SEQ_MALLOC(numVar * sizeof(long));
     assert(order);
     long numOrder = 0;
 
@@ -277,11 +277,11 @@ data_generate (data_t* dataPtr, long seed, long maxNumParent, long percentParent
     bitmap_free(orderedBitmapPtr);
     vector_free(dependencyVectorPtr);
     queue_free(workQueuePtr);
-    free(order);
+    SEQ_FREE(order);
     for (v = 0; v < numVar; v++) {
-        free(thresholdsTable[v]);
+        SEQ_FREE(thresholdsTable[v]);
     }
-    free(thresholdsTable);
+    SEQ_FREE(thresholdsTable);
 
     return netPtr;
 }
@@ -314,7 +314,7 @@ data_copy (data_t* dstPtr, data_t* srcPtr)
     long numDstDatum = dstPtr->numVar * dstPtr->numRecord;
     long numSrcDatum = srcPtr->numVar * srcPtr->numRecord;
     if (numDstDatum != numSrcDatum) {
-        free(dstPtr->records);
+        SEQ_FREE(dstPtr->records);
         dstPtr->records = (char*)calloc(numSrcDatum, sizeof(char));
         if (dstPtr->records == NULL) {
             return FALSE;

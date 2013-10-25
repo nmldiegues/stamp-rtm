@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -184,8 +184,6 @@ MAIN (argc,argv)
     TIMER_T start;
     TIMER_T stop;
 
-    GOTO_REAL();
-
     /* Initialization */
     parseArgs(argc, (char** const)argv);
     SIM_GET_NUM_CPU(global_params[PARAM_THREAD]);
@@ -226,8 +224,12 @@ MAIN (argc,argv)
     /* Benchmark */
     printf("Sequencing gene... ");
     fflush(stdout);
-    TIMER_READ(start);
+    // NB: Since ASF/PTLSim "REAL" is native execution, and since we are using
+    //     wallclock time, we want to be sure we read time inside the
+    //     simulator, or else we report native cycles spent on the benchmark
+    //     instead of simulator cycles.
     GOTO_SIM();
+    TIMER_READ(start);
 #ifdef OTM
 #pragma omp parallel
     {
@@ -236,8 +238,10 @@ MAIN (argc,argv)
 #else
     thread_start(sequencer_run, (void*)sequencerPtr);
 #endif
-    GOTO_REAL();
     TIMER_READ(stop);
+    // NB: As above, timer reads must be done inside of the simulated region
+    //     for PTLSim/ASF
+    GOTO_REAL();
     puts("done.");
     printf("Time = %lf\n", TIMER_DIFF_SECONDS(start, stop));
     fflush(stdout);
@@ -267,8 +271,6 @@ MAIN (argc,argv)
 
     TM_SHUTDOWN();
     P_MEMORY_SHUTDOWN();
-
-    GOTO_SIM();
 
     thread_shutdown();
 

@@ -22,48 +22,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -87,7 +87,7 @@
 #include "memory.h"
 #include "rbtree.h"
 #include "tm.h"
-
+#include "lehigh.h"
 
 typedef struct node {
     void* k;
@@ -101,7 +101,7 @@ typedef struct node {
 
 struct rbtree {
     node_t* root;
-    long (*compare)(const void*, const void*);   /* returns {-1,0,1}, 0 -> equal */
+    comparator_t* compare;
 };
 
 #define LDA(a)              *(a)
@@ -112,13 +112,13 @@ struct rbtree {
 #define STF(o,f,v)          ((o)->f) = (v)
 #define LDNODE(o,f)         ((node_t*)(LDF((o),f)))
 
-#define TX_LDA(a)           TM_SHARED_READ(*(a))
-#define TX_STA(a,v)         TM_SHARED_WRITE(*(a), v)
-#define TX_LDV(a)           TM_SHARED_READ(a)
+#define TX_LDA(a)           TM_SHARED_READ_L(*(a))
+#define TX_STA(a,v)         TM_SHARED_WRITE_L(*(a), v)
+#define TX_LDV(a)           TM_SHARED_READ_L(a)
 #define TX_STV(a,v)         TM_SHARED_WRITE_P(a, v)
-#define TX_LDF(o,f)         ((long)TM_SHARED_READ((o)->f))
+#define TX_LDF(o,f)         ((long)TM_SHARED_READ_L((o)->f))
 #define TX_LDF_P(o,f)       ((void*)TM_SHARED_READ_P((o)->f))
-#define TX_STF(o,f,v)       TM_SHARED_WRITE((o)->f, v)
+#define TX_STF(o,f,v)       TM_SHARED_WRITE_L((o)->f, v)
 #define TX_STF_P(o,f,v)     TM_SHARED_WRITE_P((o)->f, v)
 #define TX_LDNODE(o,f)      ((node_t*)(TX_LDF_P((o),f)))
 
@@ -126,67 +126,54 @@ struct rbtree {
  * DECLARATION OF TM_CALLABLE FUNCTIONS
  * =============================================================================
  */
-
-TM_CALLABLE
-static node_t*
+static TM_CALLABLE node_t*
 TMlookup (TM_ARGDECL  rbtree_t* s, void* k);
 
-TM_CALLABLE
-static void
+static TM_CALLABLE void
 TMrotateLeft (TM_ARGDECL  rbtree_t* s, node_t* x);
 
-TM_CALLABLE
-static void
+static TM_CALLABLE void
 TMrotateRight (TM_ARGDECL  rbtree_t* s, node_t* x);
 
-TM_CALLABLE
-static inline node_t*
+static TM_CALLABLE inline node_t*
 TMparentOf (TM_ARGDECL  node_t* n);
 
-TM_CALLABLE
-static inline node_t*
+static TM_CALLABLE inline node_t*
 TMleftOf (TM_ARGDECL  node_t* n);
 
-TM_CALLABLE
-static inline node_t*
+static TM_CALLABLE inline node_t*
 TMrightOf (TM_ARGDECL  node_t* n);
 
-TM_CALLABLE
-static inline long
+static TM_CALLABLE inline long
 TMcolorOf (TM_ARGDECL  node_t* n);
 
-TM_CALLABLE
-static inline void
+static TM_CALLABLE inline void
 TMsetColor (TM_ARGDECL  node_t* n, long c);
 
-TM_CALLABLE
-static void
+static TM_CALLABLE void
 TMfixAfterInsertion (TM_ARGDECL  rbtree_t* s, node_t* x);
 
-TM_CALLABLE
-static node_t*
+static TM_CALLABLE node_t*
 TMsuccessor  (TM_ARGDECL  node_t* t);
 
-TM_CALLABLE
-static void
+static TM_CALLABLE void
 TMfixAfterDeletion  (TM_ARGDECL  rbtree_t* s, node_t*  x);
 
-TM_CALLABLE
-static node_t*
+static TM_CALLABLE node_t*
 TMinsert (TM_ARGDECL  rbtree_t* s, void* k, void* v, node_t* n);
 
-TM_CALLABLE
-static node_t*
+static TM_CALLABLE node_t*
 TMgetNode (TM_ARGDECL_ALONE);
 
-TM_CALLABLE
-static node_t*
+static TM_CALLABLE node_t*
 TMdelete (TM_ARGDECL  rbtree_t* s, node_t* p);
 
-enum {
-    RED   = 0,
-    BLACK = 1
-};
+static long RED = 0;
+static long BLACK = 1;
+/* enum { */
+/*     RED   = 0, */
+/*     BLACK = 1 */
+/* }; */
 
 
 /*
@@ -212,8 +199,10 @@ lookup (rbtree_t* s, void* k)
 {
     node_t* p = LDNODE(s, root);
 
+    long int (*compare)(const void*, const void*) = s->compare->compare_notm;
+
     while (p != NULL) {
-        long cmp = s->compare(k, LDF(p, k));
+        long cmp = compare(k, LDF(p, k));
         if (cmp == 0) {
             return p;
         }
@@ -234,8 +223,10 @@ TMlookup (TM_ARGDECL  rbtree_t* s, void* k)
 {
     node_t* p = TX_LDNODE(s, root);
 
+    long int (*compare)(TM_ARGDECL const void*, const void*) = s->compare->compare_tm;
+
     while (p != NULL) {
-        long cmp = s->compare(k, TX_LDF_P(p, k));
+        long cmp = compare(TM_ARG k, TX_LDF_P(p, k));
         if (cmp == 0) {
             return p;
         }
@@ -641,8 +632,10 @@ insert (rbtree_t* s, void* k, void* v, node_t* n)
         return NULL;
     }
 
+    long int (*compare)(const void*, const void*) = s->compare->compare_notm;
+
     for (;;) {
-        long cmp = s->compare(k, LDF(t, k));
+        long cmp = compare(k, LDF(t, k));
         if (cmp == 0) {
             return t;
         } else if (cmp < 0) {
@@ -695,15 +688,17 @@ TMinsert (TM_ARGDECL  rbtree_t* s, void* k, void* v, node_t* n)
         TX_STF_P(n, l, (node_t*)NULL);
         TX_STF_P(n, r, (node_t*)NULL);
         TX_STF_P(n, p, (node_t*)NULL);
-        TX_STF(n, k, k);
-        TX_STF(n, v, v);
+        TX_STF_P(n, k, k);
+        TX_STF_P(n, v, v);
         TX_STF(n, c, BLACK);
         TX_STF_P(s, root, n);
         return NULL;
     }
 
+    long int (*compare)(TM_ARGDECL const void*, const void*) = s->compare->compare_tm;
+
     for (;;) {
-        long cmp = s->compare(k, TX_LDF_P(t, k));
+        long cmp = compare(TM_ARG k, TX_LDF_P(t, k));
         if (cmp == 0) {
             return t;
         } else if (cmp < 0) {
@@ -713,8 +708,8 @@ TMinsert (TM_ARGDECL  rbtree_t* s, void* k, void* v, node_t* n)
             } else {
                 TX_STF_P(n, l, (node_t*)NULL);
                 TX_STF_P(n, r, (node_t*)NULL);
-                TX_STF(n, k, k);
-                TX_STF(n, v, v);
+                TX_STF_P(n, k, k);
+                TX_STF_P(n, v, v);
                 TX_STF_P(n, p, t);
                 TX_STF_P(t, l, n);
                 TX_FIX_AFTER_INSERTION(s, n);
@@ -727,8 +722,8 @@ TMinsert (TM_ARGDECL  rbtree_t* s, void* k, void* v, node_t* n)
             } else {
                 TX_STF_P(n, l, (node_t*)NULL);
                 TX_STF_P(n, r, (node_t*)NULL);
-                TX_STF(n, k, k);
-                TX_STF(n, v, v);
+                TX_STF_P(n, k, k);
+                TX_STF_P(n, v, v);
                 TX_STF_P(n, p, t);
                 TX_STF_P(t, r, n);
                 TX_FIX_AFTER_INSERTION(s, n);
@@ -1023,8 +1018,8 @@ TMdelete (TM_ARGDECL  rbtree_t* s, node_t* p)
      */
     if (TX_LDNODE(p, l) != NULL && TX_LDNODE(p, r) != NULL) {
         node_t* s = TX_SUCCESSOR(p);
-        TX_STF(p,k, TX_LDF_P(s, k));
-        TX_STF(p,v, TX_LDF_P(s, v));
+        TX_STF_P(p,k, TX_LDF_P(s, k));
+        TX_STF_P(p,v, TX_LDF_P(s, v));
         p = s;
     } /* p has 2 children */
 
@@ -1222,6 +1217,7 @@ rbtree_verify (rbtree_t* s, long verbose)
     /* Weak check of binary-tree property */
     long ctr = 0;
     node_t* its = firstEntry(s);
+    long int (*compare)(const void*, const void*) = s->compare->compare_notm;
     while (its != NULL) {
         ctr++;
         node_t* child = its->l;
@@ -1236,7 +1232,7 @@ rbtree_verify (rbtree_t* s, long verbose)
         if (nxt == NULL) {
             break;
         }
-        if (s->compare(its->k, nxt->k) >= 0) {
+        if (compare(its->k, nxt->k) >= 0) {
             printf("Key order %lX (%ld %ld) %lX (%ld %ld)\n",
                    (unsigned long)its, (long)its->k, (long)its->v,
                    (unsigned long)nxt, (long)nxt->k, (long)nxt->v);
@@ -1264,17 +1260,24 @@ compareKeysDefault (const void* a, const void* b)
     return ((long)a - (long)b);
 }
 
+static TM_CALLABLE long
+TMcompareKeysDefault (TM_ARGDECL const void* a, const void* b)
+{
+    return ((long)a - (long)b);
+}
+
+comparator_t rbtree_comparekeysdefault(&compareKeysDefault, &TMcompareKeysDefault);
 
 /* =============================================================================
  * rbtree_alloc
  * =============================================================================
  */
 rbtree_t*
-rbtree_alloc (long (*compare)(const void*, const void*))
+rbtree_alloc (comparator_t* compare)
 {
-    rbtree_t* n = (rbtree_t* )malloc(sizeof(*n));
+    rbtree_t* n = (rbtree_t* )SEQ_MALLOC(sizeof(*n));
     if (n) {
-        n->compare = (compare ? compare : &compareKeysDefault);
+        n->compare = ((compare != NULL) ? compare : &rbtree_comparekeysdefault);
         n->root = NULL;
     }
     return n;
@@ -1286,11 +1289,11 @@ rbtree_alloc (long (*compare)(const void*, const void*))
  * =============================================================================
  */
 rbtree_t*
-TMrbtree_alloc (TM_ARGDECL  long (*compare)(const void*, const void*))
+TMrbtree_alloc (TM_ARGDECL  comparator_t* compare)
 {
     rbtree_t* n = (rbtree_t* )TM_MALLOC(sizeof(*n));
     if (n){
-        n->compare = (compare ? compare : &compareKeysDefault);
+        n->compare = ((compare == NULL) ? compare : &rbtree_comparekeysdefault);
         n->root = NULL;
     }
     return n;
@@ -1305,8 +1308,8 @@ static void
 releaseNode (node_t* n)
 {
 #ifndef SIMULATOR
-    free(n);
-#endif    
+    SEQ_FREE(n);
+#endif
 }
 
 
@@ -1314,7 +1317,7 @@ releaseNode (node_t* n)
  * TMreleaseNode
  * =============================================================================
  */
-static void
+static TM_CALLABLE void
 TMreleaseNode  (TM_ARGDECL  node_t* n)
 {
     TM_FREE(n);
@@ -1359,7 +1362,7 @@ void
 rbtree_free (rbtree_t* r)
 {
     freeNode(r->root);
-    free(r);
+    SEQ_FREE(r);
 }
 
 
@@ -1382,7 +1385,7 @@ TMrbtree_free (TM_ARGDECL  rbtree_t* r)
 static node_t*
 getNode ()
 {
-    node_t* n = (node_t*)malloc(sizeof(*n));
+    node_t* n = (node_t*)SEQ_MALLOC(sizeof(*n));
     return n;
 }
 
@@ -1503,7 +1506,7 @@ TMrbtree_update (TM_ARGDECL  rbtree_t* r, void* key, void* val)
     node_t* nn = TMgetNode(TM_ARG_ALONE);
     node_t* ex = TX_INSERT(r, key, val, nn);
     if (ex != NULL) {
-        TX_STF(ex, v, val);
+        TX_STF_P(ex, v, val);
         TMreleaseNode(TM_ARG  nn);
         return TRUE;
     }

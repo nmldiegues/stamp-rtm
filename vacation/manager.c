@@ -12,48 +12,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -84,21 +84,16 @@
  * DECLARATION OF TM_CALLABLE FUNCTIONS
  * =============================================================================
  */
-
-TM_CALLABLE
-static long 
+static TM_CALLABLE long
 queryNumFree (TM_ARGDECL  MAP_T* tablePtr, long id);
 
-TM_CALLABLE
-static long 
+static TM_CALLABLE long
 queryPrice (TM_ARGDECL  MAP_T* tablePtr, long id);
 
-TM_CALLABLE
-static bool_t 
+static TM_CALLABLE bool_t
 reserve (TM_ARGDECL MAP_T* tablePtr, MAP_T* customerTablePtr, long customerId, long id, reservation_type_t type);
 
-TM_CALLABLE
-bool_t
+static TM_CALLABLE bool_t
 addReservation (TM_ARGDECL  MAP_T* tablePtr, long id, long num, long price);
 
 
@@ -122,7 +117,7 @@ manager_alloc ()
 {
     manager_t* managerPtr;
 
-    managerPtr = (manager_t*)malloc(sizeof(manager_t));
+    managerPtr = (manager_t*)SEQ_MALLOC(sizeof(manager_t));
     assert(managerPtr != NULL);
 
     managerPtr->carTablePtr = tableAlloc();
@@ -198,7 +193,7 @@ addReservation (TM_ARGDECL  MAP_T* tablePtr, long id, long num, long price)
         if (!RESERVATION_ADD_TO_TOTAL(reservationPtr, num)) {
             return FALSE;
         }
-        if ((long)TM_SHARED_READ(reservationPtr->numTotal) == 0) {
+        if ((long)TM_SHARED_READ_L(reservationPtr->numTotal) == 0) {
             bool_t status = TMMAP_REMOVE(tablePtr, id);
             if (status == FALSE) {
                 TM_RESTART();
@@ -213,7 +208,7 @@ addReservation (TM_ARGDECL  MAP_T* tablePtr, long id, long num, long price)
 }
 
 
-bool_t
+static bool_t
 addReservation_seq (MAP_T* tablePtr, long id, long num, long price)
 {
     reservation_t* reservationPtr;
@@ -365,14 +360,14 @@ manager_deleteFlight (TM_ARGDECL  manager_t* managerPtr, long flightId)
         return FALSE;
     }
 
-    if ((long)TM_SHARED_READ(reservationPtr->numUsed) > 0) {
+    if ((long)TM_SHARED_READ_L(reservationPtr->numUsed) > 0) {
         return FALSE; /* somebody has a reservation */
     }
 
     return addReservation(TM_ARG
                           managerPtr->flightTablePtr,
                           flightId,
-                          -1*(long)TM_SHARED_READ(reservationPtr->numTotal),
+                          -1*(long)TM_SHARED_READ_L(reservationPtr->numTotal),
                           -1 /* -1 keeps old price */);
 }
 
@@ -498,7 +493,7 @@ queryNumFree (TM_ARGDECL  MAP_T* tablePtr, long id)
 
     reservationPtr = (reservation_t*)TMMAP_FIND(tablePtr, id);
     if (reservationPtr != NULL) {
-        numFree = (long)TM_SHARED_READ(reservationPtr->numFree);
+        numFree = (long)TM_SHARED_READ_L(reservationPtr->numFree);
     }
 
     return numFree;
@@ -518,7 +513,7 @@ queryPrice (TM_ARGDECL  MAP_T* tablePtr, long id)
 
     reservationPtr = (reservation_t*)TMMAP_FIND(tablePtr, id);
     if (reservationPtr != NULL) {
-        price = (long)TM_SHARED_READ(reservationPtr->price);
+        price = (long)TM_SHARED_READ_L(reservationPtr->price);
     }
 
     return price;
@@ -663,7 +658,7 @@ reserve (TM_ARGDECL
             customerPtr,
             type,
             id,
-            (long)TM_SHARED_READ(reservationPtr->price)))
+            (long)TM_SHARED_READ_L(reservationPtr->price)))
     {
         /* Undo previous successful reservation */
         bool_t status = RESERVATION_CANCEL(reservationPtr);
@@ -738,7 +733,7 @@ manager_reserveFlight (TM_ARGDECL
  * -- Returns TRUE on success, else FALSE
  * =============================================================================
  */
-static bool_t
+static TM_CALLABLE bool_t
 cancel (TM_ARGDECL
         MAP_T* tablePtr, MAP_T* customerTablePtr,
         long customerId, long id, reservation_type_t type)

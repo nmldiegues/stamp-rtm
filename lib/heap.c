@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -79,7 +79,7 @@ struct heap {
     void** elements;
     long size;
     long capacity;
-    long (*compare)(const void*, const void*);
+    comparator_t* compare;
 };
 
 
@@ -107,14 +107,32 @@ TMheapify (TM_ARGDECL  heap_t* heapPtr, long startIndex);
  * =============================================================================
  */
 heap_t*
-heap_alloc (long initCapacity, long (*compare)(const void*, const void*))
+heap_alloc (long initCapacity, comparator_t* compare)
 {
     heap_t* heapPtr;
 
-    heapPtr = (heap_t*)malloc(sizeof(heap_t));
+    heapPtr = (heap_t*)SEQ_MALLOC(sizeof(heap_t));
     if (heapPtr) {
         long capacity = ((initCapacity > 0) ? (initCapacity) : (1));
-        heapPtr->elements = (void**)malloc(capacity * sizeof(void*));
+        heapPtr->elements = (void**)SEQ_MALLOC(capacity * sizeof(void*));
+        assert(heapPtr->elements);
+        heapPtr->size = 0;
+        heapPtr->capacity = capacity;
+        heapPtr->compare = compare;
+    }
+
+    return heapPtr;
+}
+
+heap_t*
+TMheap_alloc (TM_ARGDECL long initCapacity, comparator_t* compare)
+{
+    heap_t* heapPtr;
+
+    heapPtr = (heap_t*)TM_MALLOC(sizeof(heap_t));
+    if (heapPtr) {
+        long capacity = ((initCapacity > 0) ? (initCapacity) : (1));
+        heapPtr->elements = (void**)TM_MALLOC(capacity * sizeof(void*));
         assert(heapPtr->elements);
         heapPtr->size = 0;
         heapPtr->capacity = capacity;
@@ -132,8 +150,8 @@ heap_alloc (long initCapacity, long (*compare)(const void*, const void*))
 void
 heap_free (heap_t* heapPtr)
 {
-    free(heapPtr->elements);
-    free(heapPtr);
+    SEQ_FREE(heapPtr->elements);
+    SEQ_FREE(heapPtr);
 }
 
 
@@ -145,7 +163,7 @@ static void
 siftUp (heap_t* heapPtr, long startIndex)
 {
     void** elements = heapPtr->elements;
-    long (*compare)(const void*, const void*) = heapPtr->compare;
+    long (*compare)(const void*, const void*) = heapPtr->compare->compare_notm;
 
     long index = startIndex;
     while ((index > 1)) {
@@ -171,14 +189,13 @@ static void
 TMsiftUp (TM_ARGDECL  heap_t* heapPtr, long startIndex)
 {
     void** elements = (void**)TM_SHARED_READ_P(heapPtr->elements);
-    long (*compare)(const void*, const void*) = heapPtr->compare;
-
+    long (*compare)(TM_ARGDECL const void*, const void*) = heapPtr->compare->compare_tm;
     long index = startIndex;
     while ((index > 1)) {
         long parentIndex = PARENT(index);
         void* parentPtr = (void*)TM_SHARED_READ_P(elements[parentIndex]);
         void* thisPtr   = (void*)TM_SHARED_READ_P(elements[index]);
-        if (compare(parentPtr, thisPtr) >= 0) {
+        if (compare(TM_ARG parentPtr, thisPtr) >= 0) {
             break;
         }
         void* tmpPtr = parentPtr;
@@ -202,7 +219,7 @@ heap_insert (heap_t* heapPtr, void* dataPtr)
 
     if ((size + 1) >= capacity) {
         long newCapacity = capacity * 2;
-        void** newElements = (void**)malloc(newCapacity * sizeof(void*));
+        void** newElements = (void**)SEQ_MALLOC(newCapacity * sizeof(void*));
         if (newElements == NULL) {
             return FALSE;
         }
@@ -212,7 +229,7 @@ heap_insert (heap_t* heapPtr, void* dataPtr)
         for (i = 0; i <= size; i++) {
             newElements[i] = elements[i];
         }
-        free(heapPtr->elements);
+        SEQ_FREE(heapPtr->elements);
         heapPtr->elements = newElements;
     }
 
@@ -232,30 +249,29 @@ heap_insert (heap_t* heapPtr, void* dataPtr)
 bool_t
 TMheap_insert (TM_ARGDECL  heap_t* heapPtr, void* dataPtr)
 {
-    long size = (long)TM_SHARED_READ(heapPtr->size);
-    long capacity = (long)TM_SHARED_READ(heapPtr->capacity);
-
+    long size = (long)TM_SHARED_READ_L(heapPtr->size);
+    long capacity = (long)TM_SHARED_READ_L(heapPtr->capacity);
     if ((size + 1) >= capacity) {
         long newCapacity = capacity * 2;
         void** newElements = (void**)TM_MALLOC(newCapacity * sizeof(void*));
         if (newElements == NULL) {
             return FALSE;
         }
-        TM_SHARED_WRITE(heapPtr->capacity, newCapacity);
+        TM_SHARED_WRITE_L(heapPtr->capacity, newCapacity);
         long i;
-        void** elements = TM_SHARED_READ_P(heapPtr->elements);
+        void** elements = (void**) TM_SHARED_READ_P(heapPtr->elements);
         for (i = 0; i <= size; i++) {
             newElements[i] = (void*)TM_SHARED_READ_P(elements[i]);
         }
-        TM_FREE(heapPtr->elements);
-        TM_SHARED_WRITE(heapPtr->elements, newElements);
+        TM_FREE(elements);
+        TM_SHARED_WRITE_P(heapPtr->elements, newElements);
     }
 
     size++;
-    TM_SHARED_WRITE(heapPtr->size, size);
+    TM_SHARED_WRITE_L(heapPtr->size, size);
     void** elements = (void**)TM_SHARED_READ_P(heapPtr->elements);
     TM_SHARED_WRITE_P(elements[size], dataPtr);
-    TMsiftUp(TM_ARG  heapPtr, size);
+    TMsiftUp(TM_ARG heapPtr, size);
 
     return TRUE;
 }
@@ -269,7 +285,7 @@ static void
 heapify (heap_t* heapPtr, long startIndex)
 {
     void** elements = heapPtr->elements;
-    long (*compare)(const void*, const void*) = heapPtr->compare;
+    long (*compare)(const void*, const void*) = heapPtr->compare->compare_notm;
 
     long size = heapPtr->size;
     long index = startIndex;
@@ -314,9 +330,9 @@ static void
 TMheapify (TM_ARGDECL  heap_t* heapPtr, long startIndex)
 {
     void** elements = (void**)TM_SHARED_READ_P(heapPtr->elements);
-    long (*compare)(const void*, const void*) = heapPtr->compare;
+    long (*compare)(TM_ARGDECL const void*, const void*) = heapPtr->compare->compare_tm;
 
-    long size = (long)TM_SHARED_READ(heapPtr->size);
+    long size = (long)TM_SHARED_READ_L(heapPtr->size);
     long index = startIndex;
 
     while (1) {
@@ -326,16 +342,18 @@ TMheapify (TM_ARGDECL  heap_t* heapPtr, long startIndex)
         long maxIndex = -1;
 
         if ((leftIndex <= size) &&
-            (compare((void*)TM_SHARED_READ_P(elements[leftIndex]),
+            (compare(TM_ARG
+         (void*)TM_SHARED_READ_P(elements[leftIndex]),
                      (void*)TM_SHARED_READ_P(elements[index])) > 0))
         {
             maxIndex = leftIndex;
         } else {
-            maxIndex = index;
+      maxIndex = index;
         }
 
         if ((rightIndex <= size) &&
-            (compare((void*)TM_SHARED_READ_P(elements[rightIndex]),
+            (compare(TM_ARG
+         (void*)TM_SHARED_READ_P(elements[rightIndex]),
                      (void*)TM_SHARED_READ_P(elements[maxIndex])) > 0))
         {
             maxIndex = rightIndex;
@@ -346,7 +364,7 @@ TMheapify (TM_ARGDECL  heap_t* heapPtr, long startIndex)
         } else {
             void* tmpPtr = (void*)TM_SHARED_READ_P(elements[index]);
             TM_SHARED_WRITE_P(elements[index],
-                              (void*)TM_SHARED_READ(elements[maxIndex]));
+                              (void*)TM_SHARED_READ_P(elements[maxIndex]));
             TM_SHARED_WRITE_P(elements[maxIndex], tmpPtr);
             index = maxIndex;
         }
@@ -387,7 +405,7 @@ heap_remove (heap_t* heapPtr)
 void*
 TMheap_remove (TM_ARGDECL  heap_t* heapPtr)
 {
-    long size = (long)TM_SHARED_READ(heapPtr->size);
+    long size = (long)TM_SHARED_READ_L(heapPtr->size);
 
     if (size < 1) {
         return NULL;
@@ -396,7 +414,7 @@ TMheap_remove (TM_ARGDECL  heap_t* heapPtr)
     void** elements = (void**)TM_SHARED_READ_P(heapPtr->elements);
     void* dataPtr = (void*)TM_SHARED_READ_P(elements[1]);
     TM_SHARED_WRITE_P(elements[1], TM_SHARED_READ_P(elements[size]));
-    TM_SHARED_WRITE(heapPtr->size, (size - 1));
+    TM_SHARED_WRITE_L(heapPtr->size, (size - 1));
     TMheapify(TM_ARG  heapPtr, 1);
 
     return dataPtr;
@@ -411,7 +429,7 @@ bool_t
 heap_isValid (heap_t* heapPtr)
 {
     long size = heapPtr->size;
-    long (*compare)(const void*, const void*) = heapPtr->compare;
+    long (*compare)(const void*, const void*) = heapPtr->compare->compare_notm;
     void** elements = heapPtr->elements;
 
     long i;

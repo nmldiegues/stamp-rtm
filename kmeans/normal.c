@@ -24,48 +24,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -166,8 +166,8 @@ work (void* argPtr)
 
             /* Update new cluster centers : sum of objects located within */
             TM_BEGIN();
-            TM_SHARED_WRITE(*new_centers_len[index],
-                            TM_SHARED_READ(*new_centers_len[index]) + 1);
+            TM_SHARED_WRITE_I(*new_centers_len[index],
+                            TM_SHARED_READ_I(*new_centers_len[index]) + 1);
             for (j = 0; j < nfeatures; j++) {
                 TM_SHARED_WRITE_F(
                     new_centers[index][j],
@@ -180,8 +180,8 @@ work (void* argPtr)
         /* Update task queue */
         if (start + CHUNK < npoints) {
             TM_BEGIN();
-            start = (int)TM_SHARED_READ(global_i);
-            TM_SHARED_WRITE(global_i, (start + CHUNK));
+            start = (int)TM_SHARED_READ_L(global_i);
+            TM_SHARED_WRITE_L(global_i, (long)(start + CHUNK));
             TM_END();
         } else {
             break;
@@ -223,9 +223,9 @@ normal_exec (int       nthreads,
     TIMER_T stop;
 
     /* Allocate space for returning variable clusters[] */
-    clusters = (float**)malloc(nclusters * sizeof(float*));
+    clusters = (float**)SEQ_MALLOC(nclusters * sizeof(float*));
     assert(clusters);
-    clusters[0] = (float*)malloc(nclusters * nfeatures * sizeof(float));
+    clusters[0] = (float*)SEQ_MALLOC(nclusters * nfeatures * sizeof(float));
     assert(clusters[0]);
     for (i = 1; i < nclusters; i++) {
         clusters[i] = clusters[i-1] + nfeatures;
@@ -251,10 +251,9 @@ normal_exec (int       nthreads,
         int cluster_size = sizeof(int) + sizeof(float) * nfeatures;
         const int cacheLineSize = 32;
         cluster_size += (cacheLineSize-1) - ((cluster_size-1) % cacheLineSize);
-        alloc_memory = malloc(nclusters * cluster_size);
-        memset(alloc_memory, 0, nclusters * cluster_size);
-        new_centers_len = (int**) malloc(nclusters * sizeof(int*));
-        new_centers = (float**) malloc(nclusters * sizeof(float*));
+        alloc_memory = calloc(nclusters, cluster_size);
+        new_centers_len = (int**) SEQ_MALLOC(nclusters * sizeof(int*));
+        new_centers = (float**) SEQ_MALLOC(nclusters * sizeof(float*));
         assert(alloc_memory && new_centers && new_centers_len);
         for (i = 0; i < nclusters; i++) {
             new_centers_len[i] = (int*)((char*)alloc_memory + cluster_size * i);
@@ -262,9 +261,12 @@ normal_exec (int       nthreads,
         }
     }
 
-    TIMER_READ(start);
-
+    // NB: Since ASF/PTLSim "REAL" is native execution, and since we are using
+    //     wallclock time, we want to be sure we read time inside the
+    //     simulator, or else we report native cycles spent on the benchmark
+    //     instead of simulator cycles.
     GOTO_SIM();
+    TIMER_READ(start);
 
     do {
         delta = 0.0;
@@ -307,14 +309,15 @@ normal_exec (int       nthreads,
 
     } while ((delta > threshold) && (loop++ < 500));
 
-    GOTO_REAL();
-
     TIMER_READ(stop);
+    // NB: As above, timer reads must be done inside of the simulated region
+    //     for PTLSim/ASF
+    GOTO_REAL();
     global_time += TIMER_DIFF_SECONDS(start, stop);
 
-    free(alloc_memory);
-    free(new_centers);
-    free(new_centers_len);
+    SEQ_FREE(alloc_memory);
+    SEQ_FREE(new_centers);
+    SEQ_FREE(new_centers_len);
 
     return clusters;
 }

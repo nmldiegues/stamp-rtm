@@ -95,7 +95,7 @@ void     TxShutdown    ();
 void*    TxAlloc       (Thread*, size_t);
 void     TxFree        (Thread*, void*);
 
-
+void *tm_calloc (size_t n, size_t size);
 
 
 

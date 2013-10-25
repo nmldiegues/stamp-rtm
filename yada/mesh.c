@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -92,6 +92,7 @@ struct mesh {
     SET_T* boundarySetPtr;
 };
 
+comparator_t mesh_listcompareedge(&element_listCompareEdge, &TMelement_listCompareEdge);
 
 /* =============================================================================
  * mesh_alloc
@@ -100,14 +101,14 @@ struct mesh {
 mesh_t*
 mesh_alloc ()
 {
-    mesh_t* meshPtr = (mesh_t*)malloc(sizeof(mesh_t));
+    mesh_t* meshPtr = (mesh_t*)SEQ_MALLOC(sizeof(mesh_t));
 
     if (meshPtr) {
         meshPtr->rootElementPtr = NULL;
         meshPtr->initBadQueuePtr = queue_alloc(-1);
         assert(meshPtr->initBadQueuePtr);
         meshPtr->size = 0;
-        meshPtr->boundarySetPtr = SET_ALLOC(NULL, &element_listCompareEdge);
+        meshPtr->boundarySetPtr = SET_ALLOC(NULL, &mesh_listcompareedge);
         assert(meshPtr->boundarySetPtr);
     }
 
@@ -124,7 +125,7 @@ mesh_free (mesh_t* meshPtr)
 {
     queue_free(meshPtr->initBadQueuePtr);
     SET_FREE(meshPtr->boundarySetPtr);
-    free(meshPtr);
+    SEQ_FREE(meshPtr);
 }
 
 
@@ -165,9 +166,6 @@ mesh_insert (mesh_t* meshPtr, element_t* elementPtr, MAP_T* edgeMapPtr)
              */
             bool_t isSuccess;
             element_t* sharerPtr = (element_t*)MAP_FIND(edgeMapPtr, edgePtr);
-            if (! sharerPtr) {
-                return;
-            }
             assert(sharerPtr); /* cannot be shared by >2 elements */
             element_addNeighbor(elementPtr, sharerPtr);
             element_addNeighbor(sharerPtr, elementPtr);
@@ -229,9 +227,6 @@ TMmesh_insert (TM_ARGDECL
              */
             bool_t isSuccess;
             element_t* sharerPtr = (element_t*)MAP_FIND(edgeMapPtr, edgePtr);
-            if (! sharerPtr) {
-                return;
-            }
             assert(sharerPtr); /* cannot be shared by >2 elements */
             TMELEMENT_ADDNEIGHBOR(elementPtr, sharerPtr);
             TMELEMENT_ADDNEIGHBOR(sharerPtr, elementPtr);
@@ -264,9 +259,6 @@ TMmesh_insert (TM_ARGDECL
 void
 TMmesh_remove (TM_ARGDECL  mesh_t* meshPtr, element_t* elementPtr)
 {
-    if (TMELEMENT_ISGARBAGE(elementPtr)) {
-        return;
-    }
     assert(!TMELEMENT_ISGARBAGE(elementPtr));
 
     /*
@@ -274,19 +266,19 @@ TMmesh_remove (TM_ARGDECL  mesh_t* meshPtr, element_t* elementPtr)
      * always follows a call a mesh_remove.
      */
     if ((element_t*)TM_SHARED_READ_P(meshPtr->rootElementPtr) == elementPtr) {
-        TM_SHARED_WRITE_P(meshPtr->rootElementPtr, NULL);
+        TM_SHARED_WRITE_P(meshPtr->rootElementPtr, (element_t*)NULL);
     }
 
     /*
      * Remove from neighbors
      */
     list_iter_t it;
-    list_t* neighborListPtr = element_getNeighborListPtr(elementPtr);
+    list_t* neighborListPtr = TMelement_getNeighborListPtr(TM_ARG elementPtr);
     TMLIST_ITER_RESET(&it, neighborListPtr);
     while (TMLIST_ITER_HASNEXT(&it, neighborListPtr)) {
         element_t* neighborPtr =
             (element_t*)TMLIST_ITER_NEXT(&it, neighborListPtr);
-        list_t* neighborNeighborListPtr = element_getNeighborListPtr(neighborPtr);
+        list_t* neighborNeighborListPtr = TMelement_getNeighborListPtr(TM_ARG neighborPtr);
         bool_t status = TMLIST_REMOVE(neighborNeighborListPtr, elementPtr);
         assert(status);
     }
@@ -385,7 +377,7 @@ mesh_read (mesh_t* meshPtr, char* fileNamePrefix)
     sscanf(inputBuff, "%li %li", &numEntry, &numDimension);
     assert(numDimension == 2); /* must be 2-D */
     numCoordinate = numEntry + 1; /* numbering can start from 1 */
-    coordinates = (coordinate_t*)malloc(numCoordinate * sizeof(coordinate_t));
+    coordinates = (coordinate_t*)SEQ_MALLOC(numCoordinate * sizeof(coordinate_t));
     assert(coordinates);
     for (i = 0; i < numEntry; i++) {
         long id;
@@ -472,7 +464,7 @@ mesh_read (mesh_t* meshPtr, char* fileNamePrefix)
     numElement += numEntry;
     fclose(inputFile);
 
-    free(coordinates);
+    SEQ_FREE(coordinates);
     MAP_FREE(edgeMapPtr);
 
     return numElement;
@@ -501,80 +493,6 @@ mesh_shuffleBad (mesh_t* meshPtr, random_t* randomPtr)
     queue_shuffle(meshPtr->initBadQueuePtr, randomPtr);
 }
 
-
-/* =============================================================================
- * mesh_check
- * =============================================================================
- */
-bool_t
-mesh_check (mesh_t* meshPtr, long expectedNumElement)
-{
-    queue_t* searchQueuePtr;
-    MAP_T* visitedMapPtr;
-    long numBadTriangle = 0;
-    long numFalseNeighbor = 0;
-    long numElement = 0;
-
-    puts("Checking final mesh:");
-    fflush(stdout);
-
-    searchQueuePtr = queue_alloc(-1);
-    assert(searchQueuePtr);
-    visitedMapPtr = MAP_ALLOC(NULL, &element_mapCompare);
-    assert(visitedMapPtr);
-
-    /*
-     * Do breadth-first search starting from rootElementPtr
-     */
-    assert(meshPtr->rootElementPtr);
-    queue_push(searchQueuePtr, (void*)meshPtr->rootElementPtr);
-    while (!queue_isEmpty(searchQueuePtr)) {
-
-        element_t* currentElementPtr;
-        list_iter_t it;
-        list_t* neighborListPtr;
-        bool_t isSuccess;
-
-        currentElementPtr = (element_t*)queue_pop(searchQueuePtr);
-        if (MAP_CONTAINS(visitedMapPtr, (void*)currentElementPtr)) {
-            continue;
-        }
-        isSuccess = MAP_INSERT(visitedMapPtr, (void*)currentElementPtr, NULL);
-        assert(isSuccess);
-        if (!element_checkAngles(currentElementPtr)) {
-            numBadTriangle++;
-        }
-        neighborListPtr = element_getNeighborListPtr(currentElementPtr);
-
-        list_iter_reset(&it, neighborListPtr);
-        while (list_iter_hasNext(&it, neighborListPtr)) {
-            element_t* neighborElementPtr =
-                (element_t*)list_iter_next(&it, neighborListPtr);
-            /*
-             * Continue breadth-first search
-             */
-            if (!MAP_CONTAINS(visitedMapPtr, (void*)neighborElementPtr)) {
-                bool_t isSuccess;
-                isSuccess = queue_push(searchQueuePtr,
-                                       (void*)neighborElementPtr);
-                assert(isSuccess);
-            }
-        } /* for each neighbor */
-
-        numElement++;
-
-    } /* breadth-first search */
-
-    printf("Number of elements      = %li\n", numElement);
-    printf("Number of bad triangles = %li\n", numBadTriangle);
-
-    queue_free(searchQueuePtr);
-    MAP_FREE(visitedMapPtr);
-
-    return ((numBadTriangle > 0 ||
-             numFalseNeighbor > 0 ||
-             numElement != expectedNumElement) ? FALSE : TRUE);
-}
 
 
 #ifdef TEST_MESH

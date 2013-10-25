@@ -90,6 +90,8 @@ typedef struct element element_t;
  */
 long
 element_compare (element_t* aElementPtr, element_t* bElementPtr);
+long
+TMelement_compare (TM_ARGDECL element_t* aElementPtr, element_t* bElementPtr);
 
 
 /* =============================================================================
@@ -100,6 +102,8 @@ element_compare (element_t* aElementPtr, element_t* bElementPtr);
  */
 long
 element_listCompare (const void* aPtr, const void* bPtr);
+long
+TMelement_listCompare (TM_ARGDECL const void* aPtr, const void* bPtr);
 
 
 /* =============================================================================
@@ -192,6 +196,8 @@ element_getEdge (element_t* elementPtr, long i);
  */
 long
 element_listCompareEdge (const void* aPtr, const void* bPtr);
+long
+TMelement_listCompareEdge (TM_ARGDECL const void* aPtr, const void* bPtr);
 
 
 /* =============================================================================
@@ -212,6 +218,8 @@ element_mapCompareEdge (const pair_t* aPtr, const pair_t* bPtr);
  */
 long
 element_heapCompare (const void* aPtr, const void* bPtr);
+long
+TMelement_heapCompare (TM_ARGDECL const void* aPtr, const void* bPtr);
 
 
 /* =============================================================================
@@ -347,6 +355,8 @@ TMelement_addNeighbor (TM_ARGDECL  element_t* elementPtr, element_t* neighborPtr
  */
 list_t*
 element_getNeighborListPtr (element_t* elementPtr);
+list_t*
+TMelement_getNeighborListPtr (TM_ARGDECL element_t* elementPtr);
 
 
 /* =============================================================================
@@ -356,6 +366,8 @@ element_getNeighborListPtr (element_t* elementPtr);
  */
 edge_t*
 element_getCommonEdge (element_t* aElementPtr, element_t* bElementPtr);
+edge_t*
+TMelement_getCommonEdge (TM_ARGDECL element_t* aElementPtr, element_t* bElementPtr);
 
 
 /* =============================================================================
@@ -365,6 +377,8 @@ element_getCommonEdge (element_t* aElementPtr, element_t* bElementPtr);
  */
 coordinate_t
 element_getNewPoint (element_t* elementPtr);
+coordinate_t
+TMelement_getNewPoint (TM_ARGDECL element_t* elementPtr);
 
 
 /* =============================================================================

@@ -36,11 +36,11 @@ typedef struct tmalloc_info {
 
 
 /* =============================================================================
- * tmalloc_reserve
+ * tmalloc_reserve_tl2
  * =============================================================================
  */
 void*
-tmalloc_reserve (size_t size)
+tmalloc_reserve_tl2 (size_t size)
 {
     void* blockPtr = malloc(sizeof(tmalloc_info_t) + size);
 
@@ -58,11 +58,11 @@ tmalloc_reserve (size_t size)
 
 
 /* =============================================================================
- * tmalloc_reserveAgain
+ * tmalloc_reserve_tl2Again
  * =============================================================================
  */
 void*
-tmalloc_reserveAgain (void* ptr, size_t size)
+tmalloc_reserve_tl2Again (void* ptr, size_t size)
 {
     void* blockPtr = DATA2BLK(ptr);
 
@@ -272,13 +272,13 @@ main ()
 
     puts("Starting...");
 
-    char* aStr = (char*)tmalloc_reserve(len + 1);
+    char* aStr = (char*)tmalloc_reserve_tl2(len + 1);
     assert(aStr);
     aStr[len] = '\0';
     strcpy(aStr, str1);
     assert(strcmp(str1, aStr) == 0);
 
-    char* bStr = (char*)tmalloc_reserve(len + 1);
+    char* bStr = (char*)tmalloc_reserve_tl2(len + 1);
     assert(bStr);
     bStr[len] = '\0';
     strcpy(bStr, aStr);
@@ -288,7 +288,7 @@ main ()
     assert(strcmp(str2, bStr) == 0);
     assert(strcmp(bStr, aStr) != 0);
 
-    char* cStr = (char*)tmalloc_reserve(len + 2);
+    char* cStr = (char*)tmalloc_reserve_tl2(len + 2);
     assert(cStr);
     cStr[len+1] = '\0';
     strcpy(cStr, aStr);
@@ -309,17 +309,17 @@ main ()
     assert(strcmp(tmallocPtr->elements[2], str2) == 0);
     tmalloc_releaseAllForward(tmallocPtr, &visit);
 
-    aStr = (char*)tmalloc_reserve(len + 1);
+    aStr = (char*)tmalloc_reserve_tl2(len + 1);
     assert(aStr);
     aStr[len] = '\0';
     strcpy(aStr, str1);
 
-    bStr = (char*)tmalloc_reserve(len + 1);
+    bStr = (char*)tmalloc_reserve_tl2(len + 1);
     assert(bStr);
     bStr[len] = '\0';
     strcpy(bStr, str2);
 
-    cStr = (char*)tmalloc_reserve(len + 2);
+    cStr = (char*)tmalloc_reserve_tl2(len + 2);
     assert(cStr);
     cStr[len+1] = '\0';
     strcpy(cStr, str2);
@@ -332,7 +332,7 @@ main ()
     assert(strcmp(tmallocPtr->elements[2], str2) == 0);
     tmalloc_releaseAllReverse(tmallocPtr, &visit);
 
-    void* ptr = tmalloc_reserve(len);
+    void* ptr = tmalloc_reserve_tl2(len);
     tmalloc_release(ptr);
 
     tmalloc_free(tmallocPtr);

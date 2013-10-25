@@ -5,8 +5,8 @@
 # ==============================================================================
 
 
-CC       := gcc
-CFLAGS   += -g -Wall -pthread
+CC       := g++
+CFLAGS   += -g -Wall -pthread -fno-exceptions
 CFLAGS   += -O3
 CFLAGS   += -I$(LIB)
 CPP      := g++
@@ -19,7 +19,7 @@ OUTPUT +=
 
 LIB := ../lib
 
-STM := ../ssync
+STM := ../tl2
 
 LOSTM := ../../OpenTM/lostm
 

@@ -11,48 +11,48 @@
  *
  * For the license of bayes/sort.h and bayes/sort.c, please see the header
  * of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of kmeans, please see kmeans/LICENSE.kmeans
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of ssca2, please see ssca2/COPYRIGHT
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/mt19937ar.c and lib/mt19937ar.h, please see the
  * header of the files.
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * For the license of lib/rbtree.h and lib/rbtree.c, please see
  * lib/LEGALNOTICE.rbtree and lib/LICENSE.rbtree
- * 
+ *
  * ------------------------------------------------------------------------
- * 
+ *
  * Unless otherwise noted, the following license applies to STAMP files:
- * 
+ *
  * Copyright (c) 2007, Stanford University
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in
  *       the documentation and/or other materials provided with the
  *       distribution.
- * 
+ *
  *     * Neither the name of Stanford University nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY STANFORD UNIVERSITY ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -80,6 +80,8 @@
 #include "vector.h"
 
 
+const unsigned long CACHE_LINE_SIZE = 32UL;
+
 
 /* =============================================================================
  * grid_alloc
@@ -90,18 +92,18 @@ grid_alloc (long width, long height, long depth)
 {
     grid_t* gridPtr;
 
-    gridPtr = (grid_t*)malloc(sizeof(grid_t));
+    gridPtr = (grid_t*)SEQ_MALLOC(sizeof(grid_t));
     if (gridPtr) {
         gridPtr->width  = width;
         gridPtr->height = height;
         gridPtr->depth  = depth;
         long n = width * height * depth;
-        long* points_unaligned = (long*)malloc(n * sizeof(long) + 64);
+        long* points_unaligned = (long*)SEQ_MALLOC(n * sizeof(long) + CACHE_LINE_SIZE);
         assert(points_unaligned);
         gridPtr->points_unaligned = points_unaligned;
         gridPtr->points = (long*)((char*)(((unsigned long)points_unaligned
-                                          & ~(64-1)))
-                                  + 64);
+                                          & ~(CACHE_LINE_SIZE-1)))
+                                  + CACHE_LINE_SIZE);
         memset(gridPtr->points, GRID_POINT_EMPTY, (n * sizeof(long)));
     }
 
@@ -124,12 +126,12 @@ Pgrid_alloc (long width, long height, long depth)
         gridPtr->height = height;
         gridPtr->depth  = depth;
         long n = width * height * depth;
-        long* points_unaligned = (long*)P_MALLOC(n * sizeof(long) + 64);
+        long* points_unaligned = (long*)P_MALLOC(n * sizeof(long) + CACHE_LINE_SIZE);
         assert(points_unaligned);
         gridPtr->points_unaligned = points_unaligned;
         gridPtr->points = (long*)((char*)(((unsigned long)points_unaligned
-                                          & ~(64-1)))
-                                  + 64);
+                                          & ~(CACHE_LINE_SIZE-1)))
+                                  + CACHE_LINE_SIZE);
         memset(gridPtr->points, GRID_POINT_EMPTY, (n * sizeof(long)));
     }
 
@@ -144,8 +146,8 @@ Pgrid_alloc (long width, long height, long depth)
 void
 grid_free (grid_t* gridPtr)
 {
-    free(gridPtr->points_unaligned);
-    free(gridPtr);
+    SEQ_FREE(gridPtr->points_unaligned);
+    SEQ_FREE(gridPtr);
 }
 
 
@@ -178,7 +180,7 @@ grid_copy (grid_t* dstGridPtr, grid_t* srcGridPtr)
 #ifdef USE_EARLY_RELEASE
     long* srcPoints = srcGridPtr->points;
     long i;
-    long i_step = (64 / sizeof(srcPoints[0]));
+    long i_step = (CACHE_LINE_SIZE / sizeof(srcPoints[0]));
     for (i = 0; i < n; i+=i_step) {
         TM_EARLY_RELEASE(srcPoints[i]); /* releases entire line */
     }
@@ -312,11 +314,11 @@ TMgrid_addPath (TM_ARGDECL  grid_t* gridPtr, vector_t* pointVectorPtr)
 
     for (i = 1; i < (n-1); i++) {
         long* gridPointPtr = (long*)vector_at(pointVectorPtr, i);
-        long value = (long)TM_SHARED_READ(*gridPointPtr);
+        long value = (long)TM_SHARED_READ_L(*gridPointPtr);
         if (value != GRID_POINT_EMPTY) {
             TM_RESTART();
         }
-        TM_SHARED_WRITE(*gridPointPtr, GRID_POINT_FULL);
+        TM_SHARED_WRITE_L(*gridPointPtr, (long)GRID_POINT_FULL);
     }
 }
 
