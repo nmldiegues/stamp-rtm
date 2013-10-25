@@ -83,9 +83,6 @@ static void parseArgs(long argc, char* const argv[]) {
     }
 }
 
-#include <immintrin.h>
-#include <rtmintrin.h>
-
 void client_run (void* argPtr) {
     TM_THREAD_ENTER();
 
