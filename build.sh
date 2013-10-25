@@ -10,6 +10,7 @@ alias=$2
 if [[ $# != 1 ]] ; then
     cd ssync
     make clean
+    cp include/$alias-lock_if.h include/lock_if.h
     make LOCK_VERSION="-DUSE_$alias"
     rc=$?
     if [[ $rc != 0 ]] ; then

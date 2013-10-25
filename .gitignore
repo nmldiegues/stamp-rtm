@@ -13,6 +13,7 @@
 *.a
 
 array-locks/array-locks
+kmeans-locks/kmeans-locks
 
 auto-results
 
@@ -39,6 +40,10 @@ ssca2.seq
 vacation.seq
 yada.seq
 
+lib/
+
+rstm_build/
+
 array/array
 bayes/bayes
 genome/genome
@@ -48,6 +53,36 @@ labyrinth/labyrinth
 ssca2/ssca2
 vacation/vacation
 yada/yada
+
+array/
+bayes/
+genome/
+intruder/
+kmeans/
+labyrinth/
+ssca2/
+vacation/
+yada/
+
+array-bkup/array
+bayes-bkup/bayes
+genome-bkup/genome
+intruder-bkup/intruder
+kmeans-bkup/kmeans
+labyrinth-bkup/labyrinth
+ssca2-bkup/ssca2
+vacation-bkup/vacation
+yada-bkup/yada
+
+array-ssync/array
+bayes-ssync/bayes
+genome-ssync/genome
+intruder-ssync/intruder
+kmeans-ssync/kmeans
+labyrinth-ssync/labyrinth
+ssca2-ssync/ssca2
+vacation-ssync/vacation
+yada-ssync/yada
 
 ssync/bank
 ssync/bank_one
