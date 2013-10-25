@@ -227,6 +227,7 @@ maze_read (maze_t* mazePtr, char* inputFileName)
                 vector_pushBack(dstVectorPtr, (void*)dstPtr);
                 break;
             }
+
             case 'w': { /* walls (format: w x y z) */
                 if (numToken != 4) {
                     goto PARSE_ERROR;
