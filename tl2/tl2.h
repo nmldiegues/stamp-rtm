@@ -96,7 +96,7 @@ void     TxAbort       (Thread*);
 intptr_t TxLoad        (Thread*, volatile intptr_t*);
 void     TxStore       (Thread*, volatile intptr_t*, intptr_t);
 void     TxStoreLocal  (Thread*, volatile intptr_t*, intptr_t);
-void TxStoreHTM (Thread*, volatile intptr_t*, intptr_t, long);
+void TxStoreHTM (Thread*, volatile intptr_t*, intptr_t, vwLock);
 void     TxOnce        ();
 void     TxShutdown    ();
 

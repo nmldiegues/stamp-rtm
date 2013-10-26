@@ -156,7 +156,7 @@ extern __thread long fallback_stm;
 extern __thread long commit_mixed_hw;
 extern __thread long commit_mixed_stm;
 
-extern __thread uintptr_t next_commit;
+extern __thread vwLock next_commit;
 
 extern void abortHTM(Thread* Self);
 extern intptr_t sharedReadHTM(Thread* Self, intptr_t* addr);

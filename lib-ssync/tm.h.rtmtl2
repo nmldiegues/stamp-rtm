@@ -340,7 +340,7 @@
 							int tries = 4;	\
 	while (1) {	\
 							while (is_fallback != 0) {} \
-	                        if (tries > 8) { \
+	                        if (tries > 0) { \
     							int status = _xbegin();	\
     							if (status == _XBEGIN_STARTED) successful_starts++;	\
     							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 0xab) abort_30++; } \
@@ -381,7 +381,7 @@
 							         if (status == _XBEGIN_STARTED) { \
 							             if (is_fallback != 0) { _xabort(0xab); } \
 							             long res_htm = HYBRID_HTM_END(); \
-							             if (res_htm == 1) { _xabort(0xab); }   \
+							             if (res_htm == 0) { _xabort(0xab); }   \
                                                                      _xend();	\
                                                                      AFTER_COMMIT();    \
                                                                      commit_mixed_hw++; \
@@ -393,6 +393,7 @@
 							             if (ret == 0) { \
 							             	STM_RESTART(); \
 							             } \
+								     AFTER_COMMIT(); \
 							             commit_mixed_stm++; \
 							             break;  \
 							         } \

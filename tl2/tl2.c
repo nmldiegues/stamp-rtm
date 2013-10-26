@@ -1958,7 +1958,7 @@ TxStore (Thread* Self, volatile intptr_t* addr, intptr_t valu)
 }
 #endif /* !TL2_EAGER */
 
-void TxStoreHTM (Thread* Self, volatile intptr_t* addr, intptr_t valu, long clockNext)
+void TxStoreHTM (Thread* Self, volatile intptr_t* addr, intptr_t valu, vwLock clockNext)
 {
     volatile vwLock* LockFor;
     vwLock rdv;

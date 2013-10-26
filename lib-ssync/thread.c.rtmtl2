@@ -106,7 +106,7 @@ __thread long fallback_stm;
 __thread long commit_mixed_hw;
 __thread long commit_mixed_stm;
 
-__thread uintptr_t next_commit;
+__thread vwLock next_commit;
 
 void abortHTM(Thread* Self) {
     _xabort(0xab);
@@ -116,6 +116,7 @@ intptr_t sharedReadHTM(Thread* Self, intptr_t* addr) {
 }
 void sharedWriteHTM(Thread* Self, intptr_t* addr, intptr_t val) {
     HTM_WRITE(addr, val, next_commit);
+    *addr = val;
 }
 void localWriteHTM(Thread* Self, intptr_t* addr, intptr_t val) {
     *addr = val;

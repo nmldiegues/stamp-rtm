@@ -90,7 +90,7 @@ typedef volatile intptr_t               vintp;
                                                 (vintp*)(void*)&(var), \
                                                 VP2IP(val))
 
-#define HTM_WRITE(var, val, clock)	     TxStoreHTM(STM_SELF, (vintp*)(void*)&(var), (intptr_t)(val), clock)
+#define HTM_WRITE(var, val, clock)	     TxStoreHTM(STM_SELF, var, val, clock)
 
 #define STM_LOCAL_WRITE(var, val)       ({var = val; var;})
 #define STM_LOCAL_WRITE_F(var, val)     ({var = val; var;})
