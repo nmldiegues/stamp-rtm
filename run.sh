@@ -12,7 +12,7 @@ cd ../norec;
 make clean; make;
 cd ..
 
-config[1]="rtmnorec"
+config[1]="rtmtl2"
 config[2]="rstmnorec"
 config[3]="tl2"
 config[4]="tinystm"
@@ -219,7 +219,7 @@ ext[44]=""
 ext[45]=""
 
 
-build[1]="stm"
+build[1]="rtm"
 build[2]="stm"
 build[3]="stm"
 build[4]="stm"
@@ -281,7 +281,7 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
-for c in 2 3 4 5 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 1 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
@@ -294,7 +294,7 @@ do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 13 14
+            for a in 3
             do 
                 cd $workspace;
                 cd ${benchmarks[$b]};
