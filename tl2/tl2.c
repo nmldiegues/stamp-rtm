@@ -119,7 +119,6 @@ typedef enum {
 
 
 typedef int            BitMap;
-typedef uintptr_t      vwLock;  /* (Version,LOCKBIT) */
 typedef unsigned char  byte;
 
 /* Read set and write-set log entry */
@@ -352,26 +351,6 @@ GVRead (Thread* Self)
  * I1: The generated WV must be > any previously observed (read) R
  */
 
-#ifndef _GVCONFIGURATION
-#  define _GVCONFIGURATION              4
-#endif
-
-#if _GVCONFIGURATION == 4
-#  define _GVFLAVOR                     "GV4"
-#  define GVGenerateWV                  GVGenerateWV_GV4
-#endif
-
-#if _GVCONFIGURATION == 5
-#  define _GVFLAVOR                     "GV5"
-#  define GVGenerateWV                  GVGenerateWV_GV5
-#endif
-
-#if _GVCONFIGURATION == 6
-#  define _GVFLAVOR                     "GV6"
-#  define GVGenerateWV                  GVGenerateWV_GV6
-#endif
-
-
 /* =============================================================================
  * GVGenerateWV_GV4
  *
@@ -390,7 +369,7 @@ GVRead (Thread* Self)
  * thread can "borrow" the wv of the successful thread.
  * =============================================================================
  */
-__INLINE__ vwLock
+vwLock
 GVGenerateWV_GV4 (Thread* Self, vwLock maxv)
 {
 	if (maxv == 0) {
@@ -422,7 +401,7 @@ GVGenerateWV_GV4 (Thread* Self, vwLock maxv)
  *  CONSIDER: use MAX(_GCLOCK, Self->rv, Self->wv, maxv, VERSION(Self->abv))+2
  * =============================================================================
  */
-__INLINE__ vwLock
+vwLock
 GVGenerateWV_GV5 (Thread* Self, vwLock maxv)
 {
 	if (maxv == 0) {
@@ -449,7 +428,7 @@ GVGenerateWV_GV5 (Thread* Self, vwLock maxv)
  * Let the abort-rate or abort:success ratio drive the mask.
  * =============================================================================
  */
-__INLINE__ vwLock
+vwLock
 GVGenerateWV_GV6 (Thread* Self, vwLock maxv)
 {
     long rnd = (long)MarsagliaXOR(Self->xorrng);
@@ -1979,7 +1958,7 @@ TxStore (Thread* Self, volatile intptr_t* addr, intptr_t valu)
 }
 #endif /* !TL2_EAGER */
 
-static inline void TxStoreHTM (Thread* Self, volatile intptr_t* addr, intptr_t valu, long clockNext)
+void TxStoreHTM (Thread* Self, volatile intptr_t* addr, intptr_t valu, long clockNext)
 {
     volatile vwLock* LockFor;
     vwLock rdv;
@@ -2271,7 +2250,7 @@ TxCommit (Thread* Self)
     return 0;
 }
 
-static inline int
+int
 TxCommitNoAbortHTM (Thread* Self)
 {
     if (Self->wrSet.put == Self->wrSet.List)
@@ -2309,7 +2288,7 @@ TxCommitNoAbortHTM (Thread* Self)
     return 1;
 }
 
-static inline int
+int
 TxCommitNoAbortSTM (Thread* Self)
 {
     if (Self->wrSet.put == Self->wrSet.List)
@@ -2325,7 +2304,7 @@ TxCommitNoAbortSTM (Thread* Self)
 }
 
 
-static inline void AfterCommit (Thread* Self)
+void AfterCommit (Thread* Self)
 {
     txCommitReset(Self);
     tmalloc_clear(Self->allocPtr);

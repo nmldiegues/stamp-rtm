@@ -115,7 +115,7 @@ intptr_t sharedReadHTM(Thread* Self, intptr_t* addr) {
     return *addr;
 }
 void sharedWriteHTM(Thread* Self, intptr_t* addr, intptr_t val) {
-    HTM_WRITE(var, val, next_commit);
+    HTM_WRITE(addr, val, next_commit);
 }
 void localWriteHTM(Thread* Self, intptr_t* addr, intptr_t val) {
     *addr = val;
@@ -125,13 +125,13 @@ void abortSTM(Thread* Self) {
     STM_RESTART();
 }
 intptr_t sharedReadSTM(Thread* Self, intptr_t* addr) {
-    return STM_HYBRID_READ(addr);
+    return STM_READ(addr);
 }
 void sharedWriteSTM(Thread* Self, intptr_t* addr, intptr_t val) {
-    STM_HYBRID_WRITE(addr, val);
+    STM_WRITE(addr, val);
 }
 void localWriteSTM(Thread* Self, intptr_t* addr, intptr_t val) {
-    STM_HYBRID_LOCAL_WRITE(addr, val);
+    STM_LOCAL_WRITE(addr, val);
 }
 
 __thread void (*abortFunPtr)(Thread* Self);

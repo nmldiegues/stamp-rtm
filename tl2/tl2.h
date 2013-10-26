@@ -49,6 +49,7 @@
 
 
 
+typedef uintptr_t      vwLock;  /* (Version,LOCKBIT) */
 
 
 typedef struct _Thread Thread;
@@ -86,15 +87,16 @@ void     TxFreeThread  (Thread*);
 void     TxInitThread  (Thread*, long id);
 int      TxCommit      (Thread*);
 
-static inline int TxCommitNoAbortHTM (Thread*);
-static inline int TxCommitNoAbortSTM (Thread*);
-static inline void AfterCommit (Thread*);
+
+int TxCommitNoAbortHTM (Thread*);
+int TxCommitNoAbortSTM (Thread*);
+void AfterCommit (Thread*);
 
 void     TxAbort       (Thread*);
 intptr_t TxLoad        (Thread*, volatile intptr_t*);
 void     TxStore       (Thread*, volatile intptr_t*, intptr_t);
 void     TxStoreLocal  (Thread*, volatile intptr_t*, intptr_t);
-static inline void TxStoreHTM (Thread*, volatile intptr_t*, intptr_t, long);
+void TxStoreHTM (Thread*, volatile intptr_t*, intptr_t, long);
 void     TxOnce        ();
 void     TxShutdown    ();
 
@@ -103,6 +105,28 @@ void     TxFree        (Thread*, void*);
 
 void *tm_calloc (size_t n, size_t size);
 
+vwLock
+GVGenerateWV_GV4 (Thread* Self, vwLock maxv);
+
+
+#ifndef _GVCONFIGURATION
+#  define _GVCONFIGURATION              4
+#endif
+
+#if _GVCONFIGURATION == 4
+#  define _GVFLAVOR                     "GV4"
+#  define GVGenerateWV                  GVGenerateWV_GV4
+#endif
+
+#if _GVCONFIGURATION == 5
+#  define _GVFLAVOR                     "GV5"
+#  define GVGenerateWV                  GVGenerateWV_GV5
+#endif
+
+#if _GVCONFIGURATION == 6
+#  define _GVFLAVOR                     "GV6"
+#  define GVGenerateWV                  GVGenerateWV_GV6
+#endif
 
 
 
