@@ -526,7 +526,7 @@ TMfindPrevious (TM_ARGDECL  list_t* listPtr, void* dataPtr)
          nodePtr = (list_node_t*)TM_SHARED_READ_P(nodePtr->nextPtr))
     {
         //xxxif (compare(TM_ARG TM_SHARED_READ_P(nodePtr->dataPtr), dataPtr) >= 0) {
-        if (listPtr->compare(nodePtr->dataPtr, dataPtr) >= 0) {
+        if (compare(TM_ARG nodePtr->dataPtr, dataPtr) >= 0) {
             return prevPtr;
         }
         prevPtr = nodePtr;
@@ -668,7 +668,7 @@ TMlist_insert (TM_ARGDECL  list_t* listPtr, void* dataPtr)
 #ifdef LIST_NO_DUPLICATES
     if ((currPtr != NULL) &&
         //xxx listPtr->comparator->compare_tm(TM_ARG TM_SHARED_READ_P(currPtr->dataPtr), dataPtr) == 0) {
-        listPtr->compare(currPtr->dataPtr, dataPtr) == 0) {
+        listPtr->comparator->compare_tm(TM_ARG currPtr->dataPtr, dataPtr) == 0) {
         return FALSE;
     }
 #endif
@@ -761,7 +761,7 @@ TMlist_remove (TM_ARGDECL  list_t* listPtr, void* dataPtr)
     nodePtr = (list_node_t*)TM_SHARED_READ_P(prevPtr->nextPtr);
     if ((nodePtr != NULL) &&
         //xxx (listPtr->comparator->compare_tm(TM_ARG TM_SHARED_READ_P(nodePtr->dataPtr), dataPtr) == 0))
-        (listPtr->compare(nodePtr->dataPtr, dataPtr) == 0))
+        (listPtr->comparator->compare_tm(TM_ARG nodePtr->dataPtr, dataPtr) == 0))
     {
         TM_SHARED_WRITE_P(prevPtr->nextPtr, TM_SHARED_READ_P(nodePtr->nextPtr));
         TM_SHARED_WRITE_P(nodePtr->nextPtr, (struct list_node*)NULL);

@@ -13,7 +13,7 @@ make clean; make;
 cd ..
 
 config[1]="rtmnorec"
-config[2]="norec"
+config[2]="rstmnorec"
 config[3]="tl2"
 config[4]="tinystm"
 config[5]="swisstm"
@@ -287,14 +287,14 @@ do
     echo "building ${build[$c]} ${alias[$c]}"
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]} ${alias[$c]};
-    for b in 2 3 4 5 6 7 8 9
+    for b in 2 3 4 5 6 7 8
     do 
         for t in 1 2 3 4 5 6 7 8
         do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 10 1 12 13 14 15
+            for a in 13 14
             do 
                 cd $workspace;
                 cd ${benchmarks[$b]};

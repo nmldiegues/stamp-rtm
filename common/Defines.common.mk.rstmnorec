@@ -6,7 +6,7 @@
 
 
 CC       := g++
-CFLAGS   += -g -Wall -pthread
+CFLAGS   += -g -Wall -pthread -lrt
 CFLAGS   += -O3
 CFLAGS   += -I$(LIB)
 CPP      := g++

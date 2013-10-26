@@ -12,7 +12,7 @@
 CFLAGS   += -w -DSTM -I../rstm/include -I../rstm_build/include -I../rstm
 CPPFLAGS := $(CFLAGS)
 LDFLAGS  += -L$(STM)/libstm
-LIBS     += -lstm64
+LIBS     += -lstm64 -lrt
 
 
 # ==============================================================================
