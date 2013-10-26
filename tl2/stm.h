@@ -71,6 +71,9 @@
 
 typedef volatile intptr_t               vintp;
 
+#define HYBRID_READ(var)		TxLoad(STM_SELF, var)
+#define HYBRID_WRITE(var, val)		TxStore(STM_SELF, var, val)
+
 #define STM_READ(var)                   TxLoad(STM_SELF, (vintp*)(void*)&(var))
 #define STM_READ_F(var)                 IP2F(TxLoad(STM_SELF, \
                                                     (vintp*)FP2IPP(&(var))))

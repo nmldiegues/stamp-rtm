@@ -10,7 +10,7 @@
 # ==============================================================================
 
 CC      := gcc
-CFLAGS  := -g -w -O3
+CFLAGS  := -g -w #-O3
 #CFLAGS  += -m32
 #CFLAGS  += -DTL2_OPTIM_HASHLOG
 #CFLAGS  += -DTL2_RESIZE_HASHLOG
