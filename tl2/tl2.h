@@ -85,10 +85,16 @@ Thread*  TxNewThread   ();
 void     TxFreeThread  (Thread*);
 void     TxInitThread  (Thread*, long id);
 int      TxCommit      (Thread*);
+
+static inline int TxCommitNoAbortHTM (Thread*);
+static inline int TxCommitNoAbortSTM (Thread*);
+static inline void AfterCommit (Thread*);
+
 void     TxAbort       (Thread*);
 intptr_t TxLoad        (Thread*, volatile intptr_t*);
 void     TxStore       (Thread*, volatile intptr_t*, intptr_t);
 void     TxStoreLocal  (Thread*, volatile intptr_t*, intptr_t);
+static inline void TxStoreHTM (Thread*, volatile intptr_t*, intptr_t, long);
 void     TxOnce        ();
 void     TxShutdown    ();
 

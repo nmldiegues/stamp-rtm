@@ -64,6 +64,10 @@
 #define STM_BEGIN_RD()                  STM_BEGIN(1)
 #define STM_BEGIN_WR()                  STM_BEGIN(0)
 #define STM_END()                       TxCommit(STM_SELF)
+#define HYBRID_HTM_END()				 TxCommitNoAbortHTM(STM_SELF)
+#define HYBRID_STM_END()				 TxCommitNoAbortSTM(STM_SELF)
+#define AFTER_COMMIT()					 AfterCommit(STM_SELF)
+#define NEXT_CLOCK()					 GVGenerateWV(STM_SELF, 0)
 
 typedef volatile intptr_t               vintp;
 
@@ -82,6 +86,8 @@ typedef volatile intptr_t               vintp;
 #define STM_WRITE_P(var, val)           TxStore(STM_SELF, \
                                                 (vintp*)(void*)&(var), \
                                                 VP2IP(val))
+
+#define HTM_WRITE(var, val, clock)	     TxStoreHTM(STM_SELF, (vintp*)(void*)&(var), (intptr_t)(val), clock)
 
 #define STM_LOCAL_WRITE(var, val)       ({var = val; var;})
 #define STM_LOCAL_WRITE_F(var, val)     ({var = val; var;})

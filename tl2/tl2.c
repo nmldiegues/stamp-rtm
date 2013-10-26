@@ -165,8 +165,8 @@ struct _Thread {
     volatile vwLock rv;
     vwLock wv;
     vwLock abv;
-#ifdef TL2_EAGER
     vwLock maxv;
+#ifdef TL2_EAGER
     AVPair tmpLockEntry;
 #endif /* TL2_EAGER */
     int* ROFlag;
@@ -393,18 +393,17 @@ GVRead (Thread* Self)
 __INLINE__ vwLock
 GVGenerateWV_GV4 (Thread* Self, vwLock maxv)
 {
+	if (maxv == 0) {
+		maxv = Self->maxv;
+	}
     vwLock gv = _GCLOCK;
     vwLock wv = gv + 2;
     vwLock k = CAS(&_GCLOCK, gv, wv);
     if (k != gv) {
         wv = k;
     }
-    ASSERT((wv & LOCKBIT) == 0);
-    ASSERT(wv != 0); /* overflow */
-    ASSERT(wv > Self->wv);
-    ASSERT(wv > Self->rv);
-    ASSERT(wv > maxv);
     Self->wv = wv;
+    Self->maxv = wv;
     return wv;
 }
 
@@ -426,14 +425,15 @@ GVGenerateWV_GV4 (Thread* Self, vwLock maxv)
 __INLINE__ vwLock
 GVGenerateWV_GV5 (Thread* Self, vwLock maxv)
 {
+	if (maxv == 0) {
+		maxv = Self->maxv;
+	}
     vwLock wv = _GCLOCK + 2;
     if (maxv > wv) {
         wv = maxv + 2;
     }
-    ASSERT(wv != 0); /* overflow */
-    ASSERT(wv > Self->rv);
-    ASSERT(wv >= Self->wv);
     Self->wv = wv;
+    Self->maxv = wv;
     return wv;
 }
 
@@ -1979,6 +1979,13 @@ TxStore (Thread* Self, volatile intptr_t* addr, intptr_t valu)
 }
 #endif /* !TL2_EAGER */
 
+static inline void TxStoreHTM (Thread* Self, volatile intptr_t* addr, intptr_t valu, long clockNext)
+{
+    volatile vwLock* LockFor;
+    vwLock rdv;
+	LockFor = PSLOCK(addr);
+	*(LockFor) = clockNext;
+}
 
 /* =============================================================================
  * TxLoad
@@ -2264,8 +2271,66 @@ TxCommit (Thread* Self)
     return 0;
 }
 
+static inline int
+TxCommitNoAbortHTM (Thread* Self)
+{
+    if (Self->wrSet.put == Self->wrSet.List)
+    {
+        return 1;
+    }
+
+    vwLock maxv = 0;
+    vwLock rv = Self->rv;
+
+    intptr_t dx = 0;
+    Log* const rd = &Self->rdSet;
+    AVPair* const EndOfList = rd->put;
+    AVPair* e;
+    for (e = rd->List; e != EndOfList; e = e->Next) {
+        vwLock v = LDLOCK(e->LockFor);
+        dx |= (v > rv);
+        if (v > maxv) {
+        	maxv = v;
+        }
+    }
+    if (dx == 0) {
+    	return 0;
+    }
+
+    vwLock wv = GVGenerateWV(Self, maxv);
+
+    Log* const wr = &Self->wrSet;
+    AVPair* const End = wr->put;
+    for (e = wr->List; e != End; e = e->Next) {
+    	*(e->LockFor) = wv;
+    	*(e->Addr) = e->Valu;
+    }
+
+    return 1;
+}
+
+static inline int
+TxCommitNoAbortSTM (Thread* Self)
+{
+    if (Self->wrSet.put == Self->wrSet.List)
+    {
+        return 1;
+    }
+
+    if (TryFastUpdate(Self)) {
+        return 1;
+    }
+
+    return 0;
+}
 
 
+static inline void AfterCommit (Thread* Self)
+{
+    txCommitReset(Self);
+    tmalloc_clear(Self->allocPtr);
+    tmalloc_releaseAllForward(Self->freePtr, &txSterilize);
+}
 
 
 
