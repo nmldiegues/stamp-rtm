@@ -178,7 +178,8 @@ TMlist_iter_next (TM_ARGDECL  list_iter_t* itPtr, list_t* listPtr)
     list_iter_t next = (list_iter_t)TM_SHARED_READ_P((*itPtr)->nextPtr);
     TM_LOCAL_WRITE_P(*itPtr, next);
 
-    return TM_SHARED_READ_P(next->dataPtr);
+    //xxx return TM_SHARED_READ_P(next->dataPtr);
+    return next->dataPtr;
 }
 
 
@@ -524,7 +525,8 @@ TMfindPrevious (TM_ARGDECL  list_t* listPtr, void* dataPtr)
          nodePtr != NULL;
          nodePtr = (list_node_t*)TM_SHARED_READ_P(nodePtr->nextPtr))
     {
-        if (compare(TM_ARG TM_SHARED_READ_P(nodePtr->dataPtr), dataPtr) >= 0) {
+        //xxxif (compare(TM_ARG TM_SHARED_READ_P(nodePtr->dataPtr), dataPtr) >= 0) {
+        if (listPtr->compare(nodePtr->dataPtr, dataPtr) >= 0) {
             return prevPtr;
         }
         prevPtr = nodePtr;
@@ -665,7 +667,8 @@ TMlist_insert (TM_ARGDECL  list_t* listPtr, void* dataPtr)
 
 #ifdef LIST_NO_DUPLICATES
     if ((currPtr != NULL) &&
-        listPtr->comparator->compare_tm(TM_ARG TM_SHARED_READ_P(currPtr->dataPtr), dataPtr) == 0) {
+        //xxx listPtr->comparator->compare_tm(TM_ARG TM_SHARED_READ_P(currPtr->dataPtr), dataPtr) == 0) {
+        listPtr->compare(currPtr->dataPtr, dataPtr) == 0) {
         return FALSE;
     }
 #endif
@@ -675,7 +678,8 @@ TMlist_insert (TM_ARGDECL  list_t* listPtr, void* dataPtr)
         return FALSE;
     }
 
-    TM_SHARED_WRITE_P(nodePtr->nextPtr, currPtr);
+    //xxx TM_SHARED_WRITE_P(nodePtr->nextPtr, currPtr);
+    nodePtr->nextPtr = currPtr;
     TM_SHARED_WRITE_P(prevPtr->nextPtr, nodePtr);
     TM_SHARED_WRITE_L(listPtr->size, (TM_SHARED_READ_L(listPtr->size) + 1));
 
@@ -756,7 +760,8 @@ TMlist_remove (TM_ARGDECL  list_t* listPtr, void* dataPtr)
 
     nodePtr = (list_node_t*)TM_SHARED_READ_P(prevPtr->nextPtr);
     if ((nodePtr != NULL) &&
-        (listPtr->comparator->compare_tm(TM_ARG TM_SHARED_READ_P(nodePtr->dataPtr), dataPtr) == 0))
+        //xxx (listPtr->comparator->compare_tm(TM_ARG TM_SHARED_READ_P(nodePtr->dataPtr), dataPtr) == 0))
+        (listPtr->compare(nodePtr->dataPtr, dataPtr) == 0))
     {
         TM_SHARED_WRITE_P(prevPtr->nextPtr, TM_SHARED_READ_P(nodePtr->nextPtr));
         TM_SHARED_WRITE_P(nodePtr->nextPtr, (struct list_node*)NULL);
