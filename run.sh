@@ -294,7 +294,7 @@ do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1
+            for a in 1 2 3 4 5
             do 
                 cd $workspace;
                 cd ${benchmarks[$b]};
@@ -320,6 +320,7 @@ do
     done
 done
 
+exit 0;
 
 for c in 3 4 5 16 34 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
