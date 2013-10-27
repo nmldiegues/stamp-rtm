@@ -2260,105 +2260,40 @@ TxCommitNoAbortHTM (Thread* Self)
 
     Log* const wr = &Self->wrSet;
     Log* const rd = &Self->rdSet;
-    long ctr;
     vwLock wv;
 
-    Self->HoldsLocks = 1;
-    ctr = 1000; /* Spin budget - TUNABLE */
     vwLock maxv = 0;
     AVPair* p;
-    {
-        AVPair* const End = wr->put;
-        for (p = wr->List; p != End; p = p->Next) {
-            volatile vwLock* const LockFor = p->LockFor;
-            vwLock cv;
-            ASSERT(p->Addr != NULL);
-            ASSERT(p->LockFor != NULL);
-            ASSERT(p->Held == 0);
-            ASSERT(p->Owner == Self);
-            /* Consider prefetching only when Self->Retries == 0 */
-            prefetchw(LockFor);
-            cv = LDLOCK(LockFor);
-            if ((cv & LOCKBIT) && ((AVPair*)(cv ^ LOCKBIT))->Owner == Self) {
-                /* CCM: revalidate read because could be a hash collision */
-                if (FindFirst(rd, LockFor) != NULL) {
-                    if (((AVPair*)(cv ^ LOCKBIT))->rdv > Self->rv) {
-                        Self->abv = cv;
-                        return 0;
-                    }
-                }
-                /* Already locked by an earlier iteration. */
-                continue;
-            }
 
-            /* SIGTM does not maintain a read set */
-            if (FindFirst(rd, LockFor) != NULL) {
-                /*
-                 * READ-WRITE stripe
-                 */
-                if ((cv & LOCKBIT) == 0 &&
-                    cv <= Self->rv &&
-                    UNS(CAS(LockFor, cv, (UNS(p)|UNS(LOCKBIT)))) == UNS(cv))
-                {
-                    if (cv > maxv) {
-                        maxv = cv;
-                    }
-                    p->rdv  = cv;
-                    p->Held = 1;
-                    continue;
-                }
-                Self->abv = cv;
-                return 0;
-            } else
-            {
-#      ifdef TL2_NOCM
-                /* wkbaek: no spinning in NOCM mode */
-                long c = 0;
-#      else /* !TL2_NOCM */
-                long c = ctr;
-#      endif /* !TL2_NOCM */
-                for (;;) {
-                    cv = LDLOCK(LockFor);
-                    /* CCM: for SIGTM, this IF and its true path need to be "atomic" */
-                    if ((cv & LOCKBIT) == 0 &&
-                        UNS(CAS(LockFor, cv, (UNS(p)|UNS(LOCKBIT)))) == UNS(cv))
-                    {
-                        if (cv > maxv) {
-                            maxv = cv;
-                        }
-                        p->rdv  = cv; /* save so we can restore or increment */
-                        p->Held = 1;
-                        break;
-                    }
-                    if (--c < 0) {
-                        /* Will fall through to TxAbort */
-                        return 0;
-                    }
-                    /*
-                     * Consider: while spinning we might validate
-                     * the read-set by calling ReadSetCoherent()
-                     */
-                    PAUSE();
-                }
-            } /* write-only stripe */
-        } /* foreach (entry in write-set) */
+
+    intptr_t dx = 0;
+    vwLock rv = Self->rv;
+    AVPair* const EndOfList = rd->put;
+    AVPair* e;
+
+    for (e = rd->List; e != EndOfList; e = e->Next) {
+        vwLock v = LDLOCK(e->LockFor);
+            dx |= (v > rv);
+        if (v > maxv) {
+            maxv = v;
+        }
     }
+
+    if (dx != 0) { return 0; }
+
 
     wv = GVGenerateWV(Self, maxv);
 
-    if (!ReadSetCoherent(Self)) {
-        return 0;
-    }
-
     {
-        WriteBackForward(wr); /* write-back the deferred stores */
+    AVPair* e;
+    AVPair* End = wr->put;
+    for (e = wr->List; e != End; e = e->Next) {
+        *(e->Addr) = e->Valu;
+        *(e->LockFor) = wv;
     }
-    MEMBARSTST(); /* Ensure the above stores are visible  */
-    DropLocks(Self, wv); /* Release locks and increment the version */
+    }
 
-    MEMBARSTLD();
-
-    return 1; /* success */
+    return 1;
 
 /*    vwLock maxv = 0;
     vwLock rv = Self->rv;
@@ -2385,9 +2320,9 @@ TxCommitNoAbortHTM (Thread* Self)
     for (e = wr->List; e != End; e = e->Next) {
     	*(e->LockFor) = wv;
     	*(e->Addr) = e->Valu;
-    }*/
+    }
 
-    return 1;
+    return 1;*/
 }
 
 int

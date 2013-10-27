@@ -382,7 +382,7 @@
 							         int status = _xbegin();  \
 							         if (status == _XBEGIN_STARTED) { \
 							             if (is_fallback != 0) { _xabort(0xab); } \
-							             long res_htm = HYBRID_STM_END(); \
+							             long res_htm = HYBRID_HTM_END(); \
 							             if (res_htm == 0) { _xabort(0xab); }   \
                                                                      _xend();	\
                                                                      AFTER_COMMIT();    \
