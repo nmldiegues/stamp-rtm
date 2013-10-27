@@ -336,11 +336,12 @@
 
 #  else /* !OTM */
 
-#    define TM_BEGIN()	{ \
-							int tries = 4;	\
-	while (1) {	\
-							while (is_fallback != 0) {} \
-	                        if (tries > 0) { \
+
+#    define TM_BEGIN() { \
+                                                 int tries = 4;	\
+                                                 while (1) {	\
+                                                        while (is_fallback != 0) {} \
+                                                        if (tries > 0) { \
     							int status = _xbegin();	\
     							if (status == _XBEGIN_STARTED) successful_starts++;	\
     							else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 0xab) abort_30++; } \
@@ -356,7 +357,8 @@
     	                            break;	\
     							} else { \
     								rtm_aborts++;	\
-    								tries--;	\
+    								/*tries--;*/	\
+                                                                if (random_generate(randomFallback) % 100 < FALLBACK_PROB) tries = 0; \
     							}	\
     						} else {  \
     						    tries = 0; \
@@ -388,7 +390,7 @@
                                                                      AFTER_COMMIT();    \
                                                                      commit_mixed_hw++; \
 							             break;  \
-							         } else if (retriesCommit == 0 || _XABORT_CODE(status) == 0xab) { \
+							         } else if (/*retriesCommit == 0*/ (random_generate(randomFallback) % 100 < FALLBACK_PROB) || _XABORT_CODE(status) == 0xab) { \
 							             __sync_add_and_fetch(&is_fallback,1);    \
                                                                      int ret = HYBRID_STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \
@@ -409,6 +411,7 @@
                                 mallocFunPtr = &freeHTM; \
                             } \
                      	};
+
 
 
 

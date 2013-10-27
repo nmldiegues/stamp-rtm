@@ -7,6 +7,12 @@ rm lib/*.o || true
 name=$1
 alias=$2
 
+if [[ $# != 3 ]] ; then
+    prob=10
+else
+    prob=$3
+fi
+
 if [[ $# != 1 ]] ; then
     cd ssync
     make clean
@@ -26,7 +32,7 @@ for F in $FOLDERS
 do
     cd $F
     rm *.o || true
-    make -f Makefile.$name LOCK_VERSION="-DUSE_$alias"
+    make -f Makefile.$name LOCK_VERSION="-DUSE_$alias" PROB="-DFALLBACK_PROB=$prob"
     rc=$?
     if [[ $rc != 0 ]] ; then
 	echo ""

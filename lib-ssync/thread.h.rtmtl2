@@ -179,7 +179,10 @@ extern __thread void (*localWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t 
 extern __thread void (*freeFunPtr)(Thread* Self, void* ptr);
 extern __thread void* (*mallocFunPtr)(Thread* Self, size_t size);
 
+#include "random.h"
+
 extern volatile unsigned long is_fallback;
+extern __thread random_t* randomFallback;
 
 #ifdef LOG_BARRIER
 typedef struct thread_barrier {

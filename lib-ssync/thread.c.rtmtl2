@@ -149,7 +149,6 @@ void freeSTM(Thread* Self, void* ptr){
 
 void* mallocSTM(Thread* Self, size_t size){
 	return STM_MALLOC(size);
-return malloc(size);
 }
 
 __thread void (*abortFunPtr)(Thread* Self);
@@ -161,6 +160,10 @@ __thread void* (*mallocFunPtr)(Thread* Self, size_t size);
 
 volatile unsigned long is_fallback = 0;
 
+__thread random_t* randomFallback;
+
+#include <time.h>
+
 
 /* =============================================================================
  * threadWait
@@ -170,6 +173,9 @@ volatile unsigned long is_fallback = 0;
 static void
 threadWait (void* argPtr)
 {
+    randomFallback = random_alloc();
+    random_seed(randomFallback, time(NULL));
+
     long threadId = *(long*)argPtr;
 
     THREAD_LOCAL_SET(global_threadId, (long)threadId);

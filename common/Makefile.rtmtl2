@@ -7,7 +7,11 @@
 
 SUFF=.rtm
 
-CFLAGS   += -w -DHTM -I$(STM) # We substitute our RTM implementation for HTM.                                                                                                                                                
+ifndef PROB
+  PROB=-DFALLBACK_PROB=10
+endif
+
+CFLAGS   += -w -DHTM -I$(STM) $(PROB) # We substitute our RTM implementation for HTM.                                                                                                                                                
 CPPFLAGS := $(CFLAGS)
 LDFLAGS  += -L$(STM)
 LIBS     += -ltl2 -lrt -lpthread -mrtm
