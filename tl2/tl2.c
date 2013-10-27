@@ -2258,44 +2258,7 @@ TxCommitNoAbortHTM (Thread* Self)
         return 1;
     }
 
-    Log* const wr = &Self->wrSet;
-    Log* const rd = &Self->rdSet;
-    vwLock wv;
-
     vwLock maxv = 0;
-    AVPair* p;
-
-
-    intptr_t dx = 0;
-    vwLock rv = Self->rv;
-    AVPair* const EndOfList = rd->put;
-    AVPair* e;
-
-    for (e = rd->List; e != EndOfList; e = e->Next) {
-        vwLock v = LDLOCK(e->LockFor);
-            dx |= (v > rv);
-        if (v > maxv) {
-            maxv = v;
-        }
-    }
-
-    if (dx != 0) { return 0; }
-
-
-    wv = GVGenerateWV(Self, maxv);
-
-    {
-    AVPair* e;
-    AVPair* End = wr->put;
-    for (e = wr->List; e != End; e = e->Next) {
-        *(e->Addr) = e->Valu;
-        *(e->LockFor) = wv;
-    }
-    }
-
-    return 1;
-
-/*    vwLock maxv = 0;
     vwLock rv = Self->rv;
 
     intptr_t dx = 0;
@@ -2309,7 +2272,7 @@ TxCommitNoAbortHTM (Thread* Self)
         	maxv = v;
         }
     }
-    if (dx == 0) {
+    if (dx != 0) {
     	return 0;
     }
 
@@ -2322,7 +2285,7 @@ TxCommitNoAbortHTM (Thread* Self)
     	*(e->Addr) = e->Valu;
     }
 
-    return 1;*/
+    return 1;
 }
 
 int

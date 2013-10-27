@@ -281,7 +281,7 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
-for c in 16 34 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 1 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
