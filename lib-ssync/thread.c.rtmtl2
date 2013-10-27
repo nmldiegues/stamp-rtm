@@ -149,6 +149,7 @@ void freeSTM(Thread* Self, void* ptr){
 
 void* mallocSTM(Thread* Self, size_t size){
 	return STM_MALLOC(size);
+return malloc(size);
 }
 
 __thread void (*abortFunPtr)(Thread* Self);

@@ -382,7 +382,7 @@
 							         int status = _xbegin();  \
 							         if (status == _XBEGIN_STARTED) { \
 							             if (is_fallback != 0) { _xabort(0xab); } \
-							             long res_htm = HYBRID_HTM_END(); \
+							             long res_htm = HYBRID_STM_END(); \
 							             if (res_htm == 0) { _xabort(0xab); }   \
                                                                      _xend();	\
                                                                      AFTER_COMMIT();    \
@@ -734,7 +734,7 @@
 #endif
 #ifdef TM_FREE(ptr)
 	#undef TM_FREE(ptr)
-	#define TM_FREE(ptr)              (*freeFunPtr)(Self, ptr)
+	#define TM_FREE(ptr)              /*(*freeFunPtr)(Self, ptr)*/
 #endif
 
 #endif /* !STM */
