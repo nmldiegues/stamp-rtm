@@ -365,6 +365,8 @@
                                 sharedReadFunPtr = &sharedReadSTM;  \
                                 sharedWriteFunPtr = &sharedWriteSTM;    \
                                 localWriteFunPtr = &localWriteSTM;  \
+                                freeFunPtr = &freeSTM; \
+                                mallocFunPtr = &freeSTM; \
                                 fallback_mixed++; \
                                 break;  \
     						} \
@@ -403,6 +405,8 @@
                                 sharedReadFunPtr = &sharedReadHTM;  \
                                 sharedWriteFunPtr = &sharedWriteHTM;    \
                                 localWriteFunPtr = &localWriteHTM;  \
+                                freeFunPtr = &freeHTM; \
+                                mallocFunPtr = &freeHTM; \
                             } \
                      	};
 
@@ -714,6 +718,24 @@
 #  define TM_LOCAL_WRITE(var, val)      ({var = val; var;})
 #  define TM_LOCAL_WRITE_P(var, val)    ({var = val; var;})
 #  define TM_LOCAL_WRITE_F(var, val)    ({var = val; var;})
+
+#ifdef P_MALLOC
+	#undef P_MALLOC
+	#define P_MALLOC(size)            malloc(size)
+#endif
+#ifdef P_FREE
+    #undef P_FREE
+    #define P_FREE(ptr)               free(ptr)
+#endif
+
+#ifdef TM_MALLOC(size)
+    #undef TM_MALLOC(size)
+	#define TM_MALLOC(size)           (*mallocFunPtr)(Self, size)
+#endif
+#ifdef TM_FREE(ptr)
+	#undef TM_FREE(ptr)
+	#define TM_FREE(ptr)              (*freeFunPtr)(Self, ptr)
+#endif
 
 #endif /* !STM */
 

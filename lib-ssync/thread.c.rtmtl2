@@ -122,6 +122,14 @@ void localWriteHTM(Thread* Self, intptr_t* addr, intptr_t val) {
     *addr = val;
 }
 
+void freeHTM(Thread* Self, void* ptr){
+	free(ptr);
+}
+
+void* mallocHTM(Thread* Self, size_t size){
+	return malloc(size);
+}
+
 void abortSTM(Thread* Self) {
     STM_RESTART();
 }
@@ -135,10 +143,20 @@ void localWriteSTM(Thread* Self, intptr_t* addr, intptr_t val) {
     STM_LOCAL_WRITE(addr, val);
 }
 
+void freeHTM(Thread* Self, void* ptr){
+	STM_FREE(ptr)
+}
+
+void* mallocHTM(Thread* Self, size_t size){
+	return STM_MALLOC(size)
+}
+
 __thread void (*abortFunPtr)(Thread* Self);
 __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);
 __thread void (*sharedWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
 __thread void (*localWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
+__thread void (*freeFunPtr)(Thread* Self, void* ptr);
+__thread void* (*mallocFunPtr)(Thread* Self, size_t size);
 
 volatile unsigned long is_fallback = 0;
 
@@ -159,6 +177,8 @@ threadWait (void* argPtr)
     sharedReadFunPtr = &sharedReadHTM;
     sharedWriteFunPtr = &sharedWriteHTM;
     localWriteFunPtr = &localWriteHTM;
+    freeFunPtr = &freeHTM;
+    mallocFunPtr = &mallocHTM;
 
     cpu_set_t my_set;
     CPU_ZERO(&my_set);
