@@ -281,12 +281,21 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
+prob=5
+
+cd $workspace;
+cp tl2/tl2.h.gv4 tl2/tl2.h;
+cd tl2;
+make clean;
+make;
+cd ..
+
 for c in 1 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
     bash config.sh ${config[$c]};
-    bash build.sh ${build[$c]} ${alias[$c]} 10;
+    bash build.sh ${build[$c]} ${alias[$c]} 5;
     for b in 2 3 4 5 6 7 8
     do 
         for t in 1 2 3 4 5 6 7 8
@@ -298,12 +307,12 @@ do
             do 
                 cd $workspace;
                 cd ${benchmarks[$b]};
-                echo "${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}10-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
+                echo "${config[$c]} $prob gv4 | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-$prob-gv4-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
                 pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}10-${alias[$c]}-${balias[$b]}-$t-$a.pow &
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-$prob-gv4-${alias[$c]}-${balias[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}10-${alias[$c]}-${balias[$b]}-$t-$a.data &
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-$prob-gv4-${alias[$c]}-${balias[$b]}-$t-$a.data &
                 pid3=$!
                 wait_until_finish $pid3
                 wait $pid3
@@ -311,7 +320,99 @@ do
                 kill -9 $pid
                 kill -9 $pid2
                 if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${alias[$c]} | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
+                    echo "Error within: ${alias[$c]}-$prob-gv4 | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
+                fi
+            done
+            cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
+#        done
+        done
+    done
+done
+
+cd $workspace;
+cp tl2/tl2.h.gv5 tl2/tl2.h;
+cd tl2;
+make clean;
+make;
+cd ..
+
+for c in 1 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+do
+    cd $workspace;
+    echo "building ${build[$c]} ${alias[$c]}"
+    bash config.sh ${config[$c]};
+    bash build.sh ${build[$c]} ${alias[$c]} 5;
+    for b in 2 3 4 5 6 7 8
+    do 
+        for t in 1 2 3 4 5 6 7 8
+        do
+#        for r in 1 2 3 4 5 6
+#        do
+#            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
+            for a in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+            do 
+                cd $workspace;
+                cd ${benchmarks[$b]};
+                echo "${config[$c]} $prob gv4 | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-$prob-gv5-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
+                pid=$!
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-$prob-gv5-${alias[$c]}-${balias[$b]}-$t-$a.pow &
+                pid2=$!
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-$prob-gv5-${alias[$c]}-${balias[$b]}-$t-$a.data &
+                pid3=$!
+                wait_until_finish $pid3
+                wait $pid3
+                rc=$?
+                kill -9 $pid
+                kill -9 $pid2
+                if [[ $rc != 0 ]] ; then
+                    echo "Error within: ${alias[$c]}-$prob-gv4 | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
+                fi
+            done
+            cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
+#        done
+        done
+    done
+done
+
+cd $workspace;
+cp tl2/tl2.h.gv6 tl2/tl2.h;
+cd tl2;
+make clean; 
+make;
+cd ..
+
+for c in 1 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+do
+    cd $workspace;
+    echo "building ${build[$c]} ${alias[$c]}"
+    bash config.sh ${config[$c]};
+    bash build.sh ${build[$c]} ${alias[$c]} 5;
+    for b in 2 3 4 5 6 7 8
+    do 
+        for t in 1 2 3 4 5 6 7 8
+        do
+#        for r in 1 2 3 4 5 6
+#        do
+#            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
+            for a in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+            do 
+                cd $workspace;
+                cd ${benchmarks[$b]};
+                echo "${config[$c]} $prob gv4 | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-$prob-gv6-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
+                pid=$!
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-$prob-gv6-${alias[$c]}-${balias[$b]}-$t-$a.pow &
+                pid2=$!
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-$prob-gv6-${alias[$c]}-${balias[$b]}-$t-$a.data &
+                pid3=$!
+                wait_until_finish $pid3
+                wait $pid3
+                rc=$?
+                kill -9 $pid
+                kill -9 $pid2
+                if [[ $rc != 0 ]] ; then
+                    echo "Error within: ${alias[$c]}-$prob-gv4 | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
                 fi
             done
             cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
