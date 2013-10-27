@@ -2258,7 +2258,229 @@ TxCommitNoAbortHTM (Thread* Self)
         return 1;
     }
 
+#  ifdef TL2_OPTIM_HASHLOG
+    long numLog = Self->wrSet.numLog;
+    Log* logs = Self->wrSet.logs;
+    Log* end = logs + numLog;
+    Log* wr;
+#  endif /* !TL2_OPTIM_HASHLOG */
+
+#  ifndef TL2_EAGER
+#    ifdef TL2_OPTIM_HASHLOG
+    Log* wr;
+#    else /* !TL2_OPTIM_HASHLOG */
+    Log* const wr = &Self->wrSet;
+#    endif /* !TL2_OPTIM_HASHLOG */
+    Log* const rd = &Self->rdSet;
+    long ctr;
+#  endif /* !TL2_EAGER */
+    vwLock wv;
+
+    ASSERT(Self->Mode == TTXN);
+
+    /*
+     * Optional optimization -- pre-validate the read-set.
+     *
+     * Consider: Call ReadSetCoherent() before grabbing write-locks.
+     * Validate that the set of values we've fetched from pure READ objects
+     * remain coherent.  This avoids the situation where a doomed transaction
+     * grabs write locks and impedes or causes other potentially successful
+     * transactions to spin or abort.
+     *
+     * A smarter tactic might be to only call ReadSetCoherent() when
+     * Self->Retries > NN
+     */
+
+#  if 0
+    if (!ReadSetCoherent(Self)) {
+        return 0;
+    }
+#  endif
+
+#  ifndef TL2_EAGER
+
+    /*
+     * Consider: if the write-set is long or Self->Retries is high we
+     * could run a pre-pass and sort the write-locks by LockFor address.
+     * We could either use a separate LockRecord list (sorted) or
+     * link the write-set entries via SortedNext
+     */
+
+    /*
+     * Lock-acquisition phase ...
+     *
+     * CONSIDER: While iterating over the locks that cover the write-set
+     * track the maximum observed version# in maxv.
+     * In GV4:   wv = GVComputeWV(); ASSERT wv > maxv
+     * In GV5|6: wv = GVComputeWV(); if (maxv >= wv) wv = maxv + 2
+     * This is strictly an optimization.
+     * maxv isn't required for algorithmic correctness
+     */
+    Self->HoldsLocks = 1;
+    ctr = 1000; /* Spin budget - TUNABLE */
     vwLock maxv = 0;
+    AVPair* p;
+#      ifdef TL2_OPTIM_HASHLOG
+    for (wr = logs; wr != end; wr++)
+#      endif /* TL2_OPTIM_HASHLOG*/
+    {
+        AVPair* const End = wr->put;
+        for (p = wr->List; p != End; p = p->Next) {
+            volatile vwLock* const LockFor = p->LockFor;
+            vwLock cv;
+            ASSERT(p->Addr != NULL);
+            ASSERT(p->LockFor != NULL);
+            ASSERT(p->Held == 0);
+            ASSERT(p->Owner == Self);
+            /* Consider prefetching only when Self->Retries == 0 */
+            prefetchw(LockFor);
+            cv = LDLOCK(LockFor);
+            if ((cv & LOCKBIT) && ((AVPair*)(cv ^ LOCKBIT))->Owner == Self) {
+                /* CCM: revalidate read because could be a hash collision */
+                if (FindFirst(rd, LockFor) != NULL) {
+                    if (((AVPair*)(cv ^ LOCKBIT))->rdv > Self->rv) {
+                        Self->abv = cv;
+                        return 0;
+                    }
+                }
+                /* Already locked by an earlier iteration. */
+                continue;
+            }
+
+            /* SIGTM does not maintain a read set */
+            if (FindFirst(rd, LockFor) != NULL) {
+                /*
+                 * READ-WRITE stripe
+                 */
+                if ((cv & LOCKBIT) == 0 &&
+                    cv <= Self->rv &&
+                    UNS(CAS(LockFor, cv, (UNS(p)|UNS(LOCKBIT)))) == UNS(cv))
+                {
+                    if (cv > maxv) {
+                        maxv = cv;
+                    }
+                    p->rdv  = cv;
+                    p->Held = 1;
+                    continue;
+                }
+                /*
+                 * The stripe is either locked or the previously observed read-
+                 * version changed.  We must abort. Spinning makes little sense.
+                 * In theory we could spin if the read-version is the same but
+                 * the lock is held in the faint hope that the owner might
+                 * abort and revert the lock
+                 */
+                Self->abv = cv;
+                return 0;
+            } else
+            {
+                /*
+                 * WRITE-ONLY stripe
+                 * Note that we already have a fresh copy of *LockFor in cv.
+                 * If we find a write-set element locked then we can either
+                 * spin or try to find something useful to do, such as :
+                 * A. Validate the read-set by calling ReadSetCoherent()
+                 *    We can abort earlier if the transaction is doomed.
+                 * B. optimistically proceed to the next element in the write-set.
+                 *    Skip the current locked element and advance to the
+                 *    next write-set element, later retrying the skipped elements
+                 */
+#      ifdef TL2_NOCM
+                /* wkbaek: no spinning in NOCM mode */
+                long c = 0;
+#      else /* !TL2_NOCM */
+                long c = ctr;
+#      endif /* !TL2_NOCM */
+                for (;;) {
+                    cv = LDLOCK(LockFor);
+                    /* CCM: for SIGTM, this IF and its true path need to be "atomic" */
+                    if ((cv & LOCKBIT) == 0 &&
+                        UNS(CAS(LockFor, cv, (UNS(p)|UNS(LOCKBIT)))) == UNS(cv))
+                    {
+                        if (cv > maxv) {
+                            maxv = cv;
+                        }
+                        p->rdv  = cv; /* save so we can restore or increment */
+                        p->Held = 1;
+                        break;
+                    }
+                    if (--c < 0) {
+                        /* Will fall through to TxAbort */
+                        return 0;
+                    }
+                    /*
+                     * Consider: while spinning we might validate
+                     * the read-set by calling ReadSetCoherent()
+                     */
+                    PAUSE();
+                }
+            } /* write-only stripe */
+        } /* foreach (entry in write-set) */
+    }
+
+#  endif /* !TL2_EAGER */
+
+
+#    ifdef TL2_EAGER
+    wv = GVGenerateWV(Self, Self->maxv);
+#    else /* !TL2_EAGER */
+    wv = GVGenerateWV(Self, maxv);
+#    endif /* !TL2_EAGER */
+
+    /*
+     * We now hold all the locks for RW and W objects.
+     * Next we validate that the values we've fetched from pure READ objects
+     * remain coherent.
+     *
+     * If GVGenerateWV() is implemented as a simplistic atomic fetch-and-add
+     * then we can optimize by skipping read-set validation in the common-case.
+     * Namely,
+     *   if (Self->rv != (wv-2) && !ReadSetCoherent(Self)) { ... abort ... }
+     * That is, we could elide read-set validation for pure READ objects if
+     * there were no intervening write txns between the fetch of _GCLOCK into
+     * Self->rv in TxStart() and the increment of _GCLOCK in GVGenerateWV()
+     */
+
+    /*
+     * CCM: for SIGTM, the read filter would have triggered an abort already
+     * if the read-set was not consistent.
+     */
+    if (!ReadSetCoherent(Self)) {
+        /*
+         * The read-set is inconsistent.
+         * The transaction is spoiled as the read-set is stale.
+         * The candidate results produced by the txn and held in
+         * the write-set are a function of the read-set, and thus invalid
+         */
+        return 0;
+    }
+
+    /*
+     * We are now committed - this txn is successful.
+     */
+
+#  ifndef TL2_EAGER
+#    ifdef TL2_OPTIM_HASHLOG
+    for (wr = logs; wr != end; wr++)
+#    endif /* TL2_OPTIM_HASHLOG*/
+    {
+        WriteBackForward(wr); /* write-back the deferred stores */
+    }
+#  endif /* !TL2_EAGER */
+    MEMBARSTST(); /* Ensure the above stores are visible  */
+    DropLocks(Self, wv); /* Release locks and increment the version */
+
+    /*
+     * Ensure that all the prior STs have drained before starting the next
+     * txn.  We want to avoid the scenario where STs from "this" txn
+     * languish in the write-buffer and inadvertently satisfy LDs in
+     * a subsequent txn via look-aside into the write-buffer
+     */
+    MEMBARSTLD();
+
+    return 1; /* success */
+
+/*    vwLock maxv = 0;
     vwLock rv = Self->rv;
 
     intptr_t dx = 0;
@@ -2283,7 +2505,7 @@ TxCommitNoAbortHTM (Thread* Self)
     for (e = wr->List; e != End; e = e->Next) {
     	*(e->LockFor) = wv;
     	*(e->Addr) = e->Valu;
-    }
+    }*/
 
     return 1;
 }
