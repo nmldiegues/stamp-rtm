@@ -286,7 +286,7 @@ do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
     bash config.sh ${config[$c]};
-    bash build.sh ${build[$c]} ${alias[$c]};
+    bash build.sh ${build[$c]} ${alias[$c]} 5;
     for b in 2 3 4 5 6 7 8
     do 
         for t in 1 2 3 4 5 6 7 8
@@ -299,11 +299,11 @@ do
                 cd $workspace;
                 cd ${benchmarks[$b]};
                 echo "${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}5-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
                 pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pow &
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}5-${alias[$c]}-${balias[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.data &
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}5-${alias[$c]}-${balias[$b]}-$t-$a.data &
                 pid3=$!
                 wait_until_finish $pid3
                 wait $pid3
