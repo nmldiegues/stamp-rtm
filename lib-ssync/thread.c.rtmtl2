@@ -143,12 +143,12 @@ void localWriteSTM(Thread* Self, intptr_t* addr, intptr_t val) {
     STM_LOCAL_WRITE(addr, val);
 }
 
-void freeHTM(Thread* Self, void* ptr){
-	STM_FREE(ptr)
+void freeSTM(Thread* Self, void* ptr){
+	STM_FREE(ptr);
 }
 
-void* mallocHTM(Thread* Self, size_t size){
-	return STM_MALLOC(size)
+void* mallocSTM(Thread* Self, size_t size){
+	return STM_MALLOC(size);
 }
 
 __thread void (*abortFunPtr)(Thread* Self);

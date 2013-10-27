@@ -366,7 +366,7 @@
                                 sharedWriteFunPtr = &sharedWriteSTM;    \
                                 localWriteFunPtr = &localWriteSTM;  \
                                 freeFunPtr = &freeSTM; \
-                                mallocFunPtr = &freeSTM; \
+				mallocFunPtr = &mallocSTM; \
                                 fallback_mixed++; \
                                 break;  \
     						} \

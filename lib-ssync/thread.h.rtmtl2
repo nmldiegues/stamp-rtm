@@ -170,7 +170,7 @@ extern intptr_t sharedReadSTM(Thread* Self, intptr_t* addr);
 extern void sharedWriteSTM(Thread* Self, intptr_t* addr, intptr_t val);
 extern void localWriteSTM(Thread* Self, intptr_t* addr, intptr_t val);
 extern void freeSTM(Thread* Self, void* ptr);
-extern void mallocSTM(Thread* Self, size_t size);
+extern void* mallocSTM(Thread* Self, size_t size);
 
 extern __thread void (*abortFunPtr)(Thread* Self);
 extern __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);
