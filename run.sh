@@ -320,6 +320,7 @@ do
     done
 done
 
+exit 0;
 
 for c in 3 4 5 16 34 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
