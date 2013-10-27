@@ -463,6 +463,24 @@ TxCommit (Thread* Self)
     return 0;
 }
 
+int
+TxCommitSTM (Thread* Self)
+{
+    /* Fast-path: Optional optimization for pure-readers */
+    if (Self->wrSet.put == Self->wrSet.List)
+    {
+        txCommitReset(Self);
+        return 1;
+    }
+
+    if (TryFastUpdate(Self)) {
+        txCommitReset(Self);
+        return 1;
+    }
+
+    return 0;
+}
+
 long TxValidate (Thread* Self) {
     if (Self->wrSet.put == Self->wrSet.List) {
         return -1;
