@@ -24,14 +24,6 @@
 #define STM_SELF                        Self
 #define STM_RO_FLAG                     ROFlag
 
-#define STM_MALLOC(size)                TxAlloc(STM_SELF, size)
-#define STM_FREE(ptr)                   TxFree(STM_SELF, ptr)
-
-
-#  define malloc(size)                  tmalloc_reserve(size)
-#  define realloc(ptr, size)            tmalloc_reserveAgain(ptr, size)
-#  define free(ptr)                     tmalloc_release(ptr)
-
 #  include <setjmp.h>
 #  define STM_JMPBUF_T                  sigjmp_buf
 #  define STM_JMPBUF                    buf
@@ -88,7 +80,6 @@ typedef volatile intptr_t               vintp;
                                                 (vintp*)(void*)&(var), \
                                                 VP2IP(val))
 
-#define STM_HYBRID_LOCAL_WRITE(varPtr, val)     ({*varPtr = val; *varPtr;})
 #define STM_LOCAL_WRITE(var, val)       ({var = val; var;})
 #define STM_LOCAL_WRITE_F(var, val)     ({var = val; var;})
 #define STM_LOCAL_WRITE_P(var, val)     ({var = val; var;})

@@ -18,7 +18,6 @@ LIBNOREC := libnorec.a
 
 SRCS := \
 	norec.c \
-	tmalloc.c \
 #
 OBJS := ${SRCS:.c=.o}
 

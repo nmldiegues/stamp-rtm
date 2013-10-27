@@ -115,9 +115,6 @@ intptr_t sharedReadHTM(Thread* Self, intptr_t* addr) {
 void sharedWriteHTM(Thread* Self, intptr_t* addr, intptr_t val) {
     *addr = val;
 }
-void localWriteHTM(Thread* Self, intptr_t* addr, intptr_t val) {
-    *addr = val;
-}
 
 void abortSTM(Thread* Self) {
     STM_RESTART();
@@ -128,14 +125,10 @@ intptr_t sharedReadSTM(Thread* Self, intptr_t* addr) {
 void sharedWriteSTM(Thread* Self, intptr_t* addr, intptr_t val) {
     STM_HYBRID_WRITE(addr, val);
 }
-void localWriteSTM(Thread* Self, intptr_t* addr, intptr_t val) {
-    STM_HYBRID_LOCAL_WRITE(addr, val);
-}
 
 __thread void (*abortFunPtr)(Thread* Self);
 __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);
 __thread void (*sharedWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
-__thread void (*localWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
 
 volatile unsigned long is_fallback = 0;
 
@@ -155,7 +148,6 @@ threadWait (void* argPtr)
     abortFunPtr = &abortHTM;
     sharedReadFunPtr = &sharedReadHTM;
     sharedWriteFunPtr = &sharedWriteHTM;
-    localWriteFunPtr = &localWriteHTM;
 
     cpu_set_t my_set;
     CPU_ZERO(&my_set);

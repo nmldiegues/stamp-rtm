@@ -308,7 +308,6 @@
                                         abortFunPtr = &abortHTM; \
                                         sharedReadFunPtr = &sharedReadHTM;  \
                                         sharedWriteFunPtr = &sharedWriteHTM;    \
-                                        localWriteFunPtr = &localWriteHTM
 
 
 #  define TM_THREAD_EXIT()              printf("\n\nrtm_commits: %ld\tsuccessful_starts: %ld\trtm_aborts: %ld\tabort_explicit: %ld\tabort_30: %ld\tabort_retry: %ld\nconflict: %ld\tcapacity: %ld\tdebug: %ld\tnested: %ld\tother: %ld\nfallback_mixed: %ld\tfallback_stm: %ld\tcommit_mixed_hw: %ld\tcommit_mixed_stm: %ld\n", rtm_commits, successful_starts, rtm_aborts, abort_explicit, abort_30, abort_retry, abort_conflict, abort_capacity, abort_debug, abort_nested, abort_other, fallback_mixed, fallback_stm, commit_mixed_hw, commit_mixed_stm); STM_FREE_THREAD(TM_ARG_ALONE)
@@ -363,7 +362,6 @@
                                 abortFunPtr = &abortSTM;    \
                                 sharedReadFunPtr = &sharedReadSTM;  \
                                 sharedWriteFunPtr = &sharedWriteSTM;    \
-                                localWriteFunPtr = &localWriteSTM;  \
                                 fallback_mixed++; \
                                 break;  \
     						} \
@@ -382,7 +380,7 @@
 							         if (status == _XBEGIN_STARTED) { \
 							             if (is_fallback != 0) { _xabort(0xab); } \
 							             long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \
-							             if (res_htm == 1) { _xabort(0xab); }   \
+							             if (res_htm == 1) { _xabort(0xac); }   \
                                          _xend();	\
                                          TX_AFTER_FINALIZE();    \
                                          commit_mixed_hw++; \
@@ -396,13 +394,14 @@
 							             } \
 							             commit_mixed_stm++; \
 							             break;  \
+							         } else if (_XABORT_CODE(status) == 0xac) { \
+							         	STM_RESTART(); \
 							         } \
     					             retriesCommit--; \
 							    }    \
                                 abortFunPtr = &abortHTM;    \
                                 sharedReadFunPtr = &sharedReadHTM;  \
                                 sharedWriteFunPtr = &sharedWriteHTM;    \
-                                localWriteFunPtr = &localWriteHTM;  \
                             } \
                      	};
 
@@ -714,6 +713,24 @@
 #  define TM_LOCAL_WRITE(var, val)      ({var = val; var;})
 #  define TM_LOCAL_WRITE_P(var, val)    ({var = val; var;})
 #  define TM_LOCAL_WRITE_F(var, val)    ({var = val; var;})
+
+#ifdef P_MALLOC
+	#undef P_MALLOC
+	#define P_MALLOC(size)            malloc(size)
+#endif
+#ifdef P_FREE
+    #undef P_FREE
+    #define P_FREE(ptr)               free(ptr)
+#endif
+
+#ifdef TM_MALLOC(size)
+    #undef TM_MALLOC(size)
+	#define TM_MALLOC(size)           malloc(size)
+#endif
+#ifdef TM_FREE(ptr)
+	#undef TM_FREE(ptr)
+	#define TM_FREE(ptr)              /*(*freeFunPtr)(Self, ptr)*/
+#endif
 
 #endif /* !STM */
 

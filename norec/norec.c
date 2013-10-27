@@ -7,7 +7,6 @@
 #include <signal.h>
 #include "platform.h"
 #include "norec.h"
-#include "tmalloc.h"
 #include "util.h"
 
 
@@ -49,11 +48,8 @@ struct _Thread {
     long snapshot;
     unsigned long long rng;
     unsigned long long xorrng [1];
-    tmalloc_t* allocPtr; /* CCM: speculatively allocated */
-    tmalloc_t* freePtr;  /* CCM: speculatively free'd */
     Log rdSet;
     Log wrSet;
-    Log LocalUndo;
     sigjmp_buf* envPtr;
 };
 
@@ -73,69 +69,9 @@ __attribute__((aligned(64))) volatile aligned_type_t* LOCK;
 
 
 static pthread_key_t    global_key_self;
-static struct sigaction global_act_oldsigbus;
-static struct sigaction global_act_oldsigsegv;
 
 void TxIncClock() {
-    LOCK->value+=2;
-}
-
-static void
-useAfterFreeHandler (int signum, siginfo_t* siginfo, void* context)
-{
-    Thread* Self = (Thread*)pthread_getspecific(global_key_self);
-
-    if (ReadSetCoherent(Self) == -1) {
-        TxAbort(Self);
-    }
-
-    psignal(signum, NULL);
-    abort();
-}
-
-
-/* =============================================================================
- * registerUseAfterFreeHandler
- * =============================================================================
- */
-static void
-registerUseAfterFreeHandler ()
-{
-    struct sigaction act;
-
-    memset(&act, sizeof(struct sigaction), 0);
-    act.sa_sigaction = &useAfterFreeHandler;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = SA_RESTART | SA_SIGINFO;
-
-    if (sigaction(SIGBUS, &act, &global_act_oldsigbus) != 0) {
-        perror("Error: Failed to register SIGBUS handler");
-        exit(1);
-    }
-
-    if (sigaction(SIGSEGV, &act, &global_act_oldsigsegv) != 0) {
-        perror("Error: Failed to register SIGSEGV handler");
-        exit(1);
-    }
-}
-
-
-/* =============================================================================
- * restoreUseAfterFreeHandler
- * =============================================================================
- */
-static void
-restoreUseAfterFreeHandler ()
-{
-    if (sigaction(SIGBUS, &global_act_oldsigbus, NULL) != 0) {
-        perror("Error: Failed to restore SIGBUS handler");
-        exit(1);
-    }
-
-    if (sigaction(SIGSEGV, &global_act_oldsigsegv, NULL) != 0) {
-        perror("Error: Failed to restore SIGSEGV handler");
-        exit(1);
-    }
+    LOCK->value = LOCK->value + 2;
 }
 
 #ifndef NOREC_CACHE_LINE_SIZE
@@ -248,23 +184,6 @@ WriteBackForward (Log* k)
     }
 }
 
-
-__INLINE__ void
-RecordStore (Log* k, volatile intptr_t* Addr, intptr_t Valu)
-{
-    AVPair* e = k->put;
-    if (e == NULL) {
-        k->ovf++;
-        e = ExtendList(k->tail);
-        k->end = e;
-    }
-    ASSERT(Addr != NULL);
-    k->tail    = e;
-    k->put     = e->Next;
-    e->Addr    = Addr;
-    e->Valu    = Valu;
-}
-
 void
 TxOnce ()
 {
@@ -273,7 +192,6 @@ TxOnce ()
 
     pthread_key_create(&global_key_self, NULL); /* CCM: do before we register handler */
 
-    registerUseAfterFreeHandler();
 }
 
 
@@ -287,8 +205,6 @@ TxShutdown ()
            ReadOverflowTally, WriteOverflowTally, LocalOverflowTally);
 
     pthread_key_delete(global_key_self);
-
-    restoreUseAfterFreeHandler();
 
     MEMBARSTLD();
 }
@@ -317,17 +233,11 @@ TxFreeThread (Thread* t)
     }
     AtomicAdd((volatile intptr_t*)((void*)(&WriteOverflowTally)), wrSetOvf);
 
-    AtomicAdd((volatile intptr_t*)((void*)(&LocalOverflowTally)), t->LocalUndo.ovf);
-
     AtomicAdd((volatile intptr_t*)((void*)(&StartTally)),         t->Starts);
     AtomicAdd((volatile intptr_t*)((void*)(&AbortTally)),         t->Aborts);
 
-    tmalloc_free(t->allocPtr);
-    tmalloc_free(t->freePtr);
-
     FreeList(&(t->rdSet),     NOREC_INIT_RDSET_NUM_ENTRY);
     FreeList(&(t->wrSet),     NOREC_INIT_WRSET_NUM_ENTRY);
-    FreeList(&(t->LocalUndo), NOREC_INIT_LOCAL_NUM_ENTRY);
 
     free(t);
 }
@@ -350,13 +260,6 @@ TxInitThread (Thread* t, long id)
     t->rdSet.List = MakeList(NOREC_INIT_RDSET_NUM_ENTRY, t);
     t->rdSet.put = t->rdSet.List;
 
-    t->LocalUndo.List = MakeList(NOREC_INIT_LOCAL_NUM_ENTRY, t);
-    t->LocalUndo.put = t->LocalUndo.List;
-
-    t->allocPtr = tmalloc_alloc(1);
-    assert(t->allocPtr);
-    t->freePtr = tmalloc_alloc(1);
-    assert(t->freePtr);
 
 }
 
@@ -369,9 +272,6 @@ txReset (Thread* Self)
     Self->wrSet.BloomFilter = 0;
     Self->rdSet.put = Self->rdSet.List;
     Self->rdSet.tail = NULL;
-
-    Self->LocalUndo.put = Self->LocalUndo.List;
-    Self->LocalUndo.tail = NULL;
 }
 
 __INLINE__ void
@@ -387,6 +287,7 @@ ReadSetCoherent (Thread* Self)
 {
     long time;
     while (1) {
+    	MEMBARSTLD();
         time = LOCK->value;
         if ((time & 1) != 0) {
             continue;
@@ -447,31 +348,15 @@ TryFastUpdate (Thread* Self)
     return 1; /* success */
 }
 
-__INLINE__ void
-WriteBackReverse (Log* k)
-{
-    AVPair* e;
-    for (e = k->tail; e != NULL; e = e->Prev) {
-        *(e->Addr) = e->Valu;
-    }
-}
-
 void
 TxAbort (Thread* Self)
 {
-    if (Self->LocalUndo.put != Self->LocalUndo.List) {
-        WriteBackReverse(&Self->LocalUndo);
-    }
-
     Self->Retries++;
     Self->Aborts++;
 
     if (Self->Retries > 3) { /* TUNABLE */
         backoff(Self, Self->Retries);
     }
-
-    tmalloc_releaseAllReverse(Self->allocPtr);
-    tmalloc_clear(Self->freePtr);
 
     SIGLONGJMP(*Self->envPtr, 1);
     ASSERT(0);
@@ -481,11 +366,20 @@ TxAbort (Thread* Self)
 void
 TxStore (Thread* Self, volatile intptr_t* addr, intptr_t valu)
 {
-    Log* wr = &Self->wrSet;
-    MEMBARLDLD();
+    Log* k = &Self->wrSet;
 
-    wr->BloomFilter |= FILTERBITS(addr);
-    RecordStore(wr, addr, valu);
+    k->BloomFilter |= FILTERBITS(addr);
+
+    AVPair* e = k->put;
+    if (e == NULL) {
+    	k->ovf++;
+    	e = ExtendList(k->tail);
+    	k->end = e;
+    }
+    k->tail    = e;
+    k->put     = e->Next;
+    e->Addr    = addr;
+    e->Valu    = valu;
 }
 
 
@@ -499,7 +393,6 @@ TxLoad (Thread* Self, volatile intptr_t* Addr)
         Log* wr = &Self->wrSet;
         AVPair* e;
         for (e = wr->tail; e != NULL; e = e->Prev) {
-            ASSERT(e->Addr != NULL);
             if (e->Addr == Addr) {
                 return e->Valu;
             }
@@ -533,27 +426,6 @@ TxLoad (Thread* Self, volatile intptr_t* Addr)
     return Valu;
 }
 
-__INLINE__ void
-SaveForRollBack (Log* k, volatile intptr_t* Addr, intptr_t Valu)
-{
-    AVPair* e = k->put;
-    if (e == NULL) {
-        k->ovf++;
-        e = ExtendList(k->tail);
-        k->end = e;
-    }
-    k->tail    = e;
-    k->put     = e->Next;
-    e->Addr    = Addr;
-    e->Valu    = Valu;
-}
-
-void
-TxStoreLocal (Thread* Self, volatile intptr_t* Addr, intptr_t Valu)
-{
-    SaveForRollBack(&Self->LocalUndo, Addr, *Addr);
-    *Addr = Valu;
-}
 
 void
 TxStart (Thread* Self, sigjmp_buf* envPtr)
@@ -563,8 +435,6 @@ TxStart (Thread* Self, sigjmp_buf* envPtr)
     MEMBARLDLD();
 
     Self->envPtr= envPtr;
-
-    ASSERT(Self->wrSet.put == Self->wrSet.List);
 
     Self->Starts++;
 
@@ -580,25 +450,17 @@ TxCommit (Thread* Self)
     /* Fast-path: Optional optimization for pure-readers */
     if (Self->wrSet.put == Self->wrSet.List)
     {
-        /* Given NOREC the read-set is already known to be coherent. */
         txCommitReset(Self);
-        tmalloc_clear(Self->allocPtr);
-        tmalloc_releaseAllForward(Self->freePtr);
         return 1;
     }
 
     if (TryFastUpdate(Self)) {
         txCommitReset(Self);
-        tmalloc_clear(Self->allocPtr);
-        tmalloc_releaseAllForward(Self->freePtr);
         return 1;
     }
 
+    TxAbort(Self);
     return 0;
-    //TxAbort(Self);
-    //ASSERT(0);
-
-    //return 0;
 }
 
 long TxValidate (Thread* Self) {
@@ -633,8 +495,6 @@ long TxValidate (Thread* Self) {
 long TxFinalize (Thread* Self, long clock) {
     if (Self->wrSet.put == Self->wrSet.List) {
         txCommitReset(Self);
-        tmalloc_clear(Self->allocPtr);
-        tmalloc_releaseAllForward(Self->freePtr);
         return 0;
     }
 
@@ -644,34 +504,11 @@ long TxFinalize (Thread* Self, long clock) {
 
     Log* const wr = &Self->wrSet;
     WriteBackForward(wr); /* write-back the deferred stores */
-    LOCK->value+=2;
+    LOCK->value += LOCK->value + 2;
 
     return 0;
 }
 
 void TxResetAfterFinalize (Thread* Self) {
     txCommitReset(Self);
-    tmalloc_clear(Self->allocPtr);
-    tmalloc_releaseAllForward(Self->freePtr);
 }
-
-
-
-void*
-TxAlloc (Thread* Self, size_t size)
-{
-    void* ptr = tmalloc_reserve(size);
-    if (ptr) {
-        tmalloc_append(Self->allocPtr, ptr);
-    }
-
-    return ptr;
-}
-
-void
-TxFree (Thread* Self, void* ptr)
-{
-    tmalloc_append(Self->freePtr, ptr);
-}
-
-
