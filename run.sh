@@ -17,7 +17,7 @@ config[2]="rstmnorec"
 config[3]="tl2"
 config[4]="tinystm"
 config[5]="swisstm"
-config[6]="rtmmutex"
+config[6]="norec"
 config[7]="rtmspin"
 config[8]="seq"
 config[9]="seq"
@@ -177,7 +177,7 @@ ext[2]=""
 ext[3]=""
 ext[4]=""
 ext[5]=""
-ext[6]=".rtm"
+ext[6]=""
 ext[7]=".rtm"
 ext[8]=".seq"
 ext[9]=".seq"
@@ -224,7 +224,7 @@ build[2]="stm"
 build[3]="stm"
 build[4]="stm"
 build[5]="stm"
-build[6]="rtm"
+build[6]="stm"
 build[7]="rtm"
 build[8]="seq"
 build[9]="seq"
@@ -283,14 +283,7 @@ wait_until_finish() {
 
 prob=5
 
-cd $workspace;
-cp tl2/tl2.h.gv4 tl2/tl2.h;
-cd tl2;
-make clean;
-make;
-cd ..
-
-for c in 1 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 6 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
@@ -298,21 +291,21 @@ do
     bash build.sh ${build[$c]} ${alias[$c]};
     for b in 2 3 4 5 6 7 8
     do
-        for t in 1 2 3 4 5 6 7 8
+        for t in 1 3 5 7
         do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+            for a in 1 2 3
             do
                 cd $workspace;
                 cd ${benchmarks[$b]};
-                echo "${config[$c]} gv4 | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-gv4-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
+                echo "${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
                 pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-gv4-${alias[$c]}-${balias[$b]}-$t-$a.pow &
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-gv4-${alias[$c]}-${balias[$b]}-$t-$a.data &
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.data &
                 pid3=$!
                 wait_until_finish $pid3
                 wait $pid3
@@ -320,7 +313,7 @@ do
                 kill -9 $pid
                 kill -9 $pid2
                 if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${alias[$c]}-gv4 | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
+                    echo "Error within: ${alias[$c]} | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
                 fi
             done
             cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
@@ -329,6 +322,7 @@ do
     done
 done
 
+exit 0;
 
 cd $workspace;
 cp tl2/tl2.h.gv5 tl2/tl2.h;
@@ -350,7 +344,7 @@ do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 2 3 4 5 6 7 8 9 10
+            for a in 6 7 8 9 10 11 12 13
             do 
                 cd $workspace;
                 cd ${benchmarks[$b]};
@@ -368,52 +362,6 @@ do
                 kill -9 $pid2
                 if [[ $rc != 0 ]] ; then
                     echo "Error within: ${alias[$c]}-gv5 | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
-                fi
-            done
-            cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
-#        done
-        done
-    done
-done
-
-cd $workspace;
-cp tl2/tl2.h.gv6 tl2/tl2.h;
-cd tl2;
-make clean; 
-make;
-cd ..
-
-for c in 1 # 2 3 4 5 15 26 27 28 29 31 32 33 34
-do
-    cd $workspace;
-    echo "building ${build[$c]} ${alias[$c]}"
-    bash config.sh ${config[$c]};
-    bash build.sh ${build[$c]} ${alias[$c]} 5;
-    for b in 2 3 4 5 6 7 8
-    do 
-        for t in 1 2 3 4 5 6 7 8
-        do
-#        for r in 1 2 3 4 5 6
-#        do
-#            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 2 3 4 5 6 7 8 9 10
-            do 
-                cd $workspace;
-                cd ${benchmarks[$b]};
-                echo "${config[$c]} gv6 | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-gv6-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
-                pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-gv6-${alias[$c]}-${balias[$b]}-$t-$a.pow &
-                pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-gv6-${alias[$c]}-${balias[$b]}-$t-$a.data &
-                pid3=$!
-                wait_until_finish $pid3
-                wait $pid3
-                rc=$?
-                kill -9 $pid
-                kill -9 $pid2
-                if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${alias[$c]}gv6 | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
                 fi
             done
             cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
