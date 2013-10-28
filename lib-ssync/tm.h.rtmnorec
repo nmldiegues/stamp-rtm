@@ -387,7 +387,7 @@
 							             break;  \
 							         } else if (retriesCommit == 0 || _XABORT_CODE(status) == 0xab) { \
 							             __sync_add_and_fetch(&is_fallback,1);    \
-							             int ret = STM_END();  \
+							             int ret = HYBRID_STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \
 							             if (ret == 0) { \
 							             	STM_RESTART(); \
