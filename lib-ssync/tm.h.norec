@@ -411,7 +411,7 @@
 #      define thread_barrier_wait();    _Pragma ("omp barrier")
 
 #      define P_MALLOC(size)            malloc(size)
-#      define P_FREE(ptr)               free(ptr)
+#      define P_FREE(ptr)               /* free(ptr) */
 #      define TM_MALLOC(size)           malloc(size)
 #      define TM_FREE(ptr)              /* TODO: fix memory free problem with OpenTM */
 
@@ -425,9 +425,9 @@
 #      define TM_THREAD_EXIT()          STM_FREE_THREAD(TM_ARG_ALONE)
 
 #      define P_MALLOC(size)            malloc(size)
-#      define P_FREE(ptr)               free(ptr)
-#      define TM_MALLOC(size)           STM_MALLOC(size)
-#      define TM_FREE(ptr)              STM_FREE(ptr)
+#      define P_FREE(ptr)               /* free(ptr) */
+#      define TM_MALLOC(size)           malloc(size)
+#      define TM_FREE(ptr)              /* STM_FREE(ptr) */
 
 #    endif /* !OTM */
 
@@ -487,9 +487,9 @@
 #  else /* !SIMULATOR */
 
 #    define P_MALLOC(size)              malloc(size)
-#    define P_FREE(ptr)                 free(ptr)
+#    define P_FREE(ptr)                 /* free(ptr) */
 #    define TM_MALLOC(size)             malloc(size)
-#    define TM_FREE(ptr)                free(ptr)
+#    define TM_FREE(ptr)                /* free(ptr) */
 
 #  endif /* !SIMULATOR */
 
@@ -542,6 +542,25 @@
 #  define TM_LOCAL_WRITE(var, val)      STM_LOCAL_WRITE(var, val)
 #  define TM_LOCAL_WRITE_P(var, val)    STM_LOCAL_WRITE_P(var, val)
 #  define TM_LOCAL_WRITE_F(var, val)    STM_LOCAL_WRITE_F(var, val)
+
+#ifdef P_MALLOC
+	#undef P_MALLOC
+	#define P_MALLOC(size)            malloc(size)
+#endif
+#ifdef P_FREE
+    #undef P_FREE
+    #define P_FREE(ptr)               /* free(ptr) */
+#endif
+
+#ifdef TM_MALLOC(size)
+    #undef TM_MALLOC(size)
+	#define TM_MALLOC(size)           malloc(size)
+#endif
+#ifdef TM_FREE(ptr)
+	#undef TM_FREE(ptr)
+	#define TM_FREE(ptr)              /*(*freeFunPtr)(Self, ptr)*/
+#endif
+
 
 #endif /* !OTM */
 

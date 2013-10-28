@@ -41,7 +41,6 @@
 
 
 #include <stdint.h>
-#include "tmalloc.h"
 
 
 #  include <setjmp.h>
@@ -85,6 +84,7 @@ Thread*  TxNewThread   ();
 void     TxFreeThread  (Thread*);
 void     TxInitThread  (Thread*, long id);
 int      TxCommit      (Thread*);
+int      TxCommitSTM   (Thread*);
 void     TxAbort       (Thread*);
 intptr_t TxLoad        (Thread*, volatile intptr_t*);
 void     TxStore       (Thread*, volatile intptr_t*, intptr_t);

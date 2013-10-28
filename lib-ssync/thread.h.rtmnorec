@@ -159,16 +159,13 @@ extern __thread long commit_mixed_stm;
 extern void abortHTM(Thread* Self);
 extern intptr_t sharedReadHTM(Thread* Self, intptr_t* addr);
 extern void sharedWriteHTM(Thread* Self, intptr_t* addr, intptr_t val);
-extern void localWriteHTM(Thread* Self, intptr_t* addr, intptr_t val);
 extern void abortSTM(Thread* Self);
 extern intptr_t sharedReadSTM(Thread* Self, intptr_t* addr);
 extern void sharedWriteSTM(Thread* Self, intptr_t* addr, intptr_t val);
-extern void localWriteSTM(Thread* Self, intptr_t* addr, intptr_t val);
 
 extern __thread void (*abortFunPtr)(Thread* Self);
 extern __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);
 extern __thread void (*sharedWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
-extern __thread void (*localWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
 
 extern volatile unsigned long is_fallback;
 
