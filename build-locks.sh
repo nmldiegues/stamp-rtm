@@ -1,6 +1,6 @@
 #!/bin/sh
 
-FOLDERS="array-locks kmeans-locks"
+FOLDERS="array-locks genome-locks intruder-locks kmeans-locks ssca2-locks"
 
 rm lib/*.o || true
 
@@ -10,9 +10,9 @@ locks=$3
 
 if [[ $# != 1 ]] ; then
     cd ssync
-    make clean
-    cp include/$alias-lock_if.h include/lock_if.h
-    make LOCK_VERSION="-DUSE_$alias"
+#    make clean
+#    cp include/$alias-lock_if.h include/lock_if.h
+#    make LOCK_VERSION="-DUSE_$alias"
     rc=$?
     if [[ $rc != 0 ]] ; then
          echo ""

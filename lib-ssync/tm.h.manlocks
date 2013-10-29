@@ -317,40 +317,11 @@
 #    define thread_startup(numThread)   omp_set_num_threads(numThread)
 #    define thread_shutdown()           /* nothing */
 #    define thread_barrier_wait();      _Pragma ("omp barrier")
-#    define TM_BEGIN()                  _Pragma ("omp transaction") {
-#    define TM_BEGIN_RO()               _Pragma ("omp transaction") {
-#    define TM_END()                    }
-#    define TM_RESTART()                _TM_Abort()
 
 #    define TM_EARLY_RELEASE(var)       TM_Release(&(var))
 
 #  else /* !OTM */
 
-#    define TM_BEGIN()                    { __label__ failure;  \
-                                            int tries = 4;      \
-                                            XFAIL(failure);     \
-                                            tries --;           \
-                                            if (tries <= 0) {     \
-                                                pthread_spin_lock(&(global_rtm_mutex)); \
-                                            } else { \
-                                                XBEGIN(failure); \
-                                                if (*((int*)(&global_rtm_mutex)) != 1) XABORT(0xab); \
-                                            } \
-                                            
-
-#    define TM_END()                      if (tries > 0){        \
-                                              XEND();           \
-                                          } else {                     \
-                                              pthread_spin_unlock(&(global_rtm_mutex)); \
-                                          } \
-                                          };
-
-
-
-
-#    define TM_BEGIN_RO()                 TM_BEGIN()
-#    define TM_RESTART()                  XABORT(0xab);
-#    define TM_EARLY_RELEASE(var)         
 
 #  define TM_SHARED_READ(var)         (var)
 #  define TM_SHARED_WRITE(var, val)   ({var = val; var;})
@@ -479,20 +450,12 @@
 
 #  ifdef OTM
 
-#    define TM_BEGIN()                  _Pragma ("omp transaction") {
-#    define TM_BEGIN_RO()               _Pragma ("omp transaction") {
-#    define TM_END()                    }
-#    define TM_RESTART()                omp_abort()
 
 #    define TM_EARLY_RELEASE(var)       /* nothing */
 
 #  else /* !OTM */
 #    undef TM_BEGIN
 #    undef TM_END
-#    define TM_BEGIN()                  STM_BEGIN_WR()
-#    define TM_BEGIN_RO()               STM_BEGIN_RD()
-#    define TM_END()                    STM_END()
-#    define TM_RESTART()                STM_RESTART()
 
 #    define TM_EARLY_RELEASE(var)       /* nothing */
 
@@ -542,11 +505,6 @@
 #  define SEQ_MALLOC(size)              malloc(size)
 #  define SEQ_FREE(ptr)                 free(ptr)
 
-#  define TM_BEGIN()                    __transaction [[relaxed]] {
-#  define TM_BEGIN_RO()                 __transaction [[relaxed]] {
-#  define TM_END()                      }
-#  define TM_RESTART()                  assert(0)
-
 #  define TM_EARLY_RELEASE(var)         /* nothing */
 
 /* =============================================================================
@@ -587,11 +545,6 @@
 #    define TM_FREE(ptr)                free(ptr)
 
 #  endif /* !SIMULATOR */
-
-#  define TM_BEGIN()                    /* nothing */
-#  define TM_BEGIN_RO()                 /* nothing */
-#  define TM_END()                      /* nothing */
-#  define TM_RESTART()                  assert(0)
 
 #  define TM_EARLY_RELEASE(var)         /* nothing */
 
