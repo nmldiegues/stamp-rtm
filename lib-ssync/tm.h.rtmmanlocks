@@ -332,8 +332,50 @@
 #  else /* !OTM */
 
 #  define LI_HASH(ptr, addr)            { unsigned int tmp = (int)((size_t)ptr); unsigned int tmp2 = (int)LOCKS; unsigned int idx = (tmp *2654435761) % tmp2; *(addr) = idx; }
+#  define SINGLE_LOCK(ptr)            { \
+                                        unsigned int tmp = (int)((size_t)ptr); unsigned int tmp2 = (int)LOCKS; unsigned int idx = (tmp *2654435761) % tmp2; \
+                                        if (_xtest()) { if (is_free(&(local_th_data[idx][phys_id]), &(the_lock[idx])) == 0) _xabort(30); } \
+                                        else { if (flags[idx] == 0) { flags[idx] = 1; acquire_write(&(local_th_data[idx][phys_id]), &(the_lock[idx])); } } \ 
+                                      }
+                                        
+#  define SINGLE_UNLOCK(ptr)          { \
+                                        unsigned int tmp = (int)((size_t)ptr); unsigned int tmp2 = (int)LOCKS; unsigned int idx = (tmp *2654435761) % tmp2; \
+                                        if (_xtest() == 0) {  if (flags[idx] == 1) { flags[idx] = 0; release_write(cluster_id, &(local_th_data[idx][phys_id]), &(the_lock[idx])); } } \ 
+                                      }  
 
-#    define TM_BEGIN(arr, len)	{ \
+#    define TM_BEGIN()  { \
+                        int tries = 4;  \
+                        while (1) { \
+                            int status = _xbegin(); \
+                            if (status == _XBEGIN_STARTED) successful_starts++; \
+                            else if (status & _XABORT_EXPLICIT) { abort_explicit++; if (_XABORT_CODE(status) == 30) abort_30++; } \
+                            else if (status == _XABORT_RETRY) abort_retry++; \
+                            else if (status == _XABORT_CONFLICT) abort_conflict++; \
+                            else if (status == _XABORT_CAPACITY) abort_capacity++; \
+                            else if (status == _XABORT_DEBUG) abort_debug++;    \
+                            else if (status == _XABORT_NESTED) abort_nested++;  \
+                            else abort_other++; \
+                            if (status == _XBEGIN_STARTED) { \
+                                break;  \
+                            } else { \
+                                rtm_aborts++;   \
+                                tries--;    \
+                                if (tries == 0) {   \
+                                    break; \
+                                }   \
+                            }   \
+                         }
+
+
+#    define TM_END()        if (tries > 0) {    \
+                                _xend();    \
+                                rtm_commits++;  \
+                            } else {    \
+                                lock_commits++;     \
+                            }\
+                        };
+
+#    define TM_BEGIN_ARGS(arr, len)	{ \
                         int tries = 4;	\
                         while (1) {	\
 							int status = _xbegin();	\
@@ -346,6 +388,11 @@
 							else if (status == _XABORT_NESTED) abort_nested++;	\
 							else abort_other++;	\
 							if (status == _XBEGIN_STARTED) { \
+                                unsigned int i = 0; \ 
+                                for (; i < len; i++) { \
+                                    unsigned int idx = arr[i]; \
+                                    if (is_free(&(local_th_data[idx][phys_id]), &(the_lock[idx])) == 0) _xabort(30); \
+                                } \
                                 break;	\
 							} else { \
 								rtm_aborts++;	\
@@ -366,12 +413,7 @@
                          }
 
 
-#    define TM_END(arr, len)		if (tries > 0) {	\
-                                unsigned int i = 0; \ 
-                                for (; i < len; i++) { \
-                                    unsigned int idx = arr[i]; \
-                                    if (is_free(&(local_th_data[idx][phys_id]), &(the_lock[idx])) == 0) _xabort(30); \
-                                } \
+#    define TM_END_ARGS(arr, len)		if (tries > 0) {	\
 								_xend();	\
 								rtm_commits++;	\
 							} else {	\
