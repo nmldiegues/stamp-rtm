@@ -71,11 +71,14 @@
 #ifndef DECODER_H
 #define DECODER_H 1
 
+#define MAP_USE_HASHTABLE 1
 
 #include "error.h"
 #include "tm.h"
 
 typedef struct decoder decoder_t;
+
+
 
 
 /* =============================================================================

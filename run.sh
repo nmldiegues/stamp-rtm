@@ -1,6 +1,6 @@
 #!/bin/sh
 
-workspace="/home/ndiegues/stamp-rtm/"
+workspace="/home/nmld/workspace-c/stamp-rtm/"
 
 cd tl2;
 make clean; make;
@@ -92,6 +92,10 @@ alias[31]="CLH_LOCKS"
 alias[32]="RW_LOCKS"
 alias[33]="TICKET_LOCKS"
 alias[34]="HTICKET_LOCKS"
+
+alias[40]="HTICKET_LOCKS"
+alias[41]="HTICKET_LOCKS"
+alias[42]="HTICKET_LOCKS"
 alias[43]="HTICKET_LOCKS"
 alias[44]="HTICKET_LOCKS"
 alias[45]="HTICKET_LOCKS"
@@ -118,7 +122,10 @@ benchmarks[15]="array"
 benchmarks[16]="array"
 benchmarks[17]="array"
 
+benchmarkslocks[2]="genome-locks"
+benchmarkslocks[3]="intruder-locks"
 benchmarkslocks[4]="kmeans-locks"
+benchmarkslocks[6]="ssca2-locks"
 benchmarkslocks[9]="array-locks"
 benchmarkslocks[10]="array-locks"
 benchmarkslocks[11]="array-locks"
@@ -283,29 +290,29 @@ wait_until_finish() {
 
 prob=5
 
-for c in 6 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 40 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
-    echo "building ${build[$c]} ${alias[$c]}"
+    echo "building ${build[$c]} ${alias[$c]} ${locks[$c]}"
     bash config.sh ${config[$c]};
-    bash build.sh ${build[$c]} ${alias[$c]};
-    for b in 2 3 4 5 6 7 8
+    bash build-locks.sh ${build[$c]} ${alias[$c]} ${locks[$c]};
+    for b in 2 3 4 6 9
     do
-        for t in 1 3 5 7
+        for t in 4 8
         do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 2 3
+            for a in 1 #6 7 8 9 10
             do
                 cd $workspace;
-                cd ${benchmarks[$b]};
+                cd ${benchmarkslocks[$b]};
                 echo "${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${locks[$c]}-${balias[$b]}-$t-$a.pcm &
                 pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pow &
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${locks[$c]}-${balias[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.data &
+                ./${benchmarkslocks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${locks[$c]}-${balias[$b]}-$t-$a.data &
                 pid3=$!
                 wait_until_finish $pid3
                 wait $pid3
@@ -321,6 +328,7 @@ do
         done
     done
 done
+
 
 exit 0;
 

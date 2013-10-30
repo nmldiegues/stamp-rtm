@@ -2,7 +2,7 @@
 
 FOLDERS="array-locks genome-locks intruder-locks kmeans-locks ssca2-locks"
 
-rm lib/*.o || true
+# rm lib/*.o || true
 
 name=$1
 alias=$2
@@ -27,6 +27,7 @@ for F in $FOLDERS
 do
     cd $F
     rm *.o || true
+    rm ../lib/*.o || true
     make -f Makefile.$name LOCK_VERSION="-DUSE_$alias" LOCKS="-DLOCKS=$locks"
     rc=$?
     if [[ $rc != 0 ]] ; then

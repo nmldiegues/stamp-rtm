@@ -23,10 +23,10 @@ default: $(PROG)$(SUFF)
 clean:
 	$(RM) $(OBJS) $(PROG)$(SUFF) $(OUTPUT)
 
+include ../common/Makefile.common
+
 $(PROG)$(SUFF): $(OBJS)
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $(PROG)$(SUFF)
-
-include ../common/Makefile.common
 
 
 # ==============================================================================

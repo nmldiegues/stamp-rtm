@@ -172,31 +172,33 @@ work (void* argPtr)
             for (j = 0; j < nfeatures; j++) {
             	LI_HASH(&(new_centers[index][j]), &big_arr[j + 1]);
             }
-            TM_BEGIN(big_arr, nfeatures + 1);
+            TM_BEGIN_ARGS(big_arr, nfeatures + 1);
             TM_SHARED_WRITE(*new_centers_len[index], TM_SHARED_READ(*new_centers_len[index]) + 1);
             for (j = 0; j < nfeatures; j++) {
                 TM_SHARED_WRITE_F( new_centers[index][j], (TM_SHARED_READ_F(new_centers[index][j]) + feature[i][j]) );
             }
-            TM_END(big_arr, nfeatures + 1);
+            TM_END_ARGS(big_arr, nfeatures + 1);
         }
 
         /* Update task queue */
         if (start + CHUNK < npoints) {
-        	LI_HASH(&global_i, &s_arr[0]);
-        	TM_BEGIN(s_arr, 1);
+        	TM_BEGIN();
+        	SINGLE_LOCK(&global_i);
             start = (int)TM_SHARED_READ(global_i);
             TM_SHARED_WRITE(global_i, (start + CHUNK));
-            TM_END(s_arr, 1);
+            SINGLE_UNLOCK(&global_i);
+            TM_END();
         } else {
             break;
         }
     }
 
     //TM_BEGIN();
-    LI_HASH(&global_delta, &s_arr[0]);
-    TM_BEGIN(s_arr, 1);
+    TM_BEGIN();
+    SINGLE_LOCK(&global_delta);
     TM_SHARED_WRITE_F(global_delta, TM_SHARED_READ_F(global_delta) + delta);
-    TM_END(s_arr, 1);
+    SINGLE_UNLOCK(&global_delta);
+    TM_END();
 
     TM_THREAD_EXIT();
 }

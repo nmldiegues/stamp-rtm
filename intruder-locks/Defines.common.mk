@@ -5,13 +5,13 @@
 # ==============================================================================
 
 
-PROG := intruder
+PROG := intruder-locks
 
 SRCS += \
 	decoder.c \
 	detector.c \
 	dictionary.c \
-	intruder.c \
+	intruder-locks.c \
 	packet.c \
 	preprocessor.c \
 	stream.c \
@@ -20,13 +20,14 @@ SRCS += \
 	$(LIB)/pair.c \
 	$(LIB)/queue.c \
 	$(LIB)/random.c \
-	$(LIB)/rbtree.c \
+        $(LIB)/hash.c \
+	$(LIB)/hashtable.c \
 	$(LIB)/thread.c \
 	$(LIB)/vector.c \
 #
 OBJS := ${SRCS:.c=.o}
 
-CFLAGS += -DMAP_USE_RBTREE
+CFLAGS += -DMAP_USE_HASHTABLE
 
 
 # ==============================================================================

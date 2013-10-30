@@ -121,13 +121,14 @@ getStartLists (void* argPtr)
 
     unsigned int sorted_locks[1];
 
-    LI_HASH(&global_maxWeight, &sorted_locks[0]);
-    TM_BEGIN(sorted_locks, 1);
+    TM_BEGIN();
+    SINGLE_LOCK(&global_maxWeight);
     long tmp_maxWeight = (long)TM_SHARED_READ(global_maxWeight);
     if (maxWeight > tmp_maxWeight) {
         TM_SHARED_WRITE(global_maxWeight, maxWeight);
     }
-    TM_END(sorted_locks, 1);
+    SINGLE_UNLOCK(&global_maxWeight);
+    TM_END();
 
     thread_barrier_wait();
 

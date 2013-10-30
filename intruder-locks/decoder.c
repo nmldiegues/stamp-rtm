@@ -96,6 +96,14 @@ typedef struct decoded {
  * decoder_alloc
  * =============================================================================
  */
+static ulong_t
+hashSegment (const void* keyPtr)
+{
+    return keyPtr;
+}
+
+#include "hashtable.h"
+
 decoder_t*
 decoder_alloc ()
 {
@@ -103,7 +111,7 @@ decoder_alloc ()
 
     decoderPtr = (decoder_t*)malloc(sizeof(decoder_t));
     if (decoderPtr) {
-        decoderPtr->fragmentedMapPtr = MAP_ALLOC(NULL, NULL);
+        decoderPtr->fragmentedMapPtr = hashtable_alloc(500000, &hashSegment, NULL, -1, -1); //MAP_ALLOC(NULL, NULL);
         assert(decoderPtr->fragmentedMapPtr);
         decoderPtr->decodedQueuePtr = queue_alloc(1024);
         assert(decoderPtr->decodedQueuePtr);
@@ -294,6 +302,8 @@ decoder_process (decoder_t* decoderPtr, char* bytes, long numByte)
  * TMdecoder_process
  * =============================================================================
  */
+#include "hashtable.h"
+
 error_t
 TMdecoder_process (TM_ARGDECL  decoder_t* decoderPtr, char* bytes, long numByte)
 {
@@ -340,23 +350,21 @@ TMdecoder_process (TM_ARGDECL  decoder_t* decoderPtr, char* bytes, long numByte)
 
     if (numFragment > 1) {
 
+        hashtable_t* tablePtr = ((hashtable_t*)decoderPtr->fragmentedMapPtr);
+        SINGLE_LOCK(tablePtr->buckets[tablePtr->hash((void*)flowId) % tablePtr->numBucket]);
         MAP_T* fragmentedMapPtr = decoderPtr->fragmentedMapPtr;
         list_t* fragmentListPtr =
-            (list_t*)TMMAP_FIND(fragmentedMapPtr, (void*)flowId);
-
+            (list_t*)MAP_FIND(fragmentedMapPtr, (void*)flowId);
         if (fragmentListPtr == NULL) {
-
             fragmentListPtr = TMLIST_ALLOC(&packet_compareFragmentId);
             assert(fragmentListPtr);
             status = TMLIST_INSERT(fragmentListPtr, (void*)packetPtr);
             assert(status);
-            status = TMMAP_INSERT(fragmentedMapPtr,
+            status = MAP_INSERT(fragmentedMapPtr,
                                   (void*)flowId,
                                   (void*)fragmentListPtr);
             assert(status);
-
         } else {
-
             list_iter_t it;
             TMLIST_ITER_RESET(&it, fragmentListPtr);
             assert(TMLIST_ITER_HASNEXT(&it, fragmentListPtr));
@@ -365,7 +373,7 @@ TMdecoder_process (TM_ARGDECL  decoder_t* decoderPtr, char* bytes, long numByte)
             long expectedNumFragment = firstFragmentPtr->numFragment;
 
             if (numFragment != expectedNumFragment) {
-                status = TMMAP_REMOVE(fragmentedMapPtr, (void*)flowId);
+                status = MAP_REMOVE(fragmentedMapPtr, (void*)flowId);
                 assert(status);
                 return ERROR_NUMFRAGMENT;
             }
@@ -387,7 +395,7 @@ TMdecoder_process (TM_ARGDECL  decoder_t* decoderPtr, char* bytes, long numByte)
                         (packet_t*)TMLIST_ITER_NEXT(&it, fragmentListPtr);
                     assert(fragmentPtr->flowId == flowId);
                     if (fragmentPtr->fragmentId != i) {
-                        status = TMMAP_REMOVE(fragmentedMapPtr, (void*)flowId);
+                        status = MAP_REMOVE(fragmentedMapPtr, (void*)flowId);
                         assert(status);
                         return ERROR_INCOMPLETE; /* should be sequential */
                     }
@@ -413,16 +421,19 @@ TMdecoder_process (TM_ARGDECL  decoder_t* decoderPtr, char* bytes, long numByte)
                 decodedPtr->flowId = flowId;
                 decodedPtr->data = data;
 
+                SINGLE_LOCK(decoderPtr);
                 queue_t* decodedQueuePtr = decoderPtr->decodedQueuePtr;
                 status = TMQUEUE_PUSH(decodedQueuePtr, (void*)decodedPtr);
                 assert(status);
 
                 TMLIST_FREE(fragmentListPtr);
-                status = TMMAP_REMOVE(fragmentedMapPtr, (void*)flowId);
+                status = MAP_REMOVE(fragmentedMapPtr, (void*)flowId);
+                SINGLE_UNLOCK(decoderPtr);
                 assert(status);
             }
-
         }
+
+        SINGLE_UNLOCK(tablePtr->buckets[tablePtr->hash((void*)flowId) % tablePtr->numBucket]);
 
     } else {
 
@@ -444,8 +455,10 @@ TMdecoder_process (TM_ARGDECL  decoder_t* decoderPtr, char* bytes, long numByte)
         decodedPtr->flowId = flowId;
         decodedPtr->data = data;
 
+        SINGLE_LOCK(decoderPtr);
         queue_t* decodedQueuePtr = decoderPtr->decodedQueuePtr;
         status = TMQUEUE_PUSH(decodedQueuePtr, (void*)decodedPtr);
+        SINGLE_UNLOCK(decoderPtr);
         assert(status);
 
     }

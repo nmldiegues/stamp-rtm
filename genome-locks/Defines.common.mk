@@ -5,14 +5,14 @@
 # ==============================================================================
 
 
-CFLAGS += -DLIST_NO_DUPLICATES
+CFLAGS += -DLIST_NO_DUPLICATES -DMAP_USE_HASHTABLE
 CFLAGS += -DCHUNK_STEP1=12
 
-PROG := genome
+PROG := genome-locks
 
 SRCS += \
 	gene.c \
-	genome.c \
+	genome-locks.c \
 	segments.c \
 	sequencer.c \
 	table.c \

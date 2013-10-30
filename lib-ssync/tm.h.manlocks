@@ -297,8 +297,12 @@
 #  define TM_SHUTDOWN()                 /* nothing */
 
 #  define LI_HASH(ptr, addr)			{ unsigned int tmp = (int)((size_t)ptr); unsigned int tmp2 = (int)LOCKS; unsigned int idx = (tmp *2654435761) % tmp2; *(addr) = idx; }
-#  define TM_BEGIN(arr, len)				{ quickSort(arr, 0, len); unsigned int i = 0; for (; i < len; i++) { unsigned int idx = arr[i]; if (flags[idx] == 0) { flags[idx] = 1; pthread_spin_lock(&(global_rtm_mutex[idx])); } } }
-#  define TM_END(arr, len)			{ unsigned int i = 0; for (; i < len; i++) { unsigned int idx = arr[i]; if (flags[idx] == 1) { flags[idx] = 0; pthread_spin_unlock(&(global_rtm_mutex[idx])); } } }
+#  define TM_BEGIN_ARGS(arr, len)				{ quickSort(arr, 0, len); unsigned int i = 0; for (; i < len; i++) { unsigned int idx = arr[i]; if (flags[idx] == 0) { flags[idx] = 1; pthread_spin_lock(&(global_rtm_mutex[idx])); } } }
+#  define TM_END_ARGS(arr, len)			{ unsigned int i = 0; for (; i < len; i++) { unsigned int idx = arr[i]; if (flags[idx] == 1) { flags[idx] = 0; pthread_spin_unlock(&(global_rtm_mutex[idx])); } } }
+#  define SINGLE_LOCK(ptr)              { unsigned int tmp = (int)((size_t)ptr); unsigned int tmp2 = (int)LOCKS; unsigned int idx = (tmp *2654435761) % tmp2; if (flags[idx] == 0) { flags[idx] = 1; pthread_spin_lock(&(global_rtm_mutex[idx])); } }
+#  define SINGLE_UNLOCK(ptr)              { unsigned int tmp = (int)((size_t)ptr); unsigned int tmp2 = (int)LOCKS; unsigned int idx = (tmp *2654435761) % tmp2; if (flags[idx] == 1) { flags[idx] = 0; pthread_spin_unlock(&(global_rtm_mutex[idx])); } }
+#  define TM_BEGIN()                    /* nothing */
+#  define TM_END()                      /* nothing */
 
 #  define TM_THREAD_ENTER()             /* nothing */
 #  define TM_THREAD_EXIT()              /* nothing */

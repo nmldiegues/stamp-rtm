@@ -303,7 +303,7 @@ sequencer_run (void* argPtr)
         	}
         }
 
-    	TM_BEGIN(sorted_locks, ki);
+    	TM_BEGIN_ARGS(sorted_locks, ki);
         {
             for (ii = i; ii < ii_stop; ii++) {
                 void* segment = vector_at(segmentsContentsPtr, ii);
@@ -312,7 +312,7 @@ sequencer_run (void* argPtr)
                                    segment);
             } /* ii */
         }
-    	TM_END(sorted_locks, ki);
+    	TM_END_ARGS(sorted_locks, ki);
     	free(sorted_locks);
     }
 
@@ -384,13 +384,14 @@ sequencer_run (void* argPtr)
             while ((constructEntries[entryIndex].segment) != NULL) {
             	entryIndex = (entryIndex + 1) % numUniqueSegment; /* look for empty */
             }
-            LI_HASH(&(constructEntries[entryIndex]), &(locks[0]));
 
             /* Find an empty constructEntries entry */
-            TM_BEGIN(locks, 1);
+            TM_BEGIN();
+            SINGLE_LOCK(&(constructEntries[entryIndex]));
             constructEntryPtr = &constructEntries[entryIndex];
             TM_SHARED_WRITE_P(constructEntryPtr->segment, segment);
-        	TM_END(locks, 1);
+            SINGLE_UNLOCK(&(constructEntries[entryIndex]));
+            TM_END();
             entryIndex = (entryIndex + 1) % numUniqueSegment;
 
             /*
@@ -411,12 +412,13 @@ sequencer_run (void* argPtr)
                 startHash = (ulong_t)segment[j-1] +
                             (startHash << 6) + (startHash << 16) - startHash;
 
-                LI_HASH(startHashToConstructEntryTables[j]->buckets[(ulong_t)startHash % startHashToConstructEntryTables[j]->numBucket], &(locks[0]));
-                TM_BEGIN(locks, 1);
+                TM_BEGIN();
+                SINGLE_LOCK(startHashToConstructEntryTables[j]->buckets[(ulong_t)startHash % startHashToConstructEntryTables[j]->numBucket]);
                 status = TMTABLE_INSERT(startHashToConstructEntryTables[j],
                                         (ulong_t)startHash,
                                         (void*)constructEntryPtr );
-                TM_END(locks, 1);
+                SINGLE_UNLOCK(startHashToConstructEntryTables[j]->buckets[(ulong_t)startHash % startHashToConstructEntryTables[j]->numBucket]);
+                TM_END();
                 assert(status);
             }
 
@@ -426,12 +428,13 @@ sequencer_run (void* argPtr)
             startHash = (ulong_t)segment[j-1] +
                         (startHash << 6) + (startHash << 16) - startHash;
 
-            LI_HASH(hashToConstructEntryTable->buckets[(ulong_t)startHash % hashToConstructEntryTable->numBucket], &(locks[0]));
-            TM_BEGIN(locks, 1);
+            TM_BEGIN();
+            SINGLE_LOCK(hashToConstructEntryTable->buckets[(ulong_t)startHash % hashToConstructEntryTable->numBucket]);
             status = TMTABLE_INSERT(hashToConstructEntryTable,
                                     (ulong_t)startHash,
                                     (void*)constructEntryPtr);
-            TM_END(locks, 1);
+            SINGLE_UNLOCK(hashToConstructEntryTable->buckets[(ulong_t)startHash % hashToConstructEntryTable->numBucket]);
+            TM_END();
             assert(status);
         }
     }
@@ -497,10 +500,9 @@ sequencer_run (void* argPtr)
                 /* endConstructEntryPtr is local except for properties startPtr/endPtr/length */
 
 
-                unsigned int the_locks[2];
-                LI_HASH(startConstructEntryPtr, &(the_locks[0]));
-                LI_HASH(endConstructEntryPtr, &(the_locks[1]));
-                TM_BEGIN(the_locks, 2);
+                TM_BEGIN();
+                SINGLE_LOCK(startConstructEntryPtr);
+                SINGLE_LOCK(endConstructEntryPtr);
                 /* Check if matches */
                 if (TM_SHARED_READ(startConstructEntryPtr->isStart) &&
                     (TM_SHARED_READ_P(endConstructEntryPtr->startPtr) != startConstructEntryPtr) &&
@@ -537,7 +539,9 @@ sequencer_run (void* argPtr)
                     TM_SHARED_WRITE(endConstructEntry_startPtr->length, newLength);
                 } /* if (matched) */
 
-                TM_END(the_locks, 2);
+                SINGLE_UNLOCK(startConstructEntryPtr);
+                SINGLE_UNLOCK(endConstructEntryPtr);
+                TM_END();
 
                 if (!endInfoEntries[entryIndex].isEnd) { /* if there was a match */
                     break;

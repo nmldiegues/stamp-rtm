@@ -92,6 +92,11 @@ struct stream {
     MAP_T* attackMapPtr;
 };
 
+static ulong_t
+hashSegment (const void* keyPtr)
+{
+    return keyPtr; /* can be any "good" hash function */
+}
 
 /* =============================================================================
  * stream_alloc
@@ -112,7 +117,7 @@ stream_alloc (long percentAttack)
         assert(streamPtr->allocVectorPtr);
         streamPtr->packetQueuePtr = queue_alloc(-1);
         assert(streamPtr->packetQueuePtr);
-        streamPtr->attackMapPtr = MAP_ALLOC(NULL, NULL);
+        streamPtr->attackMapPtr = hashtable_alloc(500000, &hashSegment, NULL, -1, -1); // MAP_ALLOC(NULL, NULL);
         assert(streamPtr->attackMapPtr);
     }
 

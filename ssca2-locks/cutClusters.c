@@ -531,11 +531,12 @@ cutClusters (void* argPtr)
 
         unsigned int sorted_locks[1];
 
-        LI_HASH(&global_cliqueSize, &sorted_locks[0]);
-        TM_BEGIN(sorted_locks, 1);
+        TM_BEGIN();
+        SINGLE_LOCK(&global_cliqueSize);
         long tmp_cliqueSize = (long)TM_SHARED_READ(global_cliqueSize);
         TM_SHARED_WRITE(global_cliqueSize, (tmp_cliqueSize + cliqueSize));
-        TM_END(sorted_locks, 1);
+        SINGLE_UNLOCK(&global_cliqueSize);
+        TM_END();
 
         thread_barrier_wait();
 
@@ -606,11 +607,12 @@ cutClusters (void* argPtr)
 
     unsigned int sorted_locks[1];
 
-    LI_HASH(&global_cutSetIndex, &sorted_locks[0]);
-    TM_BEGIN(sorted_locks, 1);
+    TM_BEGIN();
+    SINGLE_LOCK(&global_cutSetIndex);
     long tmp_cutSetIndex = (long)TM_SHARED_READ(global_cutSetIndex);
     TM_SHARED_WRITE(global_cutSetIndex, (tmp_cutSetIndex + cutSetIndex));
-    TM_END(sorted_locks, 1);
+    SINGLE_UNLOCK(&global_cutSetIndex);
+    TM_END();
 
     thread_barrier_wait();
 

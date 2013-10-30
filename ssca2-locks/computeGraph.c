@@ -181,12 +181,13 @@ computeGraph (void* argPtr)
     }
 
     unsigned int sorted_locks[1];
-    LI_HASH(&global_maxNumVertices, &sorted_locks[0]);
-    TM_BEGIN(sorted_locks, 1);
+    TM_BEGIN();
+    SINGLE_LOCK(&global_maxNumVertices);
     long tmp_maxNumVertices = (long)TM_SHARED_READ(global_maxNumVertices);
     long new_maxNumVertices = MAX(tmp_maxNumVertices, maxNumVertices) + 1;
     TM_SHARED_WRITE(global_maxNumVertices, new_maxNumVertices);
-    TM_END(sorted_locks, 1);
+    SINGLE_UNLOCK(&global_maxNumVertices);
+    TM_END();
 
     thread_barrier_wait();
 
@@ -298,13 +299,14 @@ computeGraph (void* argPtr)
 
     thread_barrier_wait();
 
-    LI_HASH(&global_outVertexListSize, &sorted_locks[0]);
-    TM_BEGIN(sorted_locks, 1);
+    TM_BEGIN();
+    SINGLE_LOCK(&global_outVertexListSize);
     TM_SHARED_WRITE(
         global_outVertexListSize,
         ((long)TM_SHARED_READ(global_outVertexListSize) + outVertexListSize)
     );
-    TM_END(sorted_locks, 1);
+    SINGLE_UNLOCK(&global_outVertexListSize);
+    TM_END();
 
     thread_barrier_wait();
 
@@ -476,8 +478,8 @@ computeGraph (void* argPtr)
             }
             if (k == GPtr->outVertexIndex[v]+GPtr->outDegree[v]) {
 
-                LI_HASH(&(global_auxArr), &sorted_locks[0]);
-                TM_BEGIN(sorted_locks, 1);
+                TM_BEGIN();
+                SINGLE_LOCK(global_auxArr);
                 /* Add i to the impliedEdgeList of v */
                 long inDegree = (long)TM_SHARED_READ(GPtr->inDegree[v]);
                 TM_SHARED_WRITE(GPtr->inDegree[v], (inDegree + 1));
@@ -498,7 +500,8 @@ computeGraph (void* argPtr)
                     }
                     TM_SHARED_WRITE(a[inDegree % MAX_CLUSTER_SIZE], i);
                 }
-                TM_END(sorted_locks, 1);
+                SINGLE_UNLOCK(global_auxArr);
+                TM_END();
             }
         }
     } /* for i */

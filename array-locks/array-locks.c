@@ -119,7 +119,7 @@ void client_run (void* argPtr) {
         // TM_BEGIN();
         LI_HASH(&global_array[random_number], &sorted_locks[0]);
         LI_HASH(&global_array[random_number2], &sorted_locks[1]);
-        TM_BEGIN(sorted_locks, cont_size + 2);
+        TM_BEGIN_ARGS(sorted_locks, cont_size + 2);
 
         long r1 = (long)TM_SHARED_READ(global_array[random_number].value);
         long r2 = (long)TM_SHARED_READ(global_array[random_number2].value);
@@ -140,7 +140,7 @@ void client_run (void* argPtr) {
 
         TM_SHARED_WRITE(global_array[random_number].value, r1);
         TM_SHARED_WRITE(global_array[random_number2].value, r2);
-        TM_END(sorted_locks, cont_size + 2);
+        TM_END_ARGS(sorted_locks, cont_size + 2);
 
         long k = 0;
         for (;k < (long)global_params[PARAM_INTERVAL]; k++) {

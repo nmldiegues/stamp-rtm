@@ -5,7 +5,7 @@
 # ==============================================================================
 
 
-PROG := ssca2
+PROG := ssca2-locks
 
 SRCS += \
 	alg_radix_smp.c \
@@ -17,7 +17,7 @@ SRCS += \
 	getStartLists.c \
 	getUserParameters.c \
 	globals.c \
-	ssca2.c \
+	ssca2-locks.c \
 	$(LIB)/mt19937ar.c \
 	$(LIB)/random.c \
 	$(LIB)/thread.c \

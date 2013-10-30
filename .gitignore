@@ -12,6 +12,9 @@
 *.la
 *.a
 
+genome-locks/genome-locks
+intruder-locks/intruder-locks
+ssca2-locks/ssca2-locks
 array-locks/array-locks
 kmeans-locks/kmeans-locks
 

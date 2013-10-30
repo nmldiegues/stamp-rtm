@@ -811,13 +811,20 @@ genScalData (void* argPtr)
         long t = i + t1 % (TOT_VERTICES - i);
         if (t != i) {
 
-            LI_HASH(&(permV[t]), &sorted_locks[0]);
-            LI_HASH(&(permV[i]), &sorted_locks[1]);
-            TM_BEGIN(sorted_locks, 2);
+            TM_BEGIN();
+            if (t < i) {
+                SINGLE_LOCK(&(permV[t]));
+                SINGLE_LOCK(&(permV[i]));
+            } else {
+                SINGLE_LOCK(&(permV[i]));
+                SINGLE_LOCK(&(permV[t]));
+            }
             long t2 = (long)TM_SHARED_READ(permV[t]);
             TM_SHARED_WRITE(permV[t], TM_SHARED_READ(permV[i]));
             TM_SHARED_WRITE(permV[i], t2);
-            TM_END(sorted_locks, 2);
+            SINGLE_UNLOCK(&(permV[i]));
+            SINGLE_UNLOCK(&(permV[t]));
+            TM_END();
 
         }
     }
@@ -1103,11 +1110,12 @@ genScalData (void* argPtr)
     }
 
 
-    LI_HASH(&global_edgeNum, &sorted_locks[0]);
-    TM_BEGIN(sorted_locks, 1);
+    TM_BEGIN();
+    SINGLE_LOCK(&global_edgeNum);
     TM_SHARED_WRITE(global_edgeNum,
                     ((long)TM_SHARED_READ(global_edgeNum) + i_edgePtr));
-    TM_END(sorted_locks, 1);
+    SINGLE_UNLOCK(&global_edgeNum);
+    TM_END();
 
     thread_barrier_wait();
 
@@ -1322,11 +1330,12 @@ genScalData (void* argPtr)
         }
     }
 
-    LI_HASH(&global_edgeNum, &sorted_locks[0]);
-    TM_BEGIN(sorted_locks, 1);
+    TM_BEGIN();
+    SINGLE_LOCK(&global_edgeNum);
     TM_SHARED_WRITE(global_edgeNum,
                     ((long)TM_SHARED_READ(global_edgeNum) + i_edgePtr));
-    TM_END(sorted_locks, 1);
+    SINGLE_UNLOCK(&global_edgeNum);
+    TM_END();
 
 
     thread_barrier_wait();
@@ -1405,11 +1414,12 @@ genScalData (void* argPtr)
         }
     }
 
-    LI_HASH(&global_numStrWtEdges, &sorted_locks[0]);
-    TM_BEGIN(sorted_locks, 1);
+    TM_BEGIN();
+    SINGLE_LOCK(&global_numStrWtEdges);
     TM_SHARED_WRITE(global_numStrWtEdges,
                     ((long)TM_SHARED_READ(global_numStrWtEdges) + numStrWtEdges));
-    TM_END(sorted_locks, 1);
+    SINGLE_UNLOCK(&global_numStrWtEdges);
+    TM_END();
 
     thread_barrier_wait();
 
