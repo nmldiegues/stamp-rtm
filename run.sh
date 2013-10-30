@@ -1,6 +1,6 @@
 #!/bin/sh
 
-workspace="/home/nmld/workspace-c/stamp-rtm/"
+workspace="/home/ndiegues/stamp-rtm/"
 
 cd tl2;
 make clean; make;
@@ -51,6 +51,7 @@ config[50]="rtmssynconlyaux"
 config[51]="rtmssyncstart"
 config[52]="rtmnoaux"
 
+config[39]="manlocks"
 config[40]="manlocks"
 config[41]="manlocks"
 config[42]="manlocks"
@@ -93,6 +94,7 @@ alias[32]="RW_LOCKS"
 alias[33]="TICKET_LOCKS"
 alias[34]="HTICKET_LOCKS"
 
+alias[39]="HTICKET_LOCKS"
 alias[40]="HTICKET_LOCKS"
 alias[41]="HTICKET_LOCKS"
 alias[42]="HTICKET_LOCKS"
@@ -136,6 +138,7 @@ benchmarkslocks[15]="array-locks"
 benchmarkslocks[16]="array-locks"
 benchmarkslocks[17]="array-locks"
 
+locks[39]="10000"
 locks[40]="1000000"
 locks[41]="1000"
 locks[42]="1"
@@ -218,6 +221,7 @@ ext[50]=".rtm"
 ext[51]=".rtm"
 ext[52]=".rtm"
 
+ext[39]=""
 ext[40]=""
 ext[41]=""
 ext[42]=""
@@ -265,6 +269,7 @@ build[50]="rtm"
 build[51]="rtm"
 build[52]="rtm"
 
+build[39]="stm"
 build[40]="stm"
 build[41]="stm"
 build[42]="stm"
@@ -290,7 +295,7 @@ wait_until_finish() {
 
 prob=5
 
-for c in 40 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 39 40 41 42 43 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]} ${locks[$c]}"
@@ -298,12 +303,12 @@ do
     bash build-locks.sh ${build[$c]} ${alias[$c]} ${locks[$c]};
     for b in 2 3 4 6 9
     do
-        for t in 4 8
+        for t in 4 #1 2 3 4 5 6 7 8
         do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 #6 7 8 9 10
+            for a in 1 #2 3 4 5 6 7 8 9 10 #6 7 8 9 10
             do
                 cd $workspace;
                 cd ${benchmarkslocks[$b]};
