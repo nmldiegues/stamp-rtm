@@ -286,11 +286,11 @@ sequencer_run (void* argPtr)
 //     i_start = 0;
 //     i_stop = numSegment;
 // #endif /* !(HTM || STM) */
-    for (i = i_start; i < i_stop; i+=CHUNK_STEP1) {
+    //for (i = i_start; i < i_stop; i+=CHUNK_STEP1) {
 
-        long ii;
-        long ii_stop = MIN(i_stop, (i+CHUNK_STEP1));
-        unsigned int sizeLocks = ii_stop - i;
+        //long ii;
+        //long ii_stop = MIN(i_stop, (i+CHUNK_STEP1));
+        /*unsigned int sizeLocks = ii_stop - i;
         unsigned int* sorted_locks = (unsigned int*) malloc(sizeLocks* sizeof(unsigned int));
         unsigned int ki = 0;
         {
@@ -298,22 +298,45 @@ sequencer_run (void* argPtr)
         		void* segment = vector_at(segmentsContentsPtr, ii);
         		long numBucket = uniqueSegmentsPtr->numBucket;
         		long i = uniqueSegmentsPtr->hash(segment) % numBucket;
-        		LI_HASH(uniqueSegmentsPtr->buckets[i], &(sorted_locks[ki]));
+        		LI_HASH(i, &(sorted_locks[ki]));
         		ki++;
         	}
-        }
+        }*/
 
-    	TM_BEGIN_ARGS(sorted_locks, ki);
+
+    	//TM_BEGIN_ARGS(sorted_locks, ki);
+        /*TM_BEGIN();
+        SINGLE_LOCK(uniqueSegmentsPtr);
         {
             for (ii = i; ii < ii_stop; ii++) {
                 void* segment = vector_at(segmentsContentsPtr, ii);
                 TMHASHTABLE_INSERT(uniqueSegmentsPtr,
                                    segment,
                                    segment);
-            } /* ii */
+            }
         }
-    	TM_END_ARGS(sorted_locks, ki);
-    	free(sorted_locks);
+        SINGLE_UNLOCK(uniqueSegmentsPtr);
+        TM_END();*/
+    	//TM_END_ARGS(sorted_locks, ki);
+    	//free(sorted_locks);
+
+    //}
+
+    for (i = i_start; i < i_stop; i+=CHUNK_STEP1) {
+        TM_BEGIN();
+        {
+            long ii;
+            long ii_stop = MIN(i_stop, (i+CHUNK_STEP1));
+            for (ii = i; ii < ii_stop; ii++) {
+                void* segment = vector_at(segmentsContentsPtr, ii);
+                SINGLE_LOCK(segment);
+                TMHASHTABLE_INSERT(uniqueSegmentsPtr,
+                        segment,
+                        segment);
+                SINGLE_UNLOCK(segment);
+            }
+        }
+        TM_END();
     }
 
     thread_barrier_wait();
