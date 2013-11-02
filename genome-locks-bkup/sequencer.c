@@ -286,6 +286,42 @@ sequencer_run (void* argPtr)
 //     i_start = 0;
 //     i_stop = numSegment;
 // #endif /* !(HTM || STM) */
+    //for (i = i_start; i < i_stop; i+=CHUNK_STEP1) {
+
+        //long ii;
+        //long ii_stop = MIN(i_stop, (i+CHUNK_STEP1));
+        /*unsigned int sizeLocks = ii_stop - i;
+        unsigned int* sorted_locks = (unsigned int*) malloc(sizeLocks* sizeof(unsigned int));
+        unsigned int ki = 0;
+        {
+        	for (ii = i; ii < ii_stop; ii++) {
+        		void* segment = vector_at(segmentsContentsPtr, ii);
+        		long numBucket = uniqueSegmentsPtr->numBucket;
+        		long i = uniqueSegmentsPtr->hash(segment) % numBucket;
+        		LI_HASH(i, &(sorted_locks[ki]));
+        		ki++;
+        	}
+        }*/
+
+
+    	//TM_BEGIN_ARGS(sorted_locks, ki);
+        /*TM_BEGIN();
+        SINGLE_LOCK(uniqueSegmentsPtr);
+        {
+            for (ii = i; ii < ii_stop; ii++) {
+                void* segment = vector_at(segmentsContentsPtr, ii);
+                TMHASHTABLE_INSERT(uniqueSegmentsPtr,
+                                   segment,
+                                   segment);
+            }
+        }
+        SINGLE_UNLOCK(uniqueSegmentsPtr);
+        TM_END();*/
+    	//TM_END_ARGS(sorted_locks, ki);
+    	//free(sorted_locks);
+
+    //}
+
     for (i = i_start; i < i_stop; i+=CHUNK_STEP1) {
         TM_BEGIN();
         {
@@ -293,12 +329,12 @@ sequencer_run (void* argPtr)
             long ii_stop = MIN(i_stop, (i+CHUNK_STEP1));
             for (ii = i; ii < ii_stop; ii++) {
                 void* segment = vector_at(segmentsContentsPtr, ii);
-        SINGLE_LOCK(segment);
+                SINGLE_LOCK(segment);
                 TMHASHTABLE_INSERT(uniqueSegmentsPtr,
-                                   segment,
-                                   segment);
-        SINGLE_UNLOCK(segment);
-            } /* ii */
+                        segment,
+                        segment);
+                SINGLE_UNLOCK(segment);
+            }
         }
         TM_END();
     }
@@ -367,18 +403,16 @@ sequencer_run (void* argPtr)
             ulong_t startHash;
             bool_t status;
 
+            unsigned int locks[1];
+            while ((constructEntries[entryIndex].segment) != NULL) {
+            	entryIndex = (entryIndex + 1) % numUniqueSegment; /* look for empty */
+            }
+
             /* Find an empty constructEntries entry */
             TM_BEGIN();
             SINGLE_LOCK(&(constructEntries[entryIndex]));
-            while (((void*)TM_SHARED_READ_P(constructEntries[entryIndex].segment)) != NULL) {
-            	SINGLE_UNLOCK(&(constructEntries[entryIndex]));
-                entryIndex = (entryIndex + 1) % numUniqueSegment; /* look for empty */
-                SINGLE_LOCK(&(constructEntries[entryIndex]));
-            }
             constructEntryPtr = &constructEntries[entryIndex];
-            SINGLE_LOCK(constructEntryPtr);
             TM_SHARED_WRITE_P(constructEntryPtr->segment, segment);
-            SINGLE_UNLOCK(constructEntryPtr);
             SINGLE_UNLOCK(&(constructEntries[entryIndex]));
             TM_END();
             entryIndex = (entryIndex + 1) % numUniqueSegment;
@@ -400,12 +434,13 @@ sequencer_run (void* argPtr)
             for (j = 1; j < segmentLength; j++) {
                 startHash = (ulong_t)segment[j-1] +
                             (startHash << 6) + (startHash << 16) - startHash;
+
                 TM_BEGIN();
-                SINGLE_LOCK(&(startHashToConstructEntryTables[j]));
+                SINGLE_LOCK(startHashToConstructEntryTables[j]->buckets[(ulong_t)startHash % startHashToConstructEntryTables[j]->numBucket]);
                 status = TMTABLE_INSERT(startHashToConstructEntryTables[j],
                                         (ulong_t)startHash,
                                         (void*)constructEntryPtr );
-                SINGLE_UNLOCK(&(startHashToConstructEntryTables[j]));
+                SINGLE_UNLOCK(startHashToConstructEntryTables[j]->buckets[(ulong_t)startHash % startHashToConstructEntryTables[j]->numBucket]);
                 TM_END();
                 assert(status);
             }
@@ -415,12 +450,13 @@ sequencer_run (void* argPtr)
              */
             startHash = (ulong_t)segment[j-1] +
                         (startHash << 6) + (startHash << 16) - startHash;
+
             TM_BEGIN();
-            SINGLE_LOCK(hashToConstructEntryTable);
+            SINGLE_LOCK(hashToConstructEntryTable->buckets[(ulong_t)startHash % hashToConstructEntryTable->numBucket]);
             status = TMTABLE_INSERT(hashToConstructEntryTable,
                                     (ulong_t)startHash,
                                     (void*)constructEntryPtr);
-            SINGLE_UNLOCK(hashToConstructEntryTable);
+            SINGLE_UNLOCK(hashToConstructEntryTable->buckets[(ulong_t)startHash % hashToConstructEntryTable->numBucket]);
             TM_END();
             assert(status);
         }
@@ -485,10 +521,11 @@ sequencer_run (void* argPtr)
                 long newLength = 0;
 
                 /* endConstructEntryPtr is local except for properties startPtr/endPtr/length */
+
+
                 TM_BEGIN();
                 SINGLE_LOCK(startConstructEntryPtr);
                 SINGLE_LOCK(endConstructEntryPtr);
-
                 /* Check if matches */
                 if (TM_SHARED_READ(startConstructEntryPtr->isStart) &&
                     (TM_SHARED_READ_P(endConstructEntryPtr->startPtr) != startConstructEntryPtr) &&

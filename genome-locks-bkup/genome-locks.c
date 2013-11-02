@@ -243,7 +243,7 @@ MAIN (argc,argv)
     fflush(stdout);
 
     /* Check result */
-    {
+/*    {
         char* sequence = sequencerPtr->sequence;
         int result = strcmp(gene, sequence);
         printf("Sequence matches gene: %s\n", (result ? "no" : "yes"));
@@ -255,7 +255,6 @@ MAIN (argc,argv)
         assert(strlen(sequence) >= strlen(gene));
     }
 
-    /* Clean up */
     printf("Deallocating memory... ");
     fflush(stdout);
     sequencer_free(sequencerPtr);
@@ -263,7 +262,7 @@ MAIN (argc,argv)
     gene_free(genePtr);
     random_free(randomPtr);
     puts("done.");
-    fflush(stdout);
+    fflush(stdout); */
 
     TM_SHUTDOWN();
     P_MEMORY_SHUTDOWN();
