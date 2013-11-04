@@ -1,0 +1,19 @@
+buffered writes, acquire global lock, validate, increment clock, write-back with new timestamp
+ - elide global lock with hw tx
+ - use indirection object as version
+ - validate, write-back by placing indirection object with infinite version (actually not needed, as it's not visible)
+ - increment clock and write it in version, commit hw tx
+
+eager write locks are used for ensuring write-write exclusive, but they do not prevent reads
+ - subject to livelocks, needs CM
+ - at commit, it's acquired with read-write exclusive mode
+ - increment clock
+ - validate that reads did not change
+ - hardware transaction can be used, this has the advantage of allowing better CM
+ - can use the max idea of GV5, or slightly changed SIROCCO, or keep a global array where each thread writes to one location the max ts and on start reads all of them to get the max (actually, it's kind of a max register?) --- not sure if this is relevant given the 8 hw threads on the haswell
+ - go with global lock, then test others, also write-write eager can be done after
+
+start from NOrec, change metadata: 
+ - consider using inplace writes with undo logging --- fits good with the indirection object for the version with infinite and fits optimistic assumptions
+ - the inplace value can be ignored --- if we are already accessing the metadata then we are already crushing the memory layout accesses by going to the random positions
+ - I can use 1-1 or N-1 mapping for metadata
