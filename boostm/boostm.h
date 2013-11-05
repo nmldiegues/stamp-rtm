@@ -49,7 +49,8 @@
 typedef struct
 {
 	long* version;
-	void* data;
+	void* addr;
+	intptr_t data;
 	struct version_t* previous;
 } version_t;
 

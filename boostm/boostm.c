@@ -122,8 +122,9 @@ volatile long LocalOverflowTally = 0;
 
 #define PSSHIFT                         ((sizeof(void*) == 4) ? 2 : 3)
 #  define _TABSZ  (1<< 20)
-static volatile version_t LockTab[_TABSZ];
+static volatile version_t** LockTab;
 #  define PSLOCK(a) (LockTab + (((UNS(a)+COLOR) >> PSSHIFT) & TABMSK)) /* PS1M */
+#  define OFFSET(a) (((UNS(a)+COLOR) >> PSSHIFT) & TABMSK)
 
 __INLINE__ AVPair*
 MakeList (long sz, Thread* Self)
@@ -184,19 +185,38 @@ WriteBackForward (Log* k, long* versionPtr)
     AVPair* End = k->put;
     for (e = k->List; e != End; e = e->Next) {
         *(e->Addr) = e->Valu;
-        volatile version_t* LockFor = PSLOCK(e->Addr);
+
+        unsigned int offset = OFFSET(e->Addr);
+        const version_t* LockFor = LockTab[offset];
+
         version_t* newVersion = (version_t*) malloc(sizeof(version_t));
+
+        newVersion->addr = e->Addr;
         newVersion->data = e->Valu;
-        newVersion->previous = LockFor;
         newVersion->version = versionPtr;
+        newVersion->previous = LockFor;
+        LockTab[offset] = newVersion;
     }
 }
 
 void
 TxOnce ()
 {
+	LockTab = (version_t**)malloc(_TABSZ * sizeof(version_t*));
+	unsigned int i = 0;
+	long* ver = (long*) malloc(sizeof(long));
+	*ver = 0;
+	for (; i < _TABSZ; i++) {
+		LockTab[i] = (version_t*)malloc(sizeof(version_t));
+		LockTab[i]->addr = NULL;
+		LockTab[i]->data = NULL;
+		LockTab[i]->version = ver;
+		LockTab[i]->previous = NULL;
+	}
+
     LOCK = (aligned_type_t*) malloc(sizeof(aligned_type_t));
     LOCK->value = 0;
+    LOCK->counter = 0;
 
     pthread_key_create(&global_key_self, NULL); /* CCM: do before we register handler */
 
@@ -300,7 +320,7 @@ ReadSetCoherent (Thread* Self)
 	long mySnapshot = Self->snapshot;
 
 	for (e = rd->List; e != EndOfList; e = e->Next) {
-		volatile version_t* LockFor = PSLOCK(e->Addr);
+		volatile version_t* LockFor = *(PSLOCK(e->Addr));
 		if (*(LockFor->version) > mySnapshot) {
 			return 1;
 		}
@@ -349,6 +369,7 @@ TryFastUpdate (Thread* Self)
     long counter = LOCK->counter + 1;
     LOCK->counter = counter;
     *versionPtr = counter;
+    LOCK->value = 0;
     MEMBARSTLD();
 
     return 1; /* success */
@@ -406,7 +427,12 @@ TxLoad (Thread* Self, volatile intptr_t* Addr)
     }
 
     MEMBARLDLD();
-    volatile version_t* LockFor = PSLOCK(Addr);
+    intptr_t ret = *(Addr);
+    volatile version_t* LockFor = *(PSLOCK(Addr));
+
+    while (LockFor->addr != NULL && LockFor->addr != Addr) {
+    	LockFor = LockFor->previous;
+    }
 
     if (*(LockFor->version) > Self->snapshot) {
     	TxAbort(Self);
@@ -423,7 +449,11 @@ TxLoad (Thread* Self, volatile intptr_t* Addr)
     k->put     = e->Next;
     e->Addr = Addr;
 
-    return LockFor->data;
+    if (LockFor->addr == Addr) {
+    	return LockFor->data;
+    } else {
+    	return ret;
+    }
 }
 
 
@@ -438,10 +468,7 @@ TxStart (Thread* Self, sigjmp_buf* envPtr)
 
     Self->Starts++;
 
-    do {
-        Self->snapshot = LOCK->value;
-    } while ((Self->snapshot & 1) != 0);
-
+    Self->snapshot = LOCK->counter;
 }
 
 int

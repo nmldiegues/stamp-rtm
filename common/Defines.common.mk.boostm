@@ -6,8 +6,8 @@
 
 
 CC       := gcc
-CFLAGS   += -g -Wall -pthread
-CFLAGS   += -O3
+CFLAGS   += -g -Wall -pthread -rdynamic
+CFLAGS   += -O0
 CFLAGS   += -I$(LIB)
 CPP      := g++
 CPPFLAGS += $(CFLAGS)

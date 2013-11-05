@@ -3,6 +3,7 @@
 echo "Configuring $1"
 
 rm -rf lib
+rm -rf array
 rm -rf bayes
 rm -rf genome
 rm -rf intruder
@@ -15,6 +16,7 @@ rm -rf yada
 if [ "$1" = "rstmnorec" ]
 then
         cp -r lib-bkup lib
+        cp -r array-bkup array
         cp -r bayes-bkup bayes
         cp -r genome-bkup genome
         cp -r intruder-bkup intruder
@@ -25,6 +27,7 @@ then
         cp -r yada-bkup yada
 else
         cp -r lib-ssync lib
+        cp -r array-ssync array
         cp -r bayes-ssync bayes
         cp -r genome-ssync genome
         cp -r intruder-ssync intruder
