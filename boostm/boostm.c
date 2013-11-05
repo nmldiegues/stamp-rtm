@@ -356,6 +356,7 @@ TryFastUpdate (Thread* Self)
     } while (CAS(&(LOCK->value), 0, 1) == 1);
 
     if (ReadSetCoherent(Self)) {
+    	LOCK->value = 0;
     	TxAbort(Self);
     }
 
@@ -378,6 +379,7 @@ TryFastUpdate (Thread* Self)
 void
 TxAbort (Thread* Self)
 {
+
     Self->Retries++;
     Self->Aborts++;
 
