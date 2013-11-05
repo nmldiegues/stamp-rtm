@@ -18,7 +18,7 @@ config[3]="tl2"
 config[4]="tinystm"
 config[5]="swisstm"
 config[6]="norec"
-config[7]="rtmspin"
+config[7]="boostm"
 config[8]="seq"
 config[9]="seq"
 config[10]="seq"
@@ -188,7 +188,7 @@ ext[3]=""
 ext[4]=""
 ext[5]=""
 ext[6]=""
-ext[7]=".rtm"
+ext[7]=""
 ext[8]=".seq"
 ext[9]=".seq"
 ext[10]=".seq"
@@ -236,7 +236,7 @@ build[3]="stm"
 build[4]="stm"
 build[5]="stm"
 build[6]="stm"
-build[7]="rtm"
+build[7]="stm"
 build[8]="seq"
 build[9]="seq"
 build[10]="seq"
@@ -295,20 +295,20 @@ wait_until_finish() {
 
 prob=5
 
-for c in 40 41 42 43 44 45 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 7 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]} ${locks[$c]}"
     bash config.sh ${config[$c]};
     bash build-locks.sh ${build[$c]} ${alias[$c]} ${locks[$c]};
-    for b in 3 4 6 9 10 11 12 13 14 15 16 17
+    for b in 2 3 4 5 6 7 8 9
     do
-        for t in 1 2 3 4 5 6 7 8
+        for t in 1 2 4 6 8
         do
 #        for r in 1 2 3 4 5 6
 #        do
 #            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1 2 3 4 5
+            for a in 1
             do
                 cd $workspace;
                 cd ${benchmarkslocks[$b]};
