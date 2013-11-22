@@ -158,14 +158,14 @@ extern __thread long commit_mixed_stm;
 
 extern void abortHTM(Thread* Self);
 extern intptr_t sharedReadHTM(Thread* Self, intptr_t* addr);
-extern float sharedReadHTM_F(Thread* Self, float* addr);
 extern void sharedWriteHTM(Thread* Self, intptr_t* addr, intptr_t val);
+extern float sharedReadHTM_F(Thread* Self, float* addr);
 extern void sharedWriteHTM_F(Thread* Self, float* addr, float val);
 extern void abortSTM(Thread* Self);
 extern intptr_t sharedReadSTM(Thread* Self, intptr_t* addr);
 extern void sharedWriteSTM(Thread* Self, intptr_t* addr, intptr_t val);
-extern intptr_t sharedReadSTM_F(Thread* Self, intptr_t* addr);
-extern void sharedWriteSTM_F(Thread* Self, intptr_t* addr, intptr_t val);
+extern float sharedReadSTM_F(Thread* Self, float* addr);
+extern void sharedWriteSTM_F(Thread* Self, float* addr, float val);
 
 extern __thread void (*abortFunPtr)(Thread* Self);
 extern __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);

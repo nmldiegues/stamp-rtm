@@ -362,6 +362,8 @@
                                 abortFunPtr = &abortSTM;    \
                                 sharedReadFunPtr = &sharedReadSTM;  \
                                 sharedWriteFunPtr = &sharedWriteSTM;    \
+                                sharedReadFloatFunPtr = &sharedReadSTM_F;  \
+                                sharedWriteFloatFunPtr = &sharedWriteSTM_F;    \
                                 fallback_mixed++; \
                                 break;  \
     						} \
@@ -401,7 +403,9 @@
 							    }    \
                                 abortFunPtr = &abortHTM;    \
                                 sharedReadFunPtr = &sharedReadHTM;  \
+                                sharedReadFloatFunPtr = &sharedReadHTM_F;  \
                                 sharedWriteFunPtr = &sharedWriteHTM;    \
+                                sharedWriteFloatFunPtr = &sharedWriteHTM_F;    \
                             } \
                      	};
 
