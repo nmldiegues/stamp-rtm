@@ -115,6 +115,12 @@ intptr_t sharedReadHTM(Thread* Self, intptr_t* addr) {
 void sharedWriteHTM(Thread* Self, intptr_t* addr, intptr_t val) {
     *addr = val;
 }
+float sharedReadHTM_F(Thread* Self, float* addr) {
+    return *addr;
+}
+void sharedWriteHTM_F(Thread* Self, float* addr, float val) {
+    *addr = val;
+}
 
 void abortSTM(Thread* Self) {
     STM_RESTART();
@@ -123,6 +129,12 @@ intptr_t sharedReadSTM(Thread* Self, intptr_t* addr) {
     return STM_HYBRID_READ(addr);
 }
 void sharedWriteSTM(Thread* Self, intptr_t* addr, intptr_t val) {
+    STM_HYBRID_WRITE(addr, val);
+}
+float sharedReadSTM_F(Thread* Self, float* addr) {
+    return STM_HYBRID_READ(addr);
+}
+void sharedWriteSTM_F(Thread* Self, float* addr, float val) {
     STM_HYBRID_WRITE(addr, val);
 }
 
@@ -147,7 +159,9 @@ threadWait (void* argPtr)
 
     abortFunPtr = &abortHTM;
     sharedReadFunPtr = &sharedReadHTM;
+    sharedReadFloatFunPtr = &sharedReadHTM_F;
     sharedWriteFunPtr = &sharedWriteHTM;
+    sharedWriteFloatFunPtr = &sharedWriteHTM_F;
 
     cpu_set_t my_set;
     CPU_ZERO(&my_set);
