@@ -357,7 +357,7 @@
     	                            break;	\
     							} else { \
     								rtm_aborts++;	\
-    								/* tries--;	\ */
+    								/* tries--;*/	\
                                                                 if (random_generate(randomFallback) % 100 < FALLBACK_PROB) tries = 0; \
     							}	\
     						} else {  \
@@ -401,7 +401,7 @@
 							             commit_mixed_stm++; \
 							             break;  \
 							         } \
-    					             /* retriesCommit--; \ */
+    					             /* retriesCommit--;*/ \
 							    }    \
                                 abortFunPtr = &abortHTM;    \
                                 sharedReadFunPtr = &sharedReadHTM;  \

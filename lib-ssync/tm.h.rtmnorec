@@ -354,7 +354,7 @@
     	                            break;	\
     							} else { \
     								rtm_aborts++;	\
-    								/* tries--;	\ */
+    								/* tries--;*/	\
     								if (random_generate(randomFallback) % 100 < FALLBACK_PROB) tries = 0; \
     							}	\
     						} else {  \
@@ -400,7 +400,7 @@
 							         } else if (_XABORT_CODE(status) == 0xac) { \
 							         	STM_RESTART(); \
 							         } \
-    					             /* retriesCommit--; \ */
+    					             /* retriesCommit--;*/ \
 							    }    \
                                 abortFunPtr = &abortHTM;    \
                                 sharedReadFunPtr = &sharedReadHTM;  \
