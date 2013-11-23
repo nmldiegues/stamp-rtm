@@ -138,6 +138,8 @@ extern "C" {
 #endif /* !LOG_BARRIER */
 #endif /* !SIMULATOR */
 
+#include "random.h"
+
 extern __thread random_t* randomFallback;
 
 extern volatile lock_global_data the_lock;

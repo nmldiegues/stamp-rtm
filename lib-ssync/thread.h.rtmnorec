@@ -140,6 +140,8 @@ extern "C" {
 #endif /* !LOG_BARRIER */
 #endif /* !SIMULATOR */
 
+#include "random.h"
+
 extern __thread random_t* randomFallback;
 
 extern __thread long rtm_aborts;
