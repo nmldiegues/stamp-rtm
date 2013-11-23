@@ -347,8 +347,9 @@
 									acquire_write(&(local_th_data[phys_id]), &the_lock); \
 	break; 	\
 								}	\
+								if (tries > 2) { \
 								if (tries > 2 && random_generate(randomFallback) % 100 < FALLBACK_PROB) tries = 3; \
-								else tries = 4; \
+								else tries = 4; } \
 							}	\
 	}
 
