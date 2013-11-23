@@ -106,6 +106,8 @@ __thread long fallback_stm;
 __thread long commit_mixed_hw;
 __thread long commit_mixed_stm;
 
+__thread random_t* randomFallback;
+
 void abortHTM(Thread* Self) {
     _xabort(0xab);
 }
@@ -142,6 +144,9 @@ static void
 threadWait (void* argPtr)
 {
     long threadId = *(long*)argPtr;
+
+	randomFallback = random_alloc();
+    random_seed(randomFallback, time(NULL));
 
     THREAD_LOCAL_SET(global_threadId, (long)threadId);
 

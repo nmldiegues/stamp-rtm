@@ -357,8 +357,8 @@
     	                            break;	\
     							} else { \
     								rtm_aborts++;	\
-    								tries--;	\
-                                                                /*if (random_generate(randomFallback) % 100 < FALLBACK_PROB) tries = 0;*/ \
+    								/* tries--;	\ */
+                                                                if (random_generate(randomFallback) % 100 < FALLBACK_PROB) tries = 0; \
     							}	\
     						} else {  \
     						    tries = 0; \
@@ -390,7 +390,7 @@
                                                                      AFTER_COMMIT();    \
                                                                      commit_mixed_hw++; \
 							             break;  \
-							         } else if (retriesCommit == 0 /*(random_generate(randomFallback) % 100 < FALLBACK_PROB)*/ || _XABORT_CODE(status) == 0xab) { \
+							         } else if (/*retriesCommit == 0*/ (random_generate(randomFallback) % 100 < FALLBACK_PROB) || _XABORT_CODE(status) == 0xab) { \
 							             __sync_add_and_fetch(&is_fallback,1);    \
                                                                      int ret = HYBRID_STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \
@@ -401,7 +401,7 @@
 							             commit_mixed_stm++; \
 							             break;  \
 							         } \
-    					             retriesCommit--; \
+    					             /* retriesCommit--; \ */
 							    }    \
                                 abortFunPtr = &abortHTM;    \
                                 sharedReadFunPtr = &sharedReadHTM;  \

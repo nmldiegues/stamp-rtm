@@ -354,7 +354,8 @@
     	                            break;	\
     							} else { \
     								rtm_aborts++;	\
-    								tries--;	\
+    								/* tries--;	\ */
+    								if (random_generate(randomFallback) % 100 < FALLBACK_PROB) tries = 0; \
     							}	\
     						} else {  \
     						    tries = 0; \
@@ -385,7 +386,7 @@
                                          TX_AFTER_FINALIZE();    \
                                          commit_mixed_hw++; \
 							             break;  \
-							         } else if (retriesCommit == 0 || _XABORT_CODE(status) == 0xab) { \
+							         } else if ((random_generate(randomFallback) % 100 < FALLBACK_PROB) || _XABORT_CODE(status) == 0xab) { \ 
 							             __sync_add_and_fetch(&is_fallback,1);    \
 							             int ret = HYBRID_STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \
@@ -397,7 +398,7 @@
 							         } else if (_XABORT_CODE(status) == 0xac) { \
 							         	STM_RESTART(); \
 							         } \
-    					             retriesCommit--; \
+    					             /* retriesCommit--; \ */
 							    }    \
                                 abortFunPtr = &abortHTM;    \
                                 sharedReadFunPtr = &sharedReadHTM;  \

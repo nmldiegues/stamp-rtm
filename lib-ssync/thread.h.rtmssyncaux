@@ -138,6 +138,8 @@ extern "C" {
 #endif /* !LOG_BARRIER */
 #endif /* !SIMULATOR */
 
+extern __thread random_t* randomFallback;
+
 extern volatile lock_global_data the_lock;
 extern __attribute__((aligned(CACHE_LINE_SIZE))) volatile lock_local_data* local_th_data;
 
