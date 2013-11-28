@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/time.h>
+#include "timer.h"
 #include <time.h>
 
 #include "tm.h"
@@ -138,7 +139,6 @@ void barrier_cross(barrier_t *b)
  * STRESS TEST
  * ################################################################### */
 
-typedef struct thread_data {
   int range;
   int update;
   unsigned long nb_add;
@@ -148,50 +148,44 @@ typedef struct thread_data {
   unsigned long nb_aborts;
   int diff;
   unsigned int seed;
+  unsigned int operations;
   intset_t *set;
-  barrier_t *barrier;
-} thread_data_t;
 
 void *test(void *data)
 {
   int val;
-  thread_data_t *d = (thread_data_t *)data;
 
-  /* init thread */
   TM_THREAD_ENTER();
-  /* Wait on barrier */
-  barrier_cross(d->barrier);
 
-  unsigned long aborts = 0;
+  unsigned int mySeed = seed;
+  int myDiff = diff;
 
-  while (stop == 0) {
-    val = rand_r(&d->seed) % 100;
-    if (val < d->update) {
-      if (val < d->update / 2) {
+  unsigned int myOps = operations;
+
+  while (myOps > 0) {
+    val = rand_r(&mySeed) % 100;
+    if (val < update) {
+      if (val < update / 2) {
         /* Add random value */
-        val = (rand_r(&d->seed) % d->range) + 1;
-        if (set_add(TM_ARG d->set, val)) {
-          d->diff++;
+        val = (rand_r(&mySeed) % range) + 1;
+        if (set_add(TM_ARG set, val)) {
+          myDiff++;
         }
-        d->nb_add++;
       } else {
         /* Remove random value */
-        val = (rand_r(&d->seed) % d->range) + 1;
-        if (set_remove(TM_ARG d->set, val)) {
-          d->diff--;
+        val = (rand_r(&mySeed) % range) + 1;
+        if (set_remove(TM_ARG set, val)) {
+          myDiff--;
         }
-        d->nb_remove++;
       }
     } else {
       /* Look for random value */
-      val = (rand_r(&d->seed) % d->range) + 1;
-      if (set_contains(TM_ARG d->set, val))
-        d->nb_found++;
-      d->nb_contains++;
+      val = (rand_r(&mySeed) % range) + 1;
+      set_contains(TM_ARG set, val);
     }
-  }
 
-  d->nb_aborts = aborts;
+    myOps--;
+  }
 
   TM_THREAD_EXIT();
 
@@ -202,8 +196,11 @@ void *test(void *data)
 # define required_argument  1
 # define optional_argument  2
 
-int main(int argc, char **argv)
-{
+MAIN(argc, argv) {
+    TIMER_T start;
+    TIMER_T stop;
+
+
   struct option long_options[] = {
     // These options don't set a flag
     {"help",                      no_argument,       NULL, 'h'},
@@ -216,21 +213,12 @@ int main(int argc, char **argv)
     {NULL, 0, NULL, 0}
   };
 
-  intset_t *set;
-  int i, c, val, size;
-  unsigned long reads, updates;
-  thread_data_t *data;
-  pthread_t *threads;
-  pthread_attr_t attr;
-  barrier_t barrier;
-  struct timeval start, end;
-  struct timespec timeout;
-  int duration = DEFAULT_DURATION;
-  int initial = DEFAULT_INITIAL;
-  int nb_threads = DEFAULT_NB_THREADS;
-  int range = DEFAULT_RANGE;
-  int seed = DEFAULT_SEED;
-  int update = DEFAULT_UPDATE;
+  int i, c, val;
+  operations = DEFAULT_DURATION;
+  unsigned int initial = DEFAULT_INITIAL;
+  unsigned int nb_threads = DEFAULT_NB_THREADS;
+  range = DEFAULT_RANGE;
+  update = DEFAULT_UPDATE;
 
   while(1) {
     i = 0;
@@ -271,7 +259,7 @@ int main(int argc, char **argv)
          );
        exit(0);
      case 'd':
-       duration = atoi(optarg);
+       operations = atoi(optarg);
        break;
      case 'i':
        initial = atoi(optarg);
@@ -296,32 +284,6 @@ int main(int argc, char **argv)
     }
   }
 
-  assert(duration >= 0);
-  assert(initial >= 0);
-  assert(nb_threads > 0);
-  assert(range > 0);
-  assert(update >= 0 && update <= 100);
-
-  printf("Set type     : red-black tree\n");
-  printf("Duration     : %d\n", duration);
-  printf("Initial size : %d\n", initial);
-  printf("Nb threads   : %d\n", nb_threads);
-  printf("Value range  : %d\n", range);
-  printf("Seed         : %d\n", seed);
-  printf("Update rate  : %d\n", update);
-
-  timeout.tv_sec = duration / 1000;
-  timeout.tv_nsec = (duration % 1000) * 1000000;
-
-  if ((data = (thread_data_t *)malloc(nb_threads * sizeof(thread_data_t))) == NULL) {
-    perror("malloc");
-    exit(1);
-  }
-  if ((threads = (pthread_t *)malloc(nb_threads * sizeof(pthread_t))) == NULL) {
-    perror("malloc");
-    exit(1);
-  }
-
   if (seed == 0)
     srand((int)time(0));
   else
@@ -329,11 +291,12 @@ int main(int argc, char **argv)
 
   set = set_new();
 
-  stop = 0;
-
   /* Init STM */
   printf("Initializing STM\n");
+  SIM_GET_NUM_CPU(nb_threads);
   TM_STARTUP(nb_threads);
+  P_MEMORY_STARTUP(nb_threads);
+  thread_startup(nb_threads);
 
   /* Populate set */
   printf("Adding %d entries to set\n", initial);
@@ -342,72 +305,24 @@ int main(int argc, char **argv)
     set_add_seq(set, val);
   }
 
-  /* Access set from all threads */
-  barrier_init(&barrier, nb_threads + 1);
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-  for (i = 0; i < nb_threads; i++) {
-    printf("Creating thread %d\n", i);
-    data[i].range = range;
-    data[i].update = update;
-    data[i].nb_add = 0;
-    data[i].nb_remove = 0;
-    data[i].nb_contains = 0;
-    data[i].nb_found = 0;
-    data[i].diff = 0;
-    data[i].seed = rand();
-    data[i].set = set;
-    data[i].barrier = &barrier;
-    if (pthread_create(&threads[i], &attr, test, (void *)(&data[i])) != 0) {
-      fprintf(stderr, "Error creating thread\n");
-      exit(1);
-    }
-  }
-  pthread_attr_destroy(&attr);
+  diff = 0;
+  seed = rand();
 
-  /* Start threads */
-  barrier_cross(&barrier);
+  TIMER_READ(start);
+  GOTO_SIM();
 
-  printf("STARTING...\n");
-  gettimeofday(&start, NULL);
-  if (duration > 0) {
-    nanosleep(&timeout, NULL);
-  }
-  stop = 1;
-  gettimeofday(&end, NULL);
-  printf("STOPPING...\n");
+  thread_start(test, NULL);
 
-  /* Wait for thread completion */
-  for (i = 0; i < nb_threads; i++) {
-    if (pthread_join(threads[i], NULL) != 0) {
-      fprintf(stderr, "Error waiting for thread completion\n");
-      exit(1);
-    }
-  }
+  GOTO_REAL();
+  TIMER_READ(stop);
 
-  duration = (end.tv_sec * 1000 + end.tv_usec / 1000) - (start.tv_sec * 1000 + start.tv_usec / 1000);
-  reads = 0;
-  updates = 0;
-  for (i = 0; i < nb_threads; i++) {
-    printf("Thread %d\n", i);
-    printf("  #add        : %lu\n", data[i].nb_add);
-    printf("  #remove     : %lu\n", data[i].nb_remove);
-    printf("  #contains   : %lu\n", data[i].nb_contains);
-    printf("  #found      : %lu\n", data[i].nb_found);
-    reads += data[i].nb_contains;
-    updates += (data[i].nb_add + data[i].nb_remove);
-    size += data[i].diff;
-    size += data[i].diff;
-  }
-  printf("Duration      : %d (ms)\n", duration);
-  printf("#txs          : %lu (%f / s)\n", reads + updates, (reads + updates) * 1000.0 / duration);
-  printf("#read txs     : %lu (%f / s)\n", reads, reads * 1000.0 / duration);
-  printf("#update txs   : %lu (%f / s)\n", updates, updates * 1000.0 / duration);
+  puts("done.");
+  printf("Time = %0.6lf\n", TIMER_DIFF_SECONDS(start, stop));
+  fflush(stdout);
 
   TM_SHUTDOWN();
-
-  free(threads);
-  free(data);
-
-  return 0;
+  P_MEMORY_SHUTDOWN();
+  GOTO_SIM();
+  thread_shutdown();
+  MAIN_RETURN(0);
 }
