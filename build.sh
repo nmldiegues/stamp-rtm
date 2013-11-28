@@ -1,6 +1,6 @@
 #!/bin/sh
 
-FOLDERS="array genome  intruder  kmeans  labyrinth  ssca2  vacation  yada"
+FOLDERS="redblacktree" # array genome  intruder  kmeans  labyrinth  ssca2  vacation  yada"
 
 rm lib/*.o || true
 

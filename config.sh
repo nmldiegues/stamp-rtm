@@ -3,6 +3,7 @@
 echo "Configuring $1"
 
 rm -rf lib
+rm -rf redblacktree
 rm -rf array
 rm -rf bayes
 rm -rf genome
@@ -27,6 +28,7 @@ then
         cp -r yada-bkup yada
 else
         cp -r lib-ssync lib
+	cp -r redblacktree-ssync redblacktree
         cp -r array-ssync array
         cp -r bayes-ssync bayes
         cp -r genome-ssync genome
