@@ -165,7 +165,7 @@ balias[16]="array8"
 balias[17]="array9"
 
 
-params[1]="-d 10000 -i 1024 -r 1000000 -u 10 -n "
+params[1]="-d 30000000 -i 1024 -r 1000000 -u 10 -n "
 params[2]="-g16384 -s64 -n16777216 -t"
 params[3]="-a10 -l128 -n262144 -s1 -t"
 params[4]="-m15 -n15 -t0.00001 -i inputs/random-n65536-d32-c16.txt -p"
@@ -302,7 +302,7 @@ prob[5]=90
 
 for p in 5
 do
-for c in 1 2 34 # 3 4 5 6 16 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 1 2 34 3 4 5 6 16 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
