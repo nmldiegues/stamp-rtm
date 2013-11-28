@@ -112,6 +112,8 @@ __thread long abort_debug;
 __thread long abort_nested;
 __thread long abort_other;
 
+__thread random_t* randomFallback;
+
 /* =============================================================================
  * threadWait
  * -- Synchronizes all threads to start/stop parallel section
@@ -121,6 +123,9 @@ static void
 threadWait (void* argPtr)
 {
     long threadId = *(long*)argPtr;
+
+	randomFallback = random_alloc();
+    random_seed(randomFallback, time(NULL));
 
     THREAD_LOCAL_SET(global_threadId, (long)threadId);
 

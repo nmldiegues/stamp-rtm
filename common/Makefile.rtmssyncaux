@@ -11,7 +11,12 @@ endif
 
 SUFF=.rtm
 
-CFLAGS   += -DHTM -I$(STM)/include $(LOCK_VERSION) # We substitute our RTM implementation for HTM.                                                                                                                                                
+ifndef PROB
+  PROB=-DFALLBACK_PROB=10
+endif
+
+CFLAGS   += -w -DHTM -I$(STM)/include $(LOCK_VERSION) $(PROB) # We substitute our RTM implementation for HTM.   
+
 CPPFLAGS := $(CFLAGS)
 LDFLAGS  += -L$(STM)
 LIBS     += -lsync -lrt -lpthread -lnuma -mrtm

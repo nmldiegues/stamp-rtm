@@ -13,7 +13,7 @@ make clean; make;
 cd ..
 
 config[1]="rtmtl2"
-config[2]="rstmnorec"
+config[2]="rtmnorec"
 config[3]="tl2"
 config[4]="tinystm"
 config[5]="swisstm"
@@ -183,7 +183,7 @@ params[16]="-s 1000 -o1000000 -i1000 -c10 -w1000 -t"
 params[17]="-s 1000 -o2000000 -i10 -c200 -w1000 -t"
 
 ext[1]=".rtm"
-ext[2]=""
+ext[2]=".rtm"
 ext[3]=""
 ext[4]=""
 ext[5]=""
@@ -231,7 +231,7 @@ ext[45]=""
 
 
 build[1]="rtm"
-build[2]="stm"
+build[2]="rtm"
 build[3]="stm"
 build[4]="stm"
 build[5]="stm"
@@ -293,54 +293,21 @@ wait_until_finish() {
     kill -9 $pid3
 }
 
-prob=5
+prob[1]=10
+prob[2]=25
+prob[3]=50
+prob[4]=75
+prob[5]=90
 
-for c in 7 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for p in 1 2 3 4 5
 do
-    cd $workspace;
-    echo "building ${build[$c]} ${alias[$c]} ${locks[$c]}"
-    bash config.sh ${config[$c]};
-    bash build-locks.sh ${build[$c]} ${alias[$c]} ${locks[$c]};
-    for b in 2 3 4 5 6 7 8 9
-    do
-        for t in 1 2 4 6 8
-        do
-#        for r in 1 2 3 4 5 6
-#        do
-#            sed -i "s/int tries = 4/int tries = $r/g" $workspace/lib/tm.h
-            for a in 1
-            do
-                cd $workspace;
-                cd ${benchmarkslocks[$b]};
-                echo "${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${locks[$c]}-${balias[$b]}-$t-$a.pcm &
-                pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${locks[$c]}-${balias[$b]}-$t-$a.pow &
-                pid2=$!
-                ./${benchmarkslocks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${locks[$c]}-${balias[$b]}-$t-$a.data &
-                pid3=$!
-                wait_until_finish $pid3
-                wait $pid3
-                rc=$?
-                kill -9 $pid
-                kill -9 $pid2
-                if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${alias[$c]} | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
-                fi
-            done
-            cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
-#        done
-        done
-    done
-done
-
-for c in 4 34 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 1 2 34 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
     bash config.sh ${config[$c]};
-    bash build.sh ${build[$c]} ${alias[$c]};
-    for b in 3 4 6 9 10 11 12 13 14 15 16 17
+    bash build.sh ${build[$c]} ${alias[$c]} ${prob[$p]};
+    for b in 2 3 4 5 6 7 8
     do
         for t in 1 2 3 4 5 6 7 8
         do
@@ -349,11 +316,11 @@ do
                 cd $workspace;
                 cd ${benchmarks[$b]};
                 echo "${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${prob[$p]}-${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
                 pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pow &
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${prob[$p]}-${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.data &
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${prob[$p]}-${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.data &
                 pid3=$!
                 wait_until_finish $pid3
                 wait $pid3
@@ -361,12 +328,13 @@ do
                 kill -9 $pid
                 kill -9 $pid2
                 if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${alias[$c]} | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
+                    echo "Error within: ${prob[$p]} | ${alias[$c]} | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
                 fi
             done
             cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
         done
     done
+done
 done
 
 exit 0;

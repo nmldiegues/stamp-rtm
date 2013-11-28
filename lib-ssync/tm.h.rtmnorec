@@ -354,7 +354,8 @@
     	                            break;	\
     							} else { \
     								rtm_aborts++;	\
-    								tries--;	\
+    								/* tries--;*/	\
+    								if (random_generate(randomFallback) % 100 < FALLBACK_PROB) tries = 0; \
     							}	\
     						} else {  \
     						    tries = 0; \
@@ -362,8 +363,6 @@
                                 abortFunPtr = &abortSTM;    \
                                 sharedReadFunPtr = &sharedReadSTM;  \
                                 sharedWriteFunPtr = &sharedWriteSTM;    \
-                                sharedReadFloatFunPtr = &sharedReadSTM_F;  \
-                                sharedWriteFloatFunPtr = &sharedWriteSTM_F;    \
                                 fallback_mixed++; \
                                 break;  \
     						} \
@@ -387,7 +386,7 @@
                                          TX_AFTER_FINALIZE();    \
                                          commit_mixed_hw++; \
 							             break;  \
-							         } else if (retriesCommit == 0 || _XABORT_CODE(status) == 0xab) { \
+							         } else if ((random_generate(randomFallback) % 100 < FALLBACK_PROB) || _XABORT_CODE(status) == 0xab) { \ 
 							             __sync_add_and_fetch(&is_fallback,1);    \
 							             int ret = HYBRID_STM_END();  \
 							             __sync_sub_and_fetch(&is_fallback,1);    \
@@ -399,13 +398,11 @@
 							         } else if (_XABORT_CODE(status) == 0xac) { \
 							         	STM_RESTART(); \
 							         } \
-    					             retriesCommit--; \
+    					             /* retriesCommit--;*/ \
 							    }    \
                                 abortFunPtr = &abortHTM;    \
                                 sharedReadFunPtr = &sharedReadHTM;  \
-                                sharedReadFloatFunPtr = &sharedReadHTM_F;  \
                                 sharedWriteFunPtr = &sharedWriteHTM;    \
-                                sharedWriteFloatFunPtr = &sharedWriteHTM_F;    \
                             } \
                      	};
 
@@ -706,13 +703,13 @@
 
 #else /* !STM */
 
-#  define TM_SHARED_READ(var)         (*sharedReadFunPtr)(Self, &(var))
-#  define TM_SHARED_READ_P(var)         IP2VP(TM_SHARED_READ(var))
-#  define TM_SHARED_READ_F(var)         (*sharedReadFloatFunPtr)(Self, &(var))
+# define TM_SHARED_READ(var) (*sharedReadFunPtr)(Self, (vintp*)(void*)&(var))
+# define TM_SHARED_READ_P(var) IP2VP(TM_SHARED_READ(var))
+# define TM_SHARED_READ_F(var) IP2F((*sharedReadFunPtr)(Self, (vintp*)FP2IPP(&(var))))
 
-#  define TM_SHARED_WRITE(var, val)   (*sharedWriteFunPtr)(Self, &(var), val)
-#  define TM_SHARED_WRITE_P(var, val)   (*sharedWriteFunPtr)(Self, (vintp*)(void*)&(var), VP2IP(val))
-#  define TM_SHARED_WRITE_F(var, val)   (*sharedWriteFloatFunPtr)(Self, &(var), val)
+# define TM_SHARED_WRITE(var, val) (*sharedWriteFunPtr)(Self, (vintp*)(void*)&(var), (intptr_t)val)
+# define TM_SHARED_WRITE_P(var, val) (*sharedWriteFunPtr)(Self, (vintp*)(void*)&(var), VP2IP(val))
+# define TM_SHARED_WRITE_F(var, val) (*sharedWriteFunPtr)(Self, (vintp*)FP2IPP(&(var)), F2IP(val))
 
 #  define TM_LOCAL_WRITE(var, val)      ({var = val; var;})
 #  define TM_LOCAL_WRITE_P(var, val)    ({var = val; var;})

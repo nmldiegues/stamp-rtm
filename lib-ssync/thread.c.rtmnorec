@@ -106,6 +106,8 @@ __thread long fallback_stm;
 __thread long commit_mixed_hw;
 __thread long commit_mixed_stm;
 
+__thread random_t* randomFallback;
+
 void abortHTM(Thread* Self) {
     _xabort(0xab);
 }
@@ -113,12 +115,6 @@ intptr_t sharedReadHTM(Thread* Self, intptr_t* addr) {
     return *addr;
 }
 void sharedWriteHTM(Thread* Self, intptr_t* addr, intptr_t val) {
-    *addr = val;
-}
-float sharedReadHTM_F(Thread* Self, float* addr) {
-    return *addr;
-}
-void sharedWriteHTM_F(Thread* Self, float* addr, float val) {
     *addr = val;
 }
 
@@ -131,18 +127,10 @@ intptr_t sharedReadSTM(Thread* Self, intptr_t* addr) {
 void sharedWriteSTM(Thread* Self, intptr_t* addr, intptr_t val) {
     STM_HYBRID_WRITE(addr, val);
 }
-float sharedReadSTM_F(Thread* Self, float* addr) {
-    return STM_HYBRID_READ(addr);
-}
-void sharedWriteSTM_F(Thread* Self, float* addr, float val) {
-    STM_HYBRID_WRITE(addr, val);
-}
 
 __thread void (*abortFunPtr)(Thread* Self);
 __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);
 __thread void (*sharedWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
-__thread float (*sharedReadFloatFunPtr)(Thread* Self, float* addr);
-__thread void (*sharedWriteFloatFunPtr)(Thread* Self, float* addr, float val);
 
 volatile unsigned long is_fallback = 0;
 
@@ -157,13 +145,14 @@ threadWait (void* argPtr)
 {
     long threadId = *(long*)argPtr;
 
+	randomFallback = random_alloc();
+    random_seed(randomFallback, time(NULL));
+
     THREAD_LOCAL_SET(global_threadId, (long)threadId);
 
     abortFunPtr = &abortHTM;
     sharedReadFunPtr = &sharedReadHTM;
-    sharedReadFloatFunPtr = &sharedReadHTM_F;
     sharedWriteFunPtr = &sharedWriteHTM;
-    sharedWriteFloatFunPtr = &sharedWriteHTM_F;
 
     cpu_set_t my_set;
     CPU_ZERO(&my_set);

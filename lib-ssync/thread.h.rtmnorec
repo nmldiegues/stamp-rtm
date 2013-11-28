@@ -140,6 +140,10 @@ extern "C" {
 #endif /* !LOG_BARRIER */
 #endif /* !SIMULATOR */
 
+#include "random.h"
+
+extern __thread random_t* randomFallback;
+
 extern __thread long rtm_aborts;
 extern __thread long rtm_commits;
 extern __thread long successful_starts;
@@ -159,19 +163,13 @@ extern __thread long commit_mixed_stm;
 extern void abortHTM(Thread* Self);
 extern intptr_t sharedReadHTM(Thread* Self, intptr_t* addr);
 extern void sharedWriteHTM(Thread* Self, intptr_t* addr, intptr_t val);
-extern float sharedReadHTM_F(Thread* Self, float* addr);
-extern void sharedWriteHTM_F(Thread* Self, float* addr, float val);
 extern void abortSTM(Thread* Self);
 extern intptr_t sharedReadSTM(Thread* Self, intptr_t* addr);
 extern void sharedWriteSTM(Thread* Self, intptr_t* addr, intptr_t val);
-extern float sharedReadSTM_F(Thread* Self, float* addr);
-extern void sharedWriteSTM_F(Thread* Self, float* addr, float val);
 
 extern __thread void (*abortFunPtr)(Thread* Self);
 extern __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);
 extern __thread void (*sharedWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
-extern __thread float (*sharedReadFloatFunPtr)(Thread* Self, float* addr);
-extern __thread void (*sharedWriteFloatFunPtr)(Thread* Self, float* addr, float val);
 
 extern volatile unsigned long is_fallback;
 
