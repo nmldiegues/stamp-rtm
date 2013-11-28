@@ -106,7 +106,7 @@ alias[50]="HTICKET_LOCKS"
 alias[51]="HTICKET_LOCKS"
 alias[52]="HTICKET_LOCKS"
 
-benchmarks[1]="bayes"
+benchmarks[1]="redblacktree"
 benchmarks[2]="genome"
 benchmarks[3]="intruder"
 benchmarks[4]="kmeans"
@@ -146,6 +146,7 @@ locks[43]="10000"
 locks[44]="1000"
 locks[45]="100"
 
+balias[1]="redblacktree"
 balias[2]="genome"
 balias[3]="intruder"
 balias[4]="kmeans"
@@ -164,7 +165,7 @@ balias[16]="array8"
 balias[17]="array9"
 
 
-params[1]="-v32 -r4096 -n10 -p40 -i2 -e8 -s1 -t"
+params[1]="-d 10000 -i 1024 -r 1000000 -u 10 -n "
 params[2]="-g16384 -s64 -n16777216 -t"
 params[3]="-a10 -l128 -n262144 -s1 -t"
 params[4]="-m15 -n15 -t0.00001 -i inputs/random-n65536-d32-c16.txt -p"
@@ -299,28 +300,28 @@ prob[3]=50
 prob[4]=75
 prob[5]=90
 
-for p in 1 2 3 4 5
+for p in 5
 do
-for c in 1 2 34 # 2 3 4 5 15 26 27 28 29 31 32 33 34
+for c in 1 2 34 # 3 4 5 6 16 # 2 3 4 5 15 26 27 28 29 31 32 33 34
 do
     cd $workspace;
     echo "building ${build[$c]} ${alias[$c]}"
     bash config.sh ${config[$c]};
     bash build.sh ${build[$c]} ${alias[$c]} ${prob[$p]};
-    for b in 2 3 4 5 6 7 8
+    for b in 1
     do
-        for t in 1 2 3 4 5 6 7 8
+        for t in 1 # 2 3 4 5 6 7 8
         do
-            for a in 1 2 3 4 5
+            for a in 1
             do
                 cd $workspace;
                 cd ${benchmarks[$b]};
                 echo "${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a | ${alias[$c]}"
-                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${prob[$p]}-${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
+                ./../../IntelPerformanceCounterMonitorV2.5.1/pcm-tsx.x 1 -c > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pcm &
                 pid=$!
-                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${prob[$p]}-${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pow &
+                ./../../power_gadget/power_gadget -e 100 > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.pow &
                 pid2=$!
-                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${prob[$p]}-${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.data &
+                ./${benchmarks[$b]}${ext[$c]} ${params[$b]}$t > ../auto-results/${config[$c]}-${alias[$c]}-${balias[$b]}-$t-$a.data &
                 pid3=$!
                 wait_until_finish $pid3
                 wait $pid3
@@ -328,7 +329,7 @@ do
                 kill -9 $pid
                 kill -9 $pid2
                 if [[ $rc != 0 ]] ; then
-                    echo "Error within: ${prob[$p]} | ${alias[$c]} | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
+                    echo "Error within: ${alias[$c]} | ${config[$c]} | ${balias[$b]} | retries $r | threads $t | attempt $a" >> ../auto-results/error.out
                 fi
             done
             cp $workspace/lib/tm.h.rtm $workspace/lib/tm.h
