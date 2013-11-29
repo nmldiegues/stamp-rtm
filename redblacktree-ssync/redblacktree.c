@@ -146,6 +146,7 @@ void barrier_cross(barrier_t *b)
   unsigned long nb_contains;
   unsigned long nb_found;
   unsigned long nb_aborts;
+  unsigned int nb_threads;
   int diff;
   unsigned int seed;
   unsigned int operations;
@@ -160,7 +161,7 @@ void *test(void *data)
   unsigned int mySeed = seed;
   int myDiff = diff;
 
-  unsigned int myOps = operations;
+  unsigned int myOps = operations / nb_threads;
 
   while (myOps > 0) {
     val = rand_r(&mySeed) % 100;
@@ -216,7 +217,7 @@ MAIN(argc, argv) {
   int i, c, val;
   operations = DEFAULT_DURATION;
   unsigned int initial = DEFAULT_INITIAL;
-  unsigned int nb_threads = DEFAULT_NB_THREADS;
+  nb_threads = DEFAULT_NB_THREADS;
   range = DEFAULT_RANGE;
   update = DEFAULT_UPDATE;
 
