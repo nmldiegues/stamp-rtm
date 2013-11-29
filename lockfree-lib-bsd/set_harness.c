@@ -63,8 +63,8 @@
 #define MAX_ITERATIONS 100000
 #define MAX_WALL_TIME 50 /* seconds */
 #else
-#define MAX_ITERATIONS 100000000
-#define MAX_WALL_TIME 10 /* seconds */
+#define MAX_ITERATIONS 30000000
+#define MAX_WALL_TIME 100 /* seconds */
 #endif
 
 /*

@@ -4,7 +4,7 @@ DEBUGGING := -DNDEBUG
 
 ifeq ($(ARCH),INTEL)
 CC          := gcc
-CFLAGS      := -O0 -g -DINTEL -fomit-frame-pointer -march=native
+CFLAGS      := -O3 -g -DINTEL -fomit-frame-pointer -march=native
 LDFLAGS     := -lpthread
 endif
 
